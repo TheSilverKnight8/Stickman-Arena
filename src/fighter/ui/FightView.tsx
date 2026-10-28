@@ -37,6 +37,8 @@ export function FightView({
   onLeave,
   onOver,
   overlay,
+  pausable = true,
+  leaveText = 'The match ends here.',
 }: {
   driver: FightDriver;
   labels: PlayerLabel[];
@@ -44,11 +46,16 @@ export function FightView({
   onLeave: () => void;
   onOver: (s: MatchState) => void;
   overlay?: ReactNode;
+  /** A CPU match pauses while a phone is upright; an online match cannot. */
+  pausable?: boolean;
+  /** What leaving does, in the "Leave the match?" question. */
+  leaveText?: string;
 }) {
   useMusic('fighter');
   const canvas = useRef<HTMLCanvasElement>(null);
   const landscape = useLandscape();
-  const paused = isTouch && !landscape;
+  const upright = isTouch && !landscape;
+  const paused = pausable && upright;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
   const [touch] = useState(() => new TouchInput());
@@ -76,7 +83,10 @@ export function FightView({
       if (pausedRef.current) acc = 0;
       while (acc >= dt) {
         acc -= dt;
-        const events = driver.tick(tapJump.apply(keys.read() | touch.read(), settings.get().tapJump));
+        const local = tapJump.apply(keys.read() | touch.read(), settings.get().tapJump);
+        // Development only: automated tests can play in place of the keyboard.
+        const bot = import.meta.env.DEV ? (window as unknown as { __bot?: (s: MatchState, slot: number) => number }).__bot : undefined;
+        const events = driver.tick(bot ? bot(driver.state, mySlot) : local);
         scene.onEvents(driver.state, events);
         playSounds(events, mySlot);
       }
@@ -105,24 +115,26 @@ export function FightView({
   });
 
   const askLeave = async () => {
-    if (driver.state.phase !== 'over' && !(await confirmDialog({ title: 'Leave the match?', body: 'The match ends here.', confirm: 'Leave match' }))) return;
+    if (driver.state.phase !== 'over' && !(await confirmDialog({ title: 'Leave the match?', body: leaveText, confirm: 'Leave match' }))) return;
     onLeave();
   };
 
   return (
     <div className="game-surface relative h-full w-full overflow-hidden bg-[#f6e7cf]" style={{ touchAction: 'none' }}>
       <canvas ref={canvas} className="absolute inset-0 h-full w-full" />
-      <Button size="xs" variant="ghost" className="absolute left-2 top-2 z-30 bg-surface/70" onClick={() => void askLeave()}>
+      <Button size="xs" variant="ghost" className="absolute left-2 top-2 z-50 bg-surface/70" onClick={() => void askLeave()}>
         <LogOut className="size-3.5" />
         Leave
       </Button>
       {isTouch && <TouchControls input={touch} />}
       {overlay}
-      {paused && (
+      {upright && (
         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-bg/95 p-6 text-center">
           <RotateCw className="size-12 animate-spin text-accent [animation-duration:3s]" />
           <h2 className="text-3xl">Turn your phone sideways</h2>
-          <p className="max-w-xs text-muted">The Platfighter plays in landscape. The match is paused until you turn your phone.</p>
+          <p className="max-w-xs text-muted">
+            {pausable ? 'The Platfighter plays in landscape. The match is paused until you turn your phone.' : 'The Platfighter plays in landscape. This is an online match, so it keeps going.'}
+          </p>
         </div>
       )}
     </div>

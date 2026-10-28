@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Swords } from 'lucide-react';
 import { PageLayout, PageTitle, PlayLayout } from '../components/Layout';
 import { Button, Card, Segmented, cx } from '../components/ui';
@@ -17,6 +17,7 @@ import type { CharId, MatchState, StageId } from './sim/types';
 import { CharacterGrid, CharacterInfo, type Pick } from './ui/CharacterGrid';
 import { ControlsHelp } from './ui/Controls';
 import { FightView, type FightDriver } from './ui/FightView';
+import { createFighterRoom, joinFighterRoom } from './online';
 
 const PATH = GAMES.fighter.path;
 
@@ -26,9 +27,8 @@ export function FighterHome() {
     <GameHome
       game="fighter"
       about={<>Hits build up damage, and damage makes the next hit knock harder. Knock your opponent off the stage. Three stocks each, three minutes.</>}
-      roomsUnavailable="Online rooms for the Platfighter come in Stage 3. The CPU is ready."
-      onCreate={() => {}}
-      onJoin={() => {}}
+      onCreate={() => void createFighterRoom()}
+      onJoin={(code) => void joinFighterRoom(code)}
     />
   );
 }
@@ -95,7 +95,7 @@ export function FighterCpu() {
             )
           }
         />
-        <MatchIntro match={match} />
+        <MatchIntro chars={[match.you, match.cpuChar]} stage={match.stage} />
       </PlayLayout>
     );
 
@@ -158,29 +158,42 @@ function SelectScreen({ pick, level, onPick, onLevel, onStart }: { pick: Pick | 
 }
 
 /** "Fisticuffs vs Buster on Scaffold", shown for the first moments of a match. */
-function MatchIntro({ match }: { match: CpuMatch }) {
+export function MatchIntro({ chars, stage }: { chars: CharId[]; stage: StageId }) {
   const [show, setShow] = useState(true);
   useEffect(() => {
     const t = window.setTimeout(() => setShow(false), 2600);
     return () => window.clearTimeout(t);
   }, []);
   if (!show) return null;
-  const you = CHARS[match.you];
-  const cpu = CHARS[match.cpuChar];
-  const same = match.you === match.cpuChar;
+  const you = CHARS[chars[0]];
+  const cpu = CHARS[chars[1]];
+  const same = chars[0] === chars[1];
   return (
     <div className="pointer-events-none absolute inset-x-0 top-12 z-20 flex justify-center px-4">
       <div className="animate-rise rounded-2xl border-2 border-navy bg-surface/95 px-5 py-3 text-center shadow-pop">
         <p className="font-display text-xl uppercase leading-tight sm:text-2xl">
           <span style={{ color: you.color }}>{you.name}</span> <span className="text-muted">vs</span> <span style={{ color: same ? cpu.alt : cpu.color }}>{cpu.name}</span>
         </p>
-        <p className="label-caps mt-1 text-muted">{STAGES[match.stage].name}</p>
+        <p className="label-caps mt-1 text-muted">{STAGES[stage].name}</p>
       </div>
     </div>
   );
 }
 
-export function ResultCard({ state, labels, onBack, backLabel = 'Back to character select' }: { state: MatchState; labels: PlayerLabel[]; onBack: () => void; backLabel?: string }) {
+export function ResultCard({
+  state,
+  labels,
+  onBack,
+  backLabel = 'Back to character select',
+  footer,
+}: {
+  state: MatchState;
+  labels: PlayerLabel[];
+  onBack?: () => void;
+  backLabel?: string;
+  /** Shown instead of the button (an online room moves on by itself). */
+  footer?: ReactNode;
+}) {
   const w = state.winner;
   const draw = w === -1 || w === null;
   const youWon = !draw && labels[w!]?.you;
@@ -191,12 +204,12 @@ export function ResultCard({ state, labels, onBack, backLabel = 'Back to charact
       : state.endReason === 'sudden-time'
         ? 'Sudden death ran a full minute, so the match is a draw.'
         : state.endReason === 'disconnect'
-          ? 'A player left, so the match is a draw.'
+          ? 'A player left or lost connection, so the match is a draw.'
           : draw
             ? 'Both fighters went out at the same moment.'
             : 'Last fighter standing.';
   return (
-    <div className="absolute inset-0 z-30 flex animate-fade items-center justify-center bg-navy/35 p-4">
+    <div className="absolute inset-0 z-[45] flex animate-fade items-center justify-center bg-navy/35 p-4">
       <div className="w-full max-w-md animate-rise rounded-3xl border-2 border-navy bg-surface p-6 text-center shadow-pop">
         <p className="label-caps text-accent">Match over</p>
         <h2 className={cx('mt-2 text-5xl', youWon && 'text-accent')}>{title}</h2>
@@ -214,9 +227,13 @@ export function ResultCard({ state, labels, onBack, backLabel = 'Back to charact
             </div>
           ))}
         </div>
-        <Button variant="primary" size="lg" press className="mt-6" onClick={onBack}>
-          {backLabel}
-        </Button>
+        {footer ? (
+          <div className="mt-6">{footer}</div>
+        ) : (
+          <Button variant="primary" size="lg" press className="mt-6" onClick={onBack}>
+            {backLabel}
+          </Button>
+        )}
       </div>
     </div>
   );

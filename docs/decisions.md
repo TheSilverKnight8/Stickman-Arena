@@ -5,8 +5,8 @@ The spec leaves these items to Claude Code (**Claude Code decides**). Each is wr
 ## Build stages (agreed with Caleb)
 
 1. Skeleton and Pazaak: Home, both game home pages, settings, PWA and deploy, Pazaak with CPU and online play. **(done)**
-2. Platfighter against the CPU: engine, 5 characters, 5 stages, keyboard and touch controls. Plus Caleb's two Pazaak changes (20-second turns, automatic stand at 20). **(this stage)**
-3. Platfighter online, 2 players, with rollback netcode.
+2. Platfighter against the CPU: engine, 5 characters, 5 stages, keyboard and touch controls. Plus Caleb's two Pazaak changes (20-second turns, automatic stand at 20). **(done)**
+3. Platfighter online, 2 players, with rollback netcode. Plus Caleb's requests after Stage 2: ledges, the edge clipping fix, and a tap jump setting. **(this stage)**
 4. 3–4 players online, only after Caleb says 2-player works well.
 
 ## Rooms and networking (both games)
@@ -19,7 +19,7 @@ The spec leaves these items to Claude Code (**Claude Code decides**). Each is wr
 | Game data | Directly between the two browsers over WebRTC, never through a server. | Free-plan message limits do not apply. |
 | Connection help | PeerJS's built-in settings: Google's STUN server and PeerJS's public TURN relay (for networks that block direct connections). | Free. Best effort: neither is guaranteed. |
 | Leaving / dropping | Each side sends a small "still here" message every second. Six seconds of silence, a closed connection, or a failed connection counts as gone. Mid-match that is a draw, as the spec says. | Phones that lock or switch apps stop answering, so silence has to count. |
-| Room size | Pazaak: 2. A third player trying the code is told the room already has its players. | |
+| Room size | Pazaak: 2. Platfighter: 2 (3–4 is Stage 4). A third player trying the code is told the room already has its players. | |
 | After someone leaves | If the other player leaves, the room stays open for its creator with the same code, so a new player can join. If the creator leaves, the room closes and the other player is sent back with a notice. | |
 
 Not used, and why:
@@ -158,7 +158,7 @@ All share the same base: a solid slab 760 wide. Pass-through platforms:
 | Device | Layout |
 | --- | --- |
 | Keyboard | WASD or the arrow keys move and aim. With WASD: J attack, K special, L or Space jump, ; or Shift dodge. With the arrows: Z attack, X special, C or Space jump, V dodge. Both work at the same time. Escape asks to leave the match. |
-| Phone | Landscape. A joystick on the left half (it appears where the thumb touches); Attack, Special, Jump and Dodge on the right. The stick counts as up or down only when pushed mostly up or down, so a slightly diagonal push still gives a side attack. Turning the phone upright pauses a CPU match with a message. |
+| Phone | Landscape. A joystick on the left half (it appears where the thumb touches); Attack, Special, Jump and Dodge on the right. The stick counts as up or down only when pushed mostly up or down, so a slightly diagonal push still gives a side attack. Turning the phone upright pauses a CPU match with a message. An online match can't pause for one player, so it keeps going behind the same message; the Leave button stays on top. |
 | Directions | Up or down held → up or down move; otherwise left or right → side move (the fighter turns to face that way); nothing → neutral. |
 
 ### CPU
@@ -171,7 +171,26 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each: Hard beats Easy 28–2 and Normal 22–8; Normal beats Easy 26–4.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after ledges were added): Hard beats Easy 30–0 and Normal 24–6; Normal beats Easy 28–2.
+
+### Online (Stage 3)
+
+| Item | Choice |
+| --- | --- |
+| Netcode | Rollback, written in this repo ([`src/net/rollback.ts`](../src/net/rollback.ts)). Both devices run the whole match. Your buttons are used 2 frames (about 33 ms) after you press them and are sent to the other device at once. When the other player's buttons for a frame have not arrived, the match goes on guessing they are still pressing what they pressed last; when the real ones arrive and the guess was wrong, the match is rewound to that frame and replayed, in the same 1/60 s. |
+| How far ahead | At most 10 frames past the other player's last known buttons. Past that, the match waits for them, and after a third of a second of waiting it shows **Waiting for your opponent…** |
+| Staying in step | If one device's clock runs ahead, it skips a frame now and then until the two are level again. |
+| Checking | Every second the devices compare a checksum of the match. If they ever differ, the room creator's copy is sent and the other device continues from it. In testing this only happened when forced on purpose. |
+| A frozen opponent | 8 seconds without the other device's buttons (for example their app is in the background) counts as a lost connection, so the match ends in a draw, as the spec says. |
+| Who runs the room | The room creator's device keeps the room's state (picks, ready, votes) and settles anything random; the match itself runs on both. |
+| Character select | Each player sees the other's pick and Ready live, like a local select screen. Ready locks the pick (press Not ready to change it). A Random pick is settled when both are ready. Someone who joins always starts at character select. |
+| Stage select | A grid of the five stages with drawings, plus Random. You see that the opponent has voted, but not what, until both have; you can change your vote until then. The vote rules are Caleb's (spec). |
+| Vote reveal | About 2.6 seconds: both votes, what a Random vote became, and the stage that will be played. Then the match starts. |
+| After a match | The result shows for 5 seconds, then both go back to character select with their fighters still picked and Ready cleared (the rematch). |
+| Leaving | **Leave room** on character select. In a match, the Leave button (or Escape) asks first; leaving mid-match is a draw for both (spec). The header's back link also leaves the room. |
+| Same fighter on both sides | The second player's fighter uses the other shade, as against the CPU. |
+| Tap jump | Each player's own setting, applied on their device before their buttons are sent. |
+| Measured | Two browsers over a real WebRTC connection with 45–75 ms extra delay each way: about 60 frames a second, 6–15 rollbacks a second, no checksum mismatches. On a simulated network with up to 200 ms delay, uneven delay, and clocks 3% fast or slow, both devices always ended with exactly the same match as a single-device replay of the same buttons. Past about 100 ms each way the match starts waiting now and then: about 4% slower at 85–150 ms, about 14% slower at 130–230 ms. |
 
 ### Look and sound
 

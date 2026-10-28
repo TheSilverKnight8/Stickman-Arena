@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { DialogHost } from './components/dialogs';
 import { FighterCpu, FighterHome } from './fighter/FighterPages';
+import { FighterRoomPage } from './fighter/ui/RoomPage';
 import { useSettings } from './lib/settings';
 import { Home } from './pages/Home';
 import { SettingsPage } from './pages/Settings';
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/pazaak/settings" element={<SettingsPage game="pazaak" />} />
         <Route path="/fighter" element={<FighterHome />} />
         <Route path="/fighter/cpu" element={<FighterCpu />} />
+        <Route path="/fighter/room" element={<FighterRoomPage />} />
         <Route path="/fighter/settings" element={<SettingsPage game="fighter" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

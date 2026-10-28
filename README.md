@@ -12,8 +12,8 @@ It is an installable web app (PWA) for phones and computers, hosted on GitHub Pa
 | Home | Two buttons, one per game. Each leads to that game's home page: create a room, join one with a code, play the CPU, settings. |
 | Pazaak | KOTOR II rules as written in [`docs/pazaak.md`](docs/pazaak.md). Build a 10-card side deck (or Random), 20-second turns, automatic stand at 20, first to 3 sets. CPU at Normal (plain cards) or Advanced (adds ± cards and the tiebreaker). Portrait and landscape on phones. |
 | Online rooms | The creator gets a 5-character code to share (shown large, with a copy button). The other player types it in. Game data goes directly between the two devices (WebRTC); the free PeerJS server only introduces them. If a player leaves or loses connection mid-match, the match is a draw. |
-| Platfighter | Smash-style: damage builds up, KOs off the blast zones, 3 stocks, 3 minutes, sudden death at 300%. Five fighters with 12 moves each ([`docs/characters.md`](docs/characters.md)), five stages, CPU at Easy, Normal and Hard. Keyboard on computers, joystick and four buttons on phones (landscape). Online rooms come in Stage 3. |
-| Settings | Brightness, music volume, effects volume. Kept until the app closes. |
+| Platfighter | Smash-style: damage builds up, KOs off the blast zones, 3 stocks, 3 minutes, sudden death at 300%. Five fighters with 12 moves each ([`docs/characters.md`](docs/characters.md)), five stages, CPU at Easy, Normal and Hard. Ledges, and an optional tap jump. Keyboard on computers, joystick and four buttons on phones (landscape). Online rooms for 2 players with rollback netcode: character select, stage vote, match, then back to character select. |
+| Settings | Brightness, music volume, effects volume; tap jump for the Platfighter. Kept until the app closes. |
 | Sound | Music and effects made in the browser; no audio files. |
 
 The rules and the choices left to the builder are written down in [`SPEC.md`](SPEC.md) (Caleb's spec), [`docs/pazaak.md`](docs/pazaak.md) and [`docs/decisions.md`](docs/decisions.md).
@@ -61,10 +61,11 @@ src/
   fighter/sim/   Platfighter simulation: skeletons, physics, hits, stages, match rules (deterministic)
   fighter/sim/chars/  the five fighters and their moves
   fighter/render/     drawing the match
-  fighter/input/      keyboard and touch controls
-  fighter/ui/         character select, match screen
+  fighter/input/      keyboard and touch controls, tap jump
+  fighter/ui/         character select, match screen, online room
   fighter/ai.ts       the CPU
-  net/           rooms: codes, PeerJS connection, heartbeat
+  fighter/online.ts   online room: lobby, stage vote, rollback match
+  net/           rooms (codes, PeerJS connection, heartbeat) and rollback netcode
   lib/audio/     sound engine, effects, music
   lib/           settings, seeded random numbers, small shared store
   pages/         Home, game home pages, Settings

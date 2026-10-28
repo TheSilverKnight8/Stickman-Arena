@@ -16,20 +16,16 @@ export function GameHome({
   about,
   onCreate,
   onJoin,
-  roomsUnavailable,
 }: {
   game: GameId;
   about: ReactNode;
   onCreate: () => void;
   onJoin: (code: string) => void;
-  /** While online play for this game is not built yet: why the room buttons are off. */
-  roomsUnavailable?: string;
 }) {
   const g = GAMES[game];
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
-  const off = Boolean(roomsUnavailable);
 
   const join = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,15 +47,13 @@ export function GameHome({
       </PageTitle>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
-        <Card className="p-5" aria-disabled={off}>
+        <Card className="p-5">
           <p className="label-caps text-muted">Play a friend online</p>
-          {roomsUnavailable && <p className="mt-2 rounded-lg border border-warn/35 bg-warn/10 px-3 py-2 text-sm text-warn">{roomsUnavailable}</p>}
           <Button
             variant="primary"
             size="xl"
             press
             className="mt-4 w-full"
-            disabled={off}
             onClick={() => {
               sfx.click();
               onCreate();
@@ -77,7 +71,6 @@ export function GameHome({
               <input
                 id={`${game}-code`}
                 value={code}
-                disabled={off}
                 onChange={(e) => {
                   setCode(e.target.value.toUpperCase().slice(0, CODE_LENGTH + 2));
                   setProblem(null);
@@ -89,7 +82,7 @@ export function GameHome({
                 inputMode="text"
                 className="h-14 w-0 min-w-0 flex-1 rounded-xl border-2 border-navy bg-surface px-4 text-center font-mono text-2xl uppercase tracking-[0.35em] text-ink outline-none placeholder:text-muted/40 focus:ring-3 focus:ring-navy/15"
               />
-              <Button type="submit" variant="navy" size="lg" press className="h-14" disabled={off}>
+              <Button type="submit" variant="navy" size="lg" press className="h-14">
                 <LogIn className="size-5" />
                 Join
               </Button>

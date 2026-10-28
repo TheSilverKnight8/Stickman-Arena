@@ -210,6 +210,11 @@ export class Room {
     for (const id of this.links.keys()) this.send(id, msg);
   }
 
+  /** Hangs up on everyone as if their connection was lost (their game stopped answering). */
+  dropAll() {
+    for (const id of [...this.links.keys()]) this.drop(id, 'lost');
+  }
+
   get peerIds() {
     return [...this.links.keys()];
   }
