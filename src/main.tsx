@@ -23,8 +23,21 @@ if (import.meta.env.DEV) {
     import('./lib/audio/engine'),
     import('./lib/audio/music'),
     import('./lib/audio/sfx'),
-  ]).then(([rules, cards, cpu, session, rng, engine, music, sfx]) => {
-    (window as unknown as Record<string, unknown>).__arena = { rules, cards, cpu, session, rng, audio: { ...engine, ...music, ...sfx } };
+    import('./fighter/sim/step'),
+    import('./fighter/sim/body'),
+    import('./fighter/sim/chars'),
+    import('./fighter/sim/stages'),
+    import('./fighter/sim/types'),
+  ]).then(([rules, cards, cpu, session, rng, engine, music, sfx, step, body, chars, stages, types]) => {
+    (window as unknown as Record<string, unknown>).__arena = {
+      rules,
+      cards,
+      cpu,
+      session,
+      rng,
+      audio: { ...engine, ...music, ...sfx },
+      fighter: { ...step, ...body, ...chars, ...stages, ...types },
+    };
   });
 }
 
