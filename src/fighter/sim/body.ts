@@ -93,12 +93,16 @@ export function hitsOf(f: FighterState, j: Joints | null = jointsOf(f)): ActiveH
   const out: ActiveHit[] = [];
   for (const h of m.hits) {
     if (f.t < h.f[0] || f.t > h.f[1]) continue;
-    const a = pointOf(f, j, h.at);
-    const b = h.to ? pointOf(f, j, h.to) : a;
+    // A hitbox on a fist or foot covers the forearm or shin too, so a point-blank hit still connects.
+    const start = h.to ? h.at : ((typeof h.at === 'string' ? LIMB_BASE[h.at] : undefined) ?? h.at);
+    const a = pointOf(f, j, start);
+    const b = pointOf(f, j, h.to ?? h.at);
     out.push({ def: h, shape: [a[0], a[1], b[0], b[1], h.r] });
   }
   return out;
 }
+
+const LIMB_BASE: Partial<Record<string, HitDef['at']>> = { hand1: 'elbow1', hand2: 'elbow2', foot1: 'knee1', foot2: 'knee2' };
 
 /** The reflect circle, when the current move has one active. */
 export function reflectOf(f: FighterState, j: Joints | null = jointsOf(f)): [number, number, number] | null {

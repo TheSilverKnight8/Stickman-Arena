@@ -204,7 +204,8 @@ export function ResultCard({ state, labels, onBack, backLabel = 'Back to charact
         <div className="mt-4 flex justify-center gap-4">
           {state.fighters.map((f) => (
             <div key={f.slot} className="text-center">
-              <p className="font-display text-sm uppercase" style={{ color: f.palette ? CHARS[f.char].alt : CHARS[f.char].color }}>
+              <p className="flex items-center justify-center gap-1.5 font-display text-sm uppercase">
+                <span className="size-3 rounded-full border-2 border-navy" style={{ background: f.palette ? CHARS[f.char].alt : CHARS[f.char].color }} />
                 {labels[f.slot]?.name} · {CHARS[f.char].name}
               </p>
               <p className="text-xs text-muted">

@@ -18,7 +18,7 @@ export const buster: CharDef = {
   name: 'Buster',
   archetype: 'Heavyweight',
   color: '#e8a500',
-  alt: '#c97a1a',
+  alt: '#9a5f00',
   body: { torso: 40, upper: 22, fore: 22, thigh: 25, shin: 24, head: 14, weapon: 0, torsoR: 15, limbR: 8 },
   line: 9,
   halfWidth: 22,

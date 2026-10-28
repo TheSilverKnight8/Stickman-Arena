@@ -7,6 +7,7 @@
 - Logo rule (same as the portal and Synth Studio): the full Croswell Industries logo on Home only; the C mark on every other screen, in the gap left of the bottom stripes.
 - Free plans only. No accounts, no database, no saving of any kind (settings and decks last until the app closes). Hosting is GitHub Pages; rooms use the free PeerJS signaling server and direct WebRTC connections.
 - Pazaak rules are in `docs/pazaak.md`, in Caleb's words. `src/pazaak/rules.ts` must match them.
+- Each fighter's 12 moves are documented in `docs/characters.md`, which is generated from `src/fighter/sim/chars/`. When moves change, update it too.
 - Platfighter netcode is rollback: the match state must be a plain, copyable object, the simulation runs on a fixed timestep, and it must give identical results on every device. No `Math.random`, `Math.sin`/`cos`/`atan2`/`pow` or other engine-dependent math inside the simulation; use `src/lib/rng.ts` and precomputed values.
 - A player leaving or losing connection mid-match ends it in a draw, in both games.
 - `npm run typecheck` and `npm run build` must pass.

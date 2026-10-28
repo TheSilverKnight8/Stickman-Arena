@@ -56,6 +56,8 @@ export function FightView({
   useEffect(() => {
     const el = canvas.current!;
     const scene = new Scene(el, labels);
+    // Development only: lets automated tests read the running match.
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__fight = driver;
     const keys = new Keyboard();
     keys.attach();
     let raf = 0;

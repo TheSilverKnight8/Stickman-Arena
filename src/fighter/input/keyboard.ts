@@ -38,6 +38,9 @@ export class Keyboard {
   private down = new Set<string>();
   /** Buttons pressed and released between two frames still count for one frame. */
   private tapped = 0;
+  /** A press that would merge with the same button held last frame waits one frame, so it still counts as a new press. */
+  private later = 0;
+  private last = 0;
 
   private onDown = (e: KeyboardEvent) => {
     const b = MAP[e.code];
@@ -69,9 +72,15 @@ export class Keyboard {
 
   /** The buttons for this frame. */
   read(): number {
-    let bits = this.tapped;
+    let held = 0;
+    for (const code of this.down) held |= MAP[code];
+    let bits = held | this.tapped | this.later;
+    // Tapped again (another key for the same action) while it was down last frame: let it go for a frame first.
+    const merged = this.tapped & this.last & ~held;
+    bits &= ~merged;
+    this.later = merged;
     this.tapped = 0;
-    for (const code of this.down) bits |= MAP[code];
+    this.last = bits;
     return bits;
   }
 }
