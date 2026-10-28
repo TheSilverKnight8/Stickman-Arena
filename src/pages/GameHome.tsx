@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { Bot, DoorOpen, LogIn, Settings as SettingsIcon } from 'lucide-react';
 import { PageLayout, PageTitle } from '../components/Layout';
-import { Button, ButtonLink, Card, cx } from '../components/ui';
+import { Button, ButtonLink, Card } from '../components/ui';
 import { GAMES, type GameId } from '../config';
 import { sfx } from '../lib/audio/sfx';
 import { CODE_LENGTH, normalizeCode } from '../net/room';
@@ -16,20 +16,20 @@ export function GameHome({
   about,
   onCreate,
   onJoin,
-  unavailable,
+  roomsUnavailable,
 }: {
   game: GameId;
   about: ReactNode;
   onCreate: () => void;
   onJoin: (code: string) => void;
-  /** Shown instead of the buttons while the game is not built yet. */
-  unavailable?: string;
+  /** While online play for this game is not built yet: why the room buttons are off. */
+  roomsUnavailable?: string;
 }) {
   const g = GAMES[game];
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
-  const off = Boolean(unavailable);
+  const off = Boolean(roomsUnavailable);
 
   const join = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +49,11 @@ export function GameHome({
       <PageTitle eyebrow="Stickman Arena" title={g.name}>
         {about}
       </PageTitle>
-      {unavailable && <p className="mt-6 max-w-2xl rounded-xl border border-warn/35 bg-warn/10 p-4 text-sm text-warn">{unavailable}</p>}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
-        <Card className={cx('p-5', off && 'pointer-events-none opacity-50')} aria-disabled={off}>
+        <Card className="p-5" aria-disabled={off}>
           <p className="label-caps text-muted">Play a friend online</p>
+          {roomsUnavailable && <p className="mt-2 rounded-lg border border-warn/35 bg-warn/10 px-3 py-2 text-sm text-warn">{roomsUnavailable}</p>}
           <Button
             variant="primary"
             size="xl"
@@ -99,9 +99,9 @@ export function GameHome({
         </Card>
 
         <div className="grid content-start gap-5">
-          <Card className={cx('p-5', off && 'pointer-events-none opacity-50')}>
+          <Card className="p-5">
             <p className="label-caps text-muted">Practice</p>
-            <ButtonLink to={`${g.path}/cpu`} onClick={() => sfx.click()} size="xl" press className="mt-4 w-full border-2 border-navy" tabIndex={off ? -1 : undefined}>
+            <ButtonLink to={`${g.path}/cpu`} onClick={() => sfx.click()} size="xl" press className="mt-4 w-full border-2 border-navy">
               <Bot className="size-6" />
               Play the CPU
             </ButtonLink>

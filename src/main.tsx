@@ -28,7 +28,10 @@ if (import.meta.env.DEV) {
     import('./fighter/sim/chars'),
     import('./fighter/sim/stages'),
     import('./fighter/sim/types'),
-  ]).then(([rules, cards, cpu, session, rng, engine, music, sfx, step, body, chars, stages, types]) => {
+    import('./fighter/sim/skeleton'),
+    import('./fighter/render/figure'),
+    import('./fighter/ai'),
+  ]).then(([rules, cards, cpu, session, rng, engine, music, sfx, step, body, chars, stages, types, skeleton, figure, ai]) => {
     (window as unknown as Record<string, unknown>).__arena = {
       rules,
       cards,
@@ -36,7 +39,7 @@ if (import.meta.env.DEV) {
       session,
       rng,
       audio: { ...engine, ...music, ...sfx },
-      fighter: { ...step, ...body, ...chars, ...stages, ...types },
+      fighter: { ...step, ...body, ...chars, ...stages, ...types, ...skeleton, ...figure, ...ai },
     };
   });
 }

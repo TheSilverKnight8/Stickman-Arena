@@ -1,0 +1,304 @@
+import { random, type HasRng } from '../lib/rng';
+import { hitsOf, moveOf } from './sim/body';
+import { CHARS } from './sim/chars';
+import { STAGES } from './sim/stages';
+import { createMatch, step } from './sim/step';
+import { BTN, type CharId, type FighterState, type MatchState, type MoveSlot } from './sim/types';
+
+// The CPU opponent. It reads the match and presses the same buttons a player
+// would. Difficulty changes how often it thinks, how aggressive it is, whether
+// it dodges, whether it aims ahead of a moving target, and how reliably it
+// recovers. It runs outside the simulation (CPU games are offline only).
+
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
+export const DIFFICULTIES: Record<Difficulty, { name: string; about: string }> = {
+  easy: { name: 'Easy', about: 'Slow to react, attacks now and then, often misses its recovery.' },
+  normal: { name: 'Normal', about: 'Approaches and attacks in range, recovers, dodges sometimes.' },
+  hard: { name: 'Hard', about: 'Reacts fast, aims ahead of you, dodges often, goes for KOs at high damage.' },
+};
+
+const LEVEL: Record<Difficulty, { think: number; aggression: number; dodge: number; recover: number; predict: boolean; wander: number; reach: number }> = {
+  easy: { think: 16, aggression: 0.35, dodge: 0, recover: 0.55, predict: false, wander: 0.3, reach: 0.75 },
+  normal: { think: 8, aggression: 0.72, dodge: 0.12, recover: 0.95, predict: false, wander: 0.08, reach: 1 },
+  hard: { think: 3, aggression: 0.95, dodge: 0.38, recover: 1, predict: true, wander: 0, reach: 1 },
+};
+
+/** Characters whose side special carries them sideways (useful for getting back to the stage). */
+const SIDE_RECOVERY = new Set<CharId>(['fisticuffs', 'buster', 'phantom']);
+
+/** How far each character likes to stay from its target. */
+const PREFERRED: Record<CharId, number> = { fisticuffs: 35, spartan: 120, ranger: 360, buster: 70, phantom: 95 };
+
+// ---------------------------------------------------------------- what each move covers
+
+interface Reach {
+  slot: MoveSlot;
+  /** First active frame. */
+  startup: number;
+  /** Area covered, relative to the fighter's feet, facing right. */
+  x1: number;
+  x2: number;
+  y1: number;
+  y2: number;
+  dmg: number;
+  kbg: number;
+  air: boolean;
+  special: boolean;
+}
+
+const SLOTS: MoveSlot[] = ['jab', 'ftilt', 'utilt', 'dtilt', 'nair', 'fair', 'uair', 'dair', 'nspec', 'sspec', 'uspec', 'dspec'];
+const AIR = new Set<MoveSlot>(['nair', 'fair', 'uair', 'dair']);
+const reachCache = new Map<CharId, Reach[]>();
+
+function inputFor(slot: MoveSlot, facing: number) {
+  const special = slot.endsWith('spec');
+  let bits = special ? BTN.special : BTN.attack;
+  if (slot.startsWith('u')) bits |= BTN.up;
+  else if (slot.startsWith('d')) bits |= BTN.down;
+  else if (slot === 'ftilt' || slot === 'fair' || slot === 'sspec') bits |= facing > 0 ? BTN.right : BTN.left;
+  return bits;
+}
+
+/** Runs each move once on an empty stage and records where its hitboxes and projectiles go. */
+function reachOf(char: CharId): Reach[] {
+  const cached = reachCache.get(char);
+  if (cached) return cached;
+  const out: Reach[] = [];
+  for (const slot of SLOTS) {
+    const air = AIR.has(slot);
+    const s = createMatch({ stage: 'flatline', chars: [char, char], seed: 1 });
+    s.phase = 'play';
+    const f = s.fighters[0];
+    const dummy = s.fighters[1];
+    dummy.act = 'dead';
+    dummy.respawnIn = 1e9;
+    f.x = 0;
+    f.facing = 1;
+    if (air) Object.assign(f, { grounded: false, surface: -1, act: 'air', y: 200 });
+    let r: Reach | null = null;
+    const m = CHARS[char].moves[slot];
+    for (let fr = 0; fr < m.total + 30; fr++) {
+      if (air) f.y = Math.max(f.y, 200);
+      step(s, [fr === 0 ? inputFor(slot, 1) : 0, 0]);
+      if (f.act !== 'move') break;
+      const baseY = air ? 200 : 0;
+      for (const h of hitsOf(f)) {
+        const [ax, ay, bx, by, rad] = h.shape;
+        const box = { x1: Math.min(ax, bx) - rad - f.x, x2: Math.max(ax, bx) + rad - f.x, y1: Math.min(ay, by) - rad - baseY, y2: Math.max(ay, by) + rad - baseY };
+        if (!r) r = { slot, startup: f.t, ...box, dmg: h.def.dmg, kbg: h.def.kbg, air, special: slot.endsWith('spec') };
+        else {
+          r.x1 = Math.min(r.x1, box.x1);
+          r.x2 = Math.max(r.x2, box.x2);
+          r.y1 = Math.min(r.y1, box.y1);
+          r.y2 = Math.max(r.y2, box.y2);
+          r.dmg = Math.max(r.dmg, h.def.dmg);
+          r.kbg = Math.max(r.kbg, h.def.kbg);
+        }
+      }
+      const p = s.projectiles.find((q) => q.owner === 0);
+      if (!r && p) {
+        // A projectile: covers a long strip along its path.
+        const len = 520;
+        const ux = p.vx / (Math.abs(p.vx) + Math.abs(p.vy) || 1);
+        const uy = p.vy / (Math.abs(p.vx) + Math.abs(p.vy) || 1);
+        const ex = p.x - f.x + ux * len;
+        const ey = p.y - (air ? 200 : 0) + uy * len;
+        const sx = p.x - f.x;
+        const sy = p.y - (air ? 200 : 0);
+        r = { slot, startup: f.t + 6, x1: Math.min(sx, ex) - 20, x2: Math.max(sx, ex) + 20, y1: Math.min(sy, ey) - 30, y2: Math.max(sy, ey) + 30, dmg: p.dmg, kbg: p.kbg, air, special: true };
+      }
+    }
+    if (r) out.push(r);
+  }
+  reachCache.set(char, out);
+  return out;
+}
+
+// ---------------------------------------------------------------- the CPU
+
+export interface Cpu extends HasRng {
+  level: Difficulty;
+  /** Buttons held between decisions (directions, a held jump). */
+  hold: number;
+  /** A button to tap on the next frame. */
+  tap: number;
+  /** Frames until the next decision. */
+  wait: number;
+  /** Frames to keep jump held (for a full jump). */
+  jumpHold: number;
+  /** Recovery: up special / side special already attempted this trip. */
+  triedUp: boolean;
+  triedSide: boolean;
+  /** Phantom: back off for a while after landing a hit. */
+  retreat: number;
+}
+
+export function createCpu(level: Difficulty, seed: number): Cpu {
+  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0 };
+}
+
+/** The CPU's buttons for this frame. */
+export function cpuInput(s: MatchState, slot: number, cpu: Cpu): number {
+  const me = s.fighters[slot];
+  const L = LEVEL[cpu.level];
+  if (s.phase !== 'play' || me.act === 'dead' || me.act === 'out') return 0;
+
+  // Taps last exactly one frame; then the button is let go so the next press counts.
+  let out = cpu.hold;
+  if (cpu.tap) {
+    out |= cpu.tap;
+    cpu.tap = 0;
+  }
+  if (cpu.jumpHold > 0) {
+    cpu.jumpHold--;
+    out |= BTN.jump;
+  }
+  if (cpu.retreat > 0) cpu.retreat--;
+  if (me.grounded) {
+    cpu.triedUp = false;
+    cpu.triedSide = false;
+  }
+  if (--cpu.wait > 0) return out;
+  cpu.wait = L.think;
+  cpu.hold = 0;
+  decide(s, me, cpu);
+  return cpu.hold | (out & (BTN.attack | BTN.special | BTN.dodge | BTN.jump));
+}
+
+function decide(s: MatchState, me: FighterState, cpu: Cpu) {
+  const L = LEVEL[cpu.level];
+  const st = STAGES[s.stage];
+  const r = () => random(cpu);
+  const toward = (x: number) => (x > me.x ? BTN.right : BTN.left);
+
+  if (me.act === 'respawn') {
+    cpu.hold = toward(0);
+    return;
+  }
+  if (me.act === 'hurt' || me.hitlag > 0) return;
+
+  // Recovery: get back to the stage. Drift in first, cover distance with a
+  // moving side special when far out, save the double jump until near stage
+  // height, and use the up special once below it.
+  const off = me.x < st.main.x1 + 4 || me.x > st.main.x2 - 4;
+  if (!me.grounded && (off || me.y < -4)) {
+    const center = 0;
+    const gap = Math.abs(me.x) - st.main.x2;
+    cpu.hold = toward(center);
+    if (me.vy < 0) {
+      if (gap > 140 && SIDE_RECOVERY.has(me.char) && !cpu.triedSide && me.y > -120 && r() < L.recover) {
+        cpu.triedSide = true;
+        cpu.tap = BTN.special;
+      } else if (me.doubleJump && me.y < 20) {
+        cpu.tap = BTN.jump;
+      } else if (me.upSpecial && !cpu.triedUp && (me.y < -10 || (!me.doubleJump && me.y < 40))) {
+        cpu.triedUp = true;
+        // Easy sometimes forgets.
+        if (r() < L.recover) {
+          cpu.tap = BTN.special;
+          cpu.hold = BTN.up | (gap > 60 ? toward(center) : 0);
+        }
+      }
+    }
+    cpu.wait = Math.min(cpu.wait, 2);
+    return;
+  }
+
+  const target = nearestTarget(s, me);
+  if (!target) return;
+  const dx = target.x - me.x;
+  const dy = target.y - me.y;
+  const face = dx >= 0 ? 1 : -1;
+
+  // Dodge an attack that is about to land.
+  const tm = moveOf(target);
+  if (tm && Math.abs(dx) < 170 && Math.abs(dy) < 130 && r() < L.dodge) {
+    const active = tm.hits?.some((h) => h.f[0] >= target.t && h.f[0] - target.t <= 8);
+    if (active) {
+      cpu.tap = BTN.dodge;
+      return;
+    }
+  }
+
+  // Easy wanders now and then.
+  if (r() < L.wander) {
+    cpu.hold = r() < 0.5 ? BTN.left : BTN.right;
+    if (r() < 0.2) cpu.tap = BTN.jump;
+    return;
+  }
+
+  // Pick an attack that would reach the target.
+  if (r() < L.aggression && cpu.retreat === 0) {
+    const pick = chooseMove(me, target, face, cpu);
+    if (pick) {
+      const bits = inputFor(pick.slot, face);
+      cpu.tap = bits & (BTN.attack | BTN.special);
+      cpu.hold = bits & (BTN.left | BTN.right | BTN.up | BTN.down);
+      // Phantom hits and runs.
+      if (me.char === 'phantom') cpu.retreat = 40;
+      return;
+    }
+  }
+
+  // Move to a comfortable distance.
+  const want = PREFERRED[me.char];
+  const dist = Math.abs(dx);
+  const edge = st.main.x2 - 50;
+  let move = 0;
+  if (cpu.retreat > 0 || dist < want - 70) move = -face;
+  else if (dist > want + 25) move = face;
+  // Never walk off the stage on purpose.
+  if (me.grounded && move !== 0 && Math.abs(me.x + move * 40) > edge) move = 0;
+  if (move !== 0) cpu.hold |= move > 0 ? BTN.right : BTN.left;
+
+  // Jump toward targets above, or over projectiles.
+  if (me.grounded && dy > 90 && dist < 260 && r() < 0.5) {
+    cpu.tap = BTN.jump;
+    cpu.jumpHold = 6;
+  }
+  // Come back down to fight.
+  if (!me.grounded && dy < -60 && me.vy < 0 && !me.fastFall && cpu.level === 'hard') cpu.hold |= BTN.down;
+}
+
+function nearestTarget(s: MatchState, me: FighterState) {
+  let best: FighterState | null = null;
+  let bestD = Infinity;
+  for (const f of s.fighters) {
+    if (f === me || f.act === 'dead' || f.act === 'out' || f.act === 'respawn') continue;
+    const d = Math.abs(f.x - me.x) + Math.abs(f.y - me.y);
+    if (d < bestD) {
+      bestD = d;
+      best = f;
+    }
+  }
+  return best;
+}
+
+function chooseMove(me: FighterState, target: FighterState, face: number, cpu: Cpu): Reach | null {
+  const L = LEVEL[cpu.level];
+  const c = CHARS[me.char];
+  let best: Reach | null = null;
+  let bestScore = -Infinity;
+  for (const rch of reachOf(me.char)) {
+    if (rch.air !== !me.grounded && !rch.special) continue;
+    if (rch.slot === 'uspec' && !me.upSpecial) continue;
+    const m = c.moves[rch.slot];
+    if (m.needsWeapon && me.weaponOut) continue;
+    // Where the target will be when the move comes out.
+    const ahead = L.predict ? rch.startup : 0;
+    const tx = target.x + (target.vx + target.kbSpeed * target.kbX) * ahead - me.x;
+    const ty = target.y + 40 + (target.grounded ? 0 : target.vy * ahead) - me.y;
+    const rx = tx * face;
+    const margin = 8;
+    const reach = L.reach;
+    if (rx < rch.x1 * reach - margin || rx > rch.x2 * reach + margin || ty < rch.y1 - margin - 40 || ty > rch.y2 + margin) continue;
+    const killing = target.damage > 100 ? rch.kbg / 40 : 0;
+    const score = rch.dmg * (1 + killing) - rch.startup * 0.45 + random(cpu) * 5 - (rch.slot === 'uspec' ? 8 : 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = rch;
+    }
+  }
+  return best;
+}

@@ -130,4 +130,63 @@ export const sfx = {
   error() {
     notes([58, 55], { type: 'square', step: 0.09, dur: 0.12, gain: 0.08 });
   },
+
+  // ---- Platfighter
+
+  /** A hit; `power` 0 (light) to 1 (a KO-strength launch). */
+  hit(power: number) {
+    const p = Math.max(0, Math.min(1, power));
+    noise({ filter: 'lowpass', hz: 1800 + p * 2500, dur: 0.08 + p * 0.12, gain: 0.35 + p * 0.3 });
+    tone(220 - p * 120, { type: 'square', dur: 0.06 + p * 0.1, to: 60, gain: 0.12 + p * 0.08 });
+    if (p > 0.6) noise({ filter: 'bandpass', hz: 600, q: 0.7, at: 0.03, dur: 0.3, gain: 0.25 });
+  },
+  whiff(heavy: boolean) {
+    noise({ filter: 'bandpass', hz: heavy ? 900 : 1600, toHz: heavy ? 300 : 700, q: 1.2, dur: heavy ? 0.2 : 0.11, gain: heavy ? 0.22 : 0.14 });
+  },
+  jump(double: boolean) {
+    tone(double ? 420 : 300, { type: 'triangle', dur: 0.12, to: double ? 900 : 620, gain: 0.12 });
+  },
+  land() {
+    noise({ filter: 'lowpass', hz: 500, dur: 0.06, gain: 0.18 });
+  },
+  dodge() {
+    noise({ filter: 'highpass', hz: 2500, toHz: 6000, dur: 0.14, gain: 0.12 });
+  },
+  ko() {
+    noise({ filter: 'lowpass', hz: 3000, toHz: 200, dur: 0.9, gain: 0.5 });
+    tone(150, { type: 'sawtooth', dur: 0.7, to: 40, gain: 0.16 });
+    notes([84, 79], { type: 'square', step: 0.08, dur: 0.1, gain: 0.07, at: 0.05 });
+  },
+  shoot(kind: string) {
+    if (kind === 'arrow') {
+      tone(midiHz(76), { type: 'triangle', dur: 0.09, to: midiHz(64), gain: 0.14 });
+      noise({ filter: 'highpass', hz: 3000, dur: 0.05, gain: 0.12 });
+    } else if (kind === 'sword') noise({ filter: 'bandpass', hz: 1200, toHz: 500, q: 2, dur: 0.3, gain: 0.2 });
+    else if (kind === 'orb') tone(midiHz(69), { type: 'sine', dur: 0.35, to: midiHz(81), gain: 0.16 });
+    else if (kind === 'boulder') tone(110, { type: 'square', dur: 0.15, to: 70, gain: 0.12 });
+    else noise({ filter: 'lowpass', hz: 400, dur: 0.25, gain: 0.3 });
+  },
+  reflect() {
+    notes([88, 95], { type: 'square', step: 0.04, dur: 0.08, gain: 0.08 });
+  },
+  armor() {
+    tone(midiHz(57), { type: 'square', dur: 0.12, gain: 0.1 });
+    tone(midiHz(64), { type: 'square', dur: 0.12, gain: 0.08 });
+  },
+  shatter() {
+    for (let i = 0; i < 4; i++) noise({ filter: 'bandpass', hz: 800 + i * 400, at: i * 0.03, dur: 0.08, gain: 0.2 });
+  },
+  teleport() {
+    tone(midiHz(84), { type: 'sine', dur: 0.2, to: midiHz(96), gain: 0.1 });
+  },
+  count(n: number) {
+    tone(midiHz(n > 0 ? 72 : 84), { type: 'square', dur: n > 0 ? 0.12 : 0.35, gain: 0.12 });
+  },
+  game() {
+    notes([72, 76, 79, 84], { type: 'square', step: 0.06, dur: 0.2, gain: 0.1 });
+    noise({ filter: 'lowpass', hz: 1200, dur: 0.5, gain: 0.25 });
+  },
+  sudden() {
+    notes([60, 63, 66, 69], { type: 'sawtooth', step: 0.1, dur: 0.18, gain: 0.07 });
+  },
 };

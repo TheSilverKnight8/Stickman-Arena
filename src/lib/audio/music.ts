@@ -3,7 +3,7 @@ import { getAudio, whenAudioStarts } from './engine';
 // Background music: short looping tunes played by a small step sequencer.
 // Notes are MIDI numbers, one per eighth note; 0 is a rest.
 
-export type TrackId = 'menu' | 'pazaak';
+export type TrackId = 'menu' | 'pazaak' | 'fighter';
 
 interface Track {
   bpm: number;
@@ -75,7 +75,28 @@ const pazaak: Track = {
   drums: rep(['k.s.k.sh'], 8).join(''),
 };
 
-const TRACKS: Record<TrackId, Track> = { menu, pazaak };
+// "Fighter": driving and fast, D minor (Dm, Bb, C, A).
+const fightBass = [38, 34, 36, 33].flatMap((r) => bar(r, r + 12, r, r + 12, r, r + 12, r + 7, r + 12));
+const fighter: Track = {
+  bpm: 150,
+  swing: 0,
+  leadType: 'square',
+  lead: [
+    ...bar(74, 0, 74, 77, 0, 76, 74, 72),
+    ...bar(70, 0, 70, 74, 0, 72, 70, 69),
+    ...bar(72, 0, 72, 76, 0, 74, 72, 70),
+    ...bar(69, 0, 73, 0, 76, 0, 79, 0),
+    ...bar(74, 77, 81, 0, 79, 77, 76, 74),
+    ...bar(77, 0, 74, 0, 70, 0, 74, 77),
+    ...bar(76, 0, 72, 0, 79, 0, 76, 72),
+    ...bar(73, 0, 76, 0, 81, 0, 0, 0),
+  ],
+  bass: [...fightBass, ...fightBass],
+  chords: rep([null, null, null, null, null, null, null, null], 8),
+  drums: rep(['khskkhsh'], 8).join(''),
+};
+
+const TRACKS: Record<TrackId, Track> = { menu, pazaak, fighter };
 
 const midiHz = (m: number) => 440 * 2 ** ((m - 69) / 12);
 const LOOKAHEAD = 0.2;

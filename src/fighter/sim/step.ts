@@ -167,6 +167,7 @@ export function step(s: MatchState, inputs: number[]): SimEvent[] {
   }
 
   // Playing.
+  s.phaseT++;
   const aliveBefore = s.fighters.filter((f) => f.act !== 'out').map((f) => f.slot);
   for (const f of s.fighters) updateFighter(s, f, inputs[f.slot] ?? 0, ev, false);
   resolveHits(s, ev);
