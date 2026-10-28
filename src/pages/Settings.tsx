@@ -1,6 +1,6 @@
-import { Moon, Music, RotateCcw, Volume2 } from 'lucide-react';
+import { ArrowUpFromLine, Moon, Music, RotateCcw, Volume2 } from 'lucide-react';
 import { PageLayout, PageTitle } from '../components/Layout';
-import { Button, Card } from '../components/ui';
+import { Button, Card, Segmented } from '../components/ui';
 import { GAMES, type GameId } from '../config';
 import { sfx } from '../lib/audio/sfx';
 import { useMusic } from '../lib/audio/useMusic';
@@ -14,9 +14,10 @@ export function SettingsPage({ game }: { game: GameId }) {
   return (
     <PageLayout back={{ to: g.path, label: g.name }}>
       <PageTitle eyebrow={`${g.name} · Settings`} title="Settings">
-        These apply to both games. Nothing is saved, so they go back to the defaults when the app is closed.
+        Nothing is saved, so settings go back to the defaults when the app is closed.
       </PageTitle>
-      <Card className="mt-8 max-w-2xl divide-y divide-line">
+      <p className="label-caps mt-8 text-muted">Both games</p>
+      <Card className="mt-2 max-w-2xl divide-y divide-line">
         <Slider icon={<Moon className="size-5" />} label="Brightness" value={s.brightness} min={0.5} onChange={(v) => updateSettings({ brightness: v })} />
         <Slider icon={<Music className="size-5" />} label="Music volume" value={s.musicVolume} onChange={(v) => updateSettings({ musicVolume: v })} />
         <Slider
@@ -27,6 +28,33 @@ export function SettingsPage({ game }: { game: GameId }) {
           onRelease={() => sfx.click()}
         />
       </Card>
+      {game === 'fighter' && (
+        <>
+          <p className="label-caps mt-6 text-muted">Platfighter</p>
+          <Card className="mt-2 max-w-2xl px-5 py-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="text-muted">
+                <ArrowUpFromLine className="size-5" />
+              </span>
+              <span className="w-36 shrink-0 font-display text-lg uppercase tracking-wide">Tap jump</span>
+              <Segmented
+                value={s.tapJump ? 'on' : 'off'}
+                onChange={(v) => {
+                  sfx.click();
+                  updateSettings({ tapJump: v === 'on' });
+                }}
+                options={[
+                  { value: 'off', label: 'Off' },
+                  { value: 'on', label: 'On' },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              When on, pushing up (W, the up arrow, or the joystick) also jumps. Up with Attack or Special still does the up attack or up special. Hold up for a full jump; tap it for a short hop.
+            </p>
+          </Card>
+        </>
+      )}
       <Button
         className="mt-5"
         press

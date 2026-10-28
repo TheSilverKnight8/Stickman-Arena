@@ -5,7 +5,9 @@ import { Button } from '../../components/ui';
 import { sfx } from '../../lib/audio/sfx';
 import { useMusic } from '../../lib/audio/useMusic';
 import { useLandscape } from '../../lib/useOrientation';
+import { settings } from '../../lib/settings';
 import { Keyboard } from '../input/keyboard';
+import { TapJump } from '../input/tapJump';
 import { TouchControls, TouchInput } from '../input/TouchControls';
 import { Scene, type PlayerLabel } from '../render/scene';
 import { FPS } from '../sim/step';
@@ -60,6 +62,7 @@ export function FightView({
     if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__fight = driver;
     const keys = new Keyboard();
     keys.attach();
+    const tapJump = new TapJump();
     let raf = 0;
     let last = performance.now();
     let acc = 0;
@@ -73,7 +76,7 @@ export function FightView({
       if (pausedRef.current) acc = 0;
       while (acc >= dt) {
         acc -= dt;
-        const events = driver.tick(keys.read() | touch.read());
+        const events = driver.tick(tapJump.apply(keys.read() | touch.read(), settings.get().tapJump));
         scene.onEvents(driver.state, events);
         playSounds(events, mySlot);
       }

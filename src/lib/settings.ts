@@ -10,12 +10,15 @@ export interface Settings {
   musicVolume: number;
   /** 0 to 1. */
   effectsVolume: number;
+  /** Platfighter: pushing up also jumps. */
+  tapJump: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   brightness: 1,
   musicVolume: 0.5,
   effectsVolume: 0.8,
+  tapJump: false,
 };
 
 export const settings = createStore<Settings>({ ...DEFAULT_SETTINGS });

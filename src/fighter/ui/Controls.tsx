@@ -36,7 +36,7 @@ export function ControlsHelp() {
         </table>
       )}
       <p className="mt-3 text-muted">
-        Attacks change with the direction you hold: up, down, side, or none. Tap down in the air to fall faster; hold down on a platform to drop through.
+        Attacks change with the direction you hold: up, down, side, or none. Tap down in the air to fall faster; hold down on a platform to drop through. On a ledge, press toward the stage to climb, jump to jump up, or away to let go. Tap jump (pushing up also jumps) is in Settings.
       </p>
     </div>
   );

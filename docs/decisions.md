@@ -114,6 +114,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Regrab | After leaving a ledge, it can't be grabbed again for 30 frames. |
 | Stage edge collision (fixes the back-and-forth clipping Caleb saw) | Landing on the stage needs the fighter's centre over the stage. The sides push the body out by how far its feet are below the top, so stepping off the edge slides off smoothly. Before, the collision box could land a fighter whose centre was already past the edge; the next frame found no ground under it, and it flickered between standing and falling. The old "step-up" onto the stage is gone; ledges replace it. |
 | Input buffer | A button pressed up to 6 frames before the fighter can act still counts. |
+| Tap jump (Caleb's request after Stage 2) | A setting on the Platfighter's Settings page, **off by default** so the controls stay as they were. When on, pressing up also jumps. The jump waits 3 frames after up is pressed: Attack or Special in that window gives the up attack or up special instead. Holding up holds the jump (full jump); a quick tap is a short hop; pressing up again in the air double jumps. It is applied on the player's own device before the buttons are used or sent online, so each player has their own setting and online matches stay in sync. Kept until the app closes, like the other settings. |
 
 ### Armor, reflect and projectiles
 
