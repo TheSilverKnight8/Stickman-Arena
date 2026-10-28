@@ -56,7 +56,9 @@ const LEDGE_WAIT = 6;
 /** After leaving a ledge, frames before a ledge can be grabbed again. */
 const REGRAB_FRAMES = 30;
 const UNTIL_LAND_MAX = 45;
-const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 18, orb: 13, boulder: 22, shock: 14 };
+const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 22, shock: 14 };
+/** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
+const SWORD_HIT = { back: 10, front: 50 };
 const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30 };
 const REFLECTABLE: ProjKind[] = ['arrow', 'orb', 'boulder'];
 
@@ -934,6 +936,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         p.vy -= 0.4;
         break;
       case 'sword': {
+        // A stab throw: straight out, point first, slowing down; then straight back along the same line.
         if (!p.back) {
           p.vx -= p.dir * 0.55;
           if (p.vx * p.dir <= 0) {
@@ -941,12 +944,11 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
             p.hit = [];
           }
         } else {
-          const tx = owner.x;
-          const ty = owner.y + 55;
-          p.vx = approach(p.vx, tx > p.x ? 15 : -15, 0.8);
-          p.vy = (ty - p.y) * 0.12;
-          if (Math.abs(tx - p.x) < 40 && Math.abs(ty - p.y) < 60) gone = true;
+          p.vx = approach(p.vx, -p.dir * 15, 0.8);
+          // Caught when it reaches Spartan's hand. If he has moved off the line, it flies on until it is gone.
+          if (Math.abs(owner.x - p.x) < 40 && Math.abs(owner.y + 55 - p.y) < 60) gone = true;
         }
+        p.vy = 0;
         if (owner.act === 'dead' || owner.act === 'out') gone = true;
         break;
       }
@@ -1001,7 +1003,9 @@ function projectileHits(s: MatchState, p: ProjectileState, joints: ReturnType<ty
       }
     }
     if (!hittable(v)) continue;
-    if (!touches([p.x, p.y, p.x, p.y, r], hurtOf(v, j))) continue;
+    const shape: [number, number, number, number, number] =
+      p.kind === 'sword' ? [p.x - p.dir * SWORD_HIT.back, p.y, p.x + p.dir * SWORD_HIT.front, p.y, r] : [p.x, p.y, p.x, p.y, r];
+    if (!touches(shape, hurtOf(v, j))) continue;
     p.hit.push(v.slot);
     const owner = s.fighters[p.owner];
     applyHit(s, null, v, p, p.dir, p.x, p.y, ev);

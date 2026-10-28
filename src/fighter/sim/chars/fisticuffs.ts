@@ -186,7 +186,7 @@ export const fisticuffs: CharDef = {
     uspec: {
       name: 'Rising Uppercut',
       total: 42,
-      drift: 0.6,
+      drift: 1,
       anim: keys(
         [0, S],
         [4, crouch, { a1: 20, f1: 40 }],
@@ -198,7 +198,7 @@ export const fisticuffs: CharDef = {
         { f: [6, 18], at: 'hand1', r: 12, dmg: 2, ang: 85, bkb: 35, kbg: 5, rehit: 4, group: 0 },
         { f: [19, 22], at: 'hand1', r: 14, dmg: 5, ang: 80, bkb: 55, kbg: 80, group: 1 },
       ],
-      vel: [{ f: 5, vx: 1.5, vy: 15.5 }],
+      vel: [{ f: 5, vx: 1.5, vy: 17 }],
     },
     dspec: {
       name: 'Stomp Drop',

@@ -184,12 +184,12 @@ export const spartan: CharDef = {
       needsWeapon: true,
       turn: true,
       anim: keys([0, S], [8, S, { lean: -15, a1: -40, f1: -20, w: 0 }], [12, S, { lean: 20, a1: 90, f1: 95, w: 0 }], [18, S, { lean: 20, a1: 90, f1: 95, w: 0 }], [30, S]),
-      proj: [{ f: 12, kind: 'sword', x: 30, y: 30, speed: 15, ang: 0, dmg: 8, hitAng: 40, bkb: 35, kbg: 62 }],
+      proj: [{ f: 12, kind: 'sword', x: 50, y: 30, speed: 15, ang: 0, dmg: 8, hitAng: 40, bkb: 35, kbg: 62 }],
     },
     uspec: {
       name: 'Rising Slash',
       total: 42,
-      drift: 0.7,
+      drift: 1.05,
       anim: keys(
         [0, S],
         [5, crouch, { a1: 60, f1: 60, w: 0 }],
@@ -203,7 +203,7 @@ export const spartan: CharDef = {
         { f: [21, 23], at: 'tip', r: 15, dmg: 6, ang: 70, bkb: 55, kbg: 75, group: 1 },
         { f: [21, 23], at: 'hand1', to: 'tip', r: 11, dmg: 6, ang: 70, bkb: 55, kbg: 75, group: 1 },
       ],
-      vel: [{ f: 6, vx: 1.5, vy: 14.5 }],
+      vel: [{ f: 6, vx: 1.5, vy: 16 }],
     },
     dspec: {
       name: 'Deflect',

@@ -44,7 +44,7 @@ Weight 108 · run speed 5 · air speed 3.6 · jump 13 / double jump 12 · gravit
 | Up (air) | **Sky Arc** — Swings the sword overhead in the air. | 8 | 34 | 11 | landing lag 10; needs the sword in hand |
 | Down (air) | **Plunge** — Plunges the sword straight down. The tip spikes. | 9 | 40 | 13 | landing lag 16; needs the sword in hand; spikes |
 | Neutral special | **Grand Slash** — A slow, huge overhead slam. Spartan's strongest hit. | 21 | 58 | 19 | needs the sword in hand |
-| Side special | **Sword Throw** — The projectile. The sword spins out and comes back like a boomerang, hitting on the way out and again on the way back. Until Spartan catches it, attacks that need the sword cannot be used (moving, jumping, dodging and Rising Slash still work). | 12 | 30 | 8 | projectile (sword); needs the sword in hand |
+| Side special | **Sword Throw** — The projectile. A stab throw: the sword flies straight out point first, slows down, and comes straight back along the same line, hitting on the way out and again on the way back. Spartan catches it when it reaches the hand; if Spartan has moved off its line (in the air, say), it flies on and is back in hand once it is gone. Until then, attacks that need the sword cannot be used (moving, jumping, dodging and Rising Slash still work). | 12 | 30 | 8 | projectile (sword); needs the sword in hand |
 | Up special | **Rising Slash** — Rises spinning with the sword up, several hits then a launcher. Shorter than most recoveries. | 7 | 42 | 6 | 3+ hits of 3 |
 | Down special | **Deflect** — Twirls the sword in front. Sends arrows, orbs and boulders back at their thrower (reflect), harder and faster. | 4 | 30 | 4 | reflects frames 3–20; needs the sword in hand |
 
@@ -57,15 +57,15 @@ Weight 98 · run speed 6 · air speed 4.2 · jump 13.5 / double jump 12.5 · gra
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Neutral (ground) | **Bow Bash** — Swings the bow at close range (an answer to opponents who get close). | 4 | 18 | 4 |  |
-| Side (ground) | **Quick Shot** — Fires an arrow straight ahead. | 10 | 26 | 6 | projectile (arrow) |
-| Up (ground) | **Skyward Shot** — Fires an arrow upward. | 9 | 26 | 6 | projectile (arrow) |
+| Side (ground) | **Quick Shot** — Fires an arrow straight ahead. | 10 | 34 | 6 | projectile (arrow) |
+| Up (ground) | **Skyward Shot** — Fires an arrow upward. | 9 | 34 | 6 | projectile (arrow) |
 | Down (ground) | **Back-off Kick** — Low kick that pushes the opponent away and slides Ranger back. | 4 | 24 | 6 |  |
 | Neutral (air) | **Bow Spin** — Spins with the bow out (close-range answer in the air). | 5 | 28 | 6 | landing lag 7 |
-| Side (air) | **Air Shot** — Fires an arrow ahead in the air, with a little recoil. | 9 | 28 | 5 | projectile (arrow); landing lag 8 |
-| Up (air) | **Up Shot** — Fires an arrow straight up in the air. | 8 | 26 | 5 | projectile (arrow); landing lag 7 |
-| Down (air) | **Dive Shot** — Fires an arrow down and forward, with a small hop upward. | 9 | 30 | 6 | projectile (arrow); landing lag 9 |
-| Neutral special | **Charged Shot** — Hold special to draw the bow (up to about a second), let go to fire. Faster, stronger arrows the longer it is held. | 13 | 36 | 7 | projectile (arrow); hold to charge up to 50 frames |
-| Side special | **Triple Shot** — Three arrows in a spread. | 14 | 38 | 4 | projectile (arrow) |
+| Side (air) | **Air Shot** — Fires an arrow ahead in the air, with a little recoil. | 9 | 36 | 5 | projectile (arrow); landing lag 8 |
+| Up (air) | **Up Shot** — Fires an arrow straight up in the air. | 8 | 34 | 5 | projectile (arrow); landing lag 7 |
+| Down (air) | **Dive Shot** — Fires an arrow down and forward, with a small hop upward. | 9 | 38 | 6 | projectile (arrow); landing lag 9 |
+| Neutral special | **Charged Shot** — Hold special to draw the bow (up to about a second), let go to fire. Faster, stronger arrows the longer it is held. | 13 | 46 | 7 | projectile (arrow); hold to charge up to 50 frames |
+| Side special | **Triple Shot** — Three arrows in a spread. | 14 | 48 | 4 | projectile (arrow) |
 | Up special | **Rocket Arrow** — Fires an arrow straight down and rides the push upward. The recovery move. | 7 | 34 | 7 | projectile (arrow) |
 | Down special | **Backflip Kick** — Kicks the opponent away and backflips out (a close-range escape). | 3 | 32 | 8 |  |
 
@@ -108,6 +108,6 @@ Weight 78 · run speed 8 · air speed 5.2 · jump 14.5 / double jump 14 · gravi
 | Down (air) | **Dive Kick** — Dives diagonally down feet-first (movement). | 6 | 28 | 7 | landing lag 8 |
 | Neutral special | **Phantom Orb** — The projectile. A slow orb drifts forward. One at a time; it fades if Phantom is hit. | 10 | 28 | 6 | projectile (orb) |
 | Side special | **Blink Strike** — A fast dash; cannot be hit for the first few frames. | 6 | 30 | 7 | can't be hit frames 2–7 |
-| Up special | **Phase Rise** — Vanishes and reappears up to about two body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 32 | 5 | can't be hit frames 3–14 |
+| Up special | **Phase Rise** — Vanishes and reappears up to about two and a half body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 32 | 5 | can't be hit frames 3–14 |
 | Down special | **Recoil Kick** — Kicks forward and bounces back away (hit and run). | 4 | 28 | 8 |  |
 

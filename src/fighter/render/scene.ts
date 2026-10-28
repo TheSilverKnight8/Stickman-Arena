@@ -305,9 +305,9 @@ export class Scene {
         break;
       }
       case 'sword': {
-        const a = (p.t * 28 * Math.PI) / 180;
+        // Point first the whole way, out and back: no spin.
         const half = 55;
-        drawSword(ctx, [p.x - Math.cos(a) * half, p.y - Math.sin(a) * half], [p.x + Math.cos(a) * half, p.y + Math.sin(a) * half], half * 2);
+        drawSword(ctx, [p.x - p.dir * half, p.y], [p.x + p.dir * half, p.y], half * 2);
         break;
       }
       case 'orb': {

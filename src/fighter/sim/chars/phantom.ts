@@ -80,7 +80,7 @@ export const phantom: CharDef = {
         [9, S, { lean: -50, dx: -8, t1: 210, s1: 220, t2: -10, s2: -30, a1: -60, f1: -80, a2: -100, f2: -120 }],
         [22, S],
       ),
-      hits: [{ f: [4, 9], at: 'foot1', r: 11, dmg: 6, ang: 95, bkb: 35, kbg: 78 }],
+      hits: [{ f: [4, 9], at: 'foot1', r: 11, dmg: 6, ang: 95, bkb: 35, kbg: 88 }],
     },
     dtilt: {
       name: 'Slide',
@@ -117,7 +117,7 @@ export const phantom: CharDef = {
       turn: true,
       anim: keys([0, A], [5, A, { lean: 60, a1: 92, f1: 90, t1: 20, s1: -10, t2: -60, s2: -80 }], [10, A, { lean: 60, a1: 92, f1: 90, t1: 20, s1: -10, t2: -60, s2: -80 }], [24, A]),
       hits: [
-        { f: [6, 9], at: 'hand1', r: 9, dmg: 8, ang: 38, bkb: 30, kbg: 82 },
+        { f: [6, 9], at: 'hand1', r: 9, dmg: 8, ang: 38, bkb: 30, kbg: 92 },
         { f: [6, 9], at: 'elbow1', to: 'hand1', r: 7, dmg: 6, ang: 45, bkb: 25, kbg: 50 },
       ],
       vel: [{ f: 5, vx: 3, add: true }],
@@ -172,7 +172,7 @@ export const phantom: CharDef = {
       total: 32,
       hidden: [3, 12],
       intangible: [3, 14],
-      teleport: { f: 12, dist: 210 },
+      teleport: { f: 12, dist: 250 },
       anim: keys(
         [0, S],
         [3, crouch, { a1: 10, f1: 20 }],
@@ -194,7 +194,7 @@ export const phantom: CharDef = {
         [12, A, { lean: 30 }],
         [28, S],
       ),
-      hits: [{ f: [4, 7], at: 'foot1', r: 11, dmg: 8, ang: 40, bkb: 40, kbg: 76 }],
+      hits: [{ f: [4, 7], at: 'foot1', r: 11, dmg: 8, ang: 40, bkb: 40, kbg: 86 }],
       vel: [
         { f: 9, vx: -10 },
         { f: 9, vy: 6 },
