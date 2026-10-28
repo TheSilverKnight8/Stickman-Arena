@@ -37,7 +37,7 @@ The rules themselves are Caleb's (`docs/pazaak.md`). Choices about how it plays:
 | Item | Choice |
 | --- | --- |
 | Who runs an online match | The room creator's device runs the rules and the timer; the other device sends its moves. Each device is only sent what its player may see: the opponent's hand is face down and the deck order is hidden. |
-| Timer | 5 seconds per turn, in online and CPU games. It starts when the card is drawn and does not restart when a hand card is played. A bar and a number show it to both players, with ticks in the last 3 seconds of your turn. |
+| Timer | 20 seconds per turn (Caleb's change after Stage 1; it was 5), in online and CPU games. It starts when the card is drawn and does not restart when a hand card is played. A bar and a number show it to both players, with ticks in the last 3 seconds of your turn. |
 | ± cards | Tapping one opens a + / − choice above it. |
 | Between sets | The result shows for about 2.6 seconds, then the next set starts by itself. |
 | End of match | Online: the result shows for 5 seconds, then both players go back to deck selection (the rematch). CPU: the result stays until you press **Back to deck selection**. |

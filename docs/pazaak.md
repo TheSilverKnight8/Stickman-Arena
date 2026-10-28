@@ -17,7 +17,8 @@ These are the rules the game follows. `src/pazaak/rules.ts` implements them, and
 3. Then they choose one of two things:
    - **End turn.** They'll draw another card at the start of their next turn.
    - **Stand.** They're done for the set, with no more draws and no more hand cards. The opponent keeps taking turns until they stand or bust.
-4. If the 5-second timer runs out, the turn ends. The player doesn't stand.
+4. If the 20-second timer runs out, the turn ends. The player doesn't stand.
+5. If a player's total is exactly 20 (after the draw, or after playing a hand card), they stand automatically.
 
 **Busting.** A player busts if their total is over 20 at the end of their turn, and the opponent wins the set. Going over 20 mid-turn doesn't count. A player can draw a card that takes them over 20 and then play a negative card to get back under before the turn ends.
 
@@ -44,10 +45,18 @@ These are the rules the game follows. `src/pazaak/rules.ts` implements them, and
 | What happens to the main deck between sets? | It carries through the match. Cards drawn stay out. If it runs out, the used cards are shuffled back in. |
 | The Tiebreaker | A ±1 card when played. If both players stand on the same total, the player who played a Tiebreaker that set wins it. |
 
+## Changes after playtesting
+
+| Change | From | To |
+| --- | --- | --- |
+| Turn timer | 5 seconds | 20 seconds |
+| Total of exactly 20 | The player chooses End turn or Stand | The player stands automatically |
+
 ## How the game reads edge cases
 
 These follow from the rules above. Each is listed so it can be checked.
 
+- **A 9th card that makes exactly 20:** the nine-card rule comes first, so the player wins the set outright.
 - **A 9th card over 20:** no 10th card can be played to fix it, so it is a bust right away.
 - **Standing over 20** is a bust (the turn ends over 20).
 - **Both players played a Tiebreaker and tie:** neither one decides it, so the set is a tie and is replayed.

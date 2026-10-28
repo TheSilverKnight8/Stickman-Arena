@@ -261,7 +261,7 @@ function TurnTimer({ deadline, mine }: { deadline: number | null; mine: boolean 
       <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-line">
         <div ref={bar} className={cx('h-full origin-left rounded-full', mine ? 'bg-accent' : 'bg-navy')} />
       </div>
-      <span ref={num} className="w-4 text-right font-mono text-sm text-muted" />
+      <span ref={num} className="w-6 text-right font-mono text-sm text-muted" />
     </div>
   );
 }

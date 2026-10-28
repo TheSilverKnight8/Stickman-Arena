@@ -1,8 +1,8 @@
 import { cpuTurn } from './cpu';
 import { apply, type PazaakAction, type PazaakState, type Seat } from './rules';
 
-/** The turn timer from the spec. When it runs out the turn ends; the player does not stand. */
-export const TURN_MS = 5000;
+/** The turn timer (Caleb raised it from 5 to 20 seconds). When it runs out the turn ends; the player does not stand. */
+export const TURN_MS = 20000;
 /** How long the result of a set stays on the table before the next set starts. */
 export const SET_PAUSE_MS = 2600;
 /** The CPU thinks for a moment so its moves can be followed. */

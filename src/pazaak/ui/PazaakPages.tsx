@@ -51,7 +51,7 @@ export function PazaakHome() {
   return (
     <GameHome
       game="pazaak"
-      about={<>Get a higher total than your opponent without going over 20. Win 3 sets to win the match. Each turn you have 5 seconds.</>}
+      about={<>Get a higher total than your opponent without going over 20. Win 3 sets to win the match. Each turn you have 20 seconds.</>}
       onCreate={() => void createRoom()}
       onJoin={(code) => void joinRoom(code)}
     />

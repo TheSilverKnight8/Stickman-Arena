@@ -35,7 +35,7 @@ export interface SetResult {
 export type PazaakEvent =
   | { type: 'draw'; seat: Seat; value: number }
   | { type: 'play'; seat: Seat; id: string; value: number }
-  | { type: 'stand'; seat: Seat }
+  | { type: 'stand'; seat: Seat; /** Stood automatically: nine cards, or a total of exactly 20. */ auto?: boolean }
   | { type: 'endTurn'; seat: Seat; timeout: boolean }
   | { type: 'bust'; seat: Seat }
   | { type: 'shuffle' }
@@ -68,7 +68,7 @@ export interface PazaakState {
 export type PazaakAction =
   | { type: 'play'; seat: Seat; slot: number; sign?: 1 | -1 }
   | { type: 'endTurn'; seat: Seat }
-  | { type: 'stand'; seat: Seat }
+  | { type: 'stand'; seat: Seat; /** Stood automatically: nine cards, or a total of exactly 20. */ auto?: boolean }
   | { type: 'timeout'; seat: Seat; turnId: number }
   | { type: 'nextSet' };
 
@@ -134,6 +134,7 @@ export function apply(prev: PazaakState, action: PazaakAction): PazaakState {
       if (c.kind === 'tiebreaker') p.tiebreaker = true;
       s.events.push({ type: 'play', seat: action.seat, id, value });
       checkNine(s, action.seat);
+      checkTwenty(s, action.seat);
       break;
     }
     case 'endTurn':
@@ -205,6 +206,7 @@ function beginTurn(s: PazaakState) {
   s.turnId++;
   s.events.push({ type: 'draw', seat, value });
   checkNine(s, seat);
+  checkTwenty(s, seat);
 }
 
 /** Nine cards in play: the player stands automatically and wins the set. No more cards can be added, so over 20 is a bust. */
@@ -215,9 +217,19 @@ function checkNine(s: PazaakState, seat: Seat) {
   if (total(p) > TARGET) bust(s, seat);
   else {
     p.standing = true;
-    s.events.push({ type: 'stand', seat });
+    s.events.push({ type: 'stand', seat, auto: true });
     endSet(s, { winner: seat, reason: 'nine', totals: totals(s) });
   }
+}
+
+/** A total of exactly 20 (from a draw or a hand card): the player stands automatically. */
+function checkTwenty(s: PazaakState, seat: Seat) {
+  if (s.phase !== 'turn' || s.turn !== seat) return;
+  const p = s.players[seat];
+  if (p.standing || total(p) !== TARGET) return;
+  p.standing = true;
+  s.events.push({ type: 'stand', seat, auto: true });
+  afterStand(s);
 }
 
 function endTurn(s: PazaakState, seat: Seat) {

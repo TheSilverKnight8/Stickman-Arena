@@ -10,7 +10,7 @@ It is an installable web app (PWA) for phones and computers, hosted on GitHub Pa
 | Area | What it does |
 | --- | --- |
 | Home | Two buttons, one per game. Each leads to that game's home page: create a room, join one with a code, play the CPU, settings. |
-| Pazaak | KOTOR II rules as written in [`docs/pazaak.md`](docs/pazaak.md). Build a 10-card side deck (or Random), 5-second turns, first to 3 sets. CPU at Normal (plain cards) or Advanced (adds ± cards and the tiebreaker). Portrait and landscape on phones. |
+| Pazaak | KOTOR II rules as written in [`docs/pazaak.md`](docs/pazaak.md). Build a 10-card side deck (or Random), 20-second turns, automatic stand at 20, first to 3 sets. CPU at Normal (plain cards) or Advanced (adds ± cards and the tiebreaker). Portrait and landscape on phones. |
 | Online rooms | The creator gets a 5-character code to share (shown large, with a copy button). The other player types it in. Game data goes directly between the two devices (WebRTC); the free PeerJS server only introduces them. If a player leaves or loses connection mid-match, the match is a draw. |
 | Platfighter | Stage 2 and 3 of the build (see [`docs/decisions.md`](docs/decisions.md)). |
 | Settings | Brightness, music volume, effects volume. Kept until the app closes. |
