@@ -46,6 +46,8 @@ const RESPAWN_X = [-80, 80, -160, 160];
 const LAND_LAG = 4;
 const AIRDODGE_LAND_LAG = 8;
 const HURT_LAND_LAG = 14;
+/** An aerial that lands before its hit is over keeps going on the ground for up to this many frames, so it still hits. */
+const LAND_CARRY = 8;
 // Ledges: the two top corners of the main stage.
 /** A fresh grab (after landing or being hit) can't be hit for this long. */
 const LEDGE_INVINCIBLE = 24;
@@ -145,6 +147,7 @@ function newFighter(slot: number, char: CharId, palette: number, x: number, y: n
     regrab: 0,
     ledgeFresh: true,
     ledgeLock: 0,
+    landAt: -1,
   };
 }
 
@@ -254,6 +257,7 @@ function startSuddenDeath(s: MatchState) {
 function enter(f: FighterState, act: Act) {
   f.act = act;
   f.t = 0;
+  f.landAt = -1;
   if (act !== 'move') f.move = null;
 }
 
@@ -609,6 +613,15 @@ function advanceMove(s: MatchState, f: FighterState, input: number, ev: SimEvent
   if (m.chain && f.t >= m.chain.window[0] && f.t <= m.chain.window[1] && f.buf & BTN.attack) {
     return startMove(s, f, m.chain.into, input, 0, ev);
   }
+  // An aerial carrying on after landing: its hit is over, so now the landing lag.
+  if (f.landAt >= 0) {
+    if (!f.grounded) f.landAt = -1;
+    else if (f.t > f.landAt) {
+      enter(f, 'land');
+      f.landLag = m.landLag ?? LAND_LAG;
+      return;
+    }
+  }
   if (f.t >= m.total) return enter(f, f.grounded ? 'idle' : 'air');
   moveEffects(s, f, m, input, ev);
 }
@@ -744,13 +757,26 @@ function landOn(s: MatchState, f: FighterState, surface: number, y: number, prev
       if (!m) break;
       if (m.untilLand !== undefined && m.onLand && f.t >= 2) startMove(s, f, m.onLand, 0, 0, ev);
       else if (m.landLag !== undefined) {
-        enter(f, 'land');
-        f.landLag = m.landLag;
+        // Landing before the hit is over: the attack keeps going on the ground for a few frames.
+        const last = lastHitFrame(m);
+        if (f.landAt < 0 && f.t <= last) f.landAt = Math.min(last, f.t + LAND_CARRY);
+        else if (f.landAt < 0) {
+          enter(f, 'land');
+          f.landLag = m.landLag;
+        }
       }
       // Other moves carry on, now on the ground.
       break;
     }
   }
+}
+
+/** The last frame on which a move can hit or shoot (-1 if it never does). */
+function lastHitFrame(m: MoveDef): number {
+  let last = -1;
+  for (const h of m.hits ?? []) last = Math.max(last, h.f[1]);
+  for (const p of m.proj ?? []) last = Math.max(last, p.f);
+  return last;
 }
 
 function checkBlast(s: MatchState, f: FighterState, ev: SimEvent[]) {

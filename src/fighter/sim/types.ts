@@ -257,6 +257,8 @@ export interface FighterState {
   ledgeFresh: boolean;
   /** Directions already held when the ledge was grabbed; they count only after being let go. */
   ledgeLock: number;
+  /** An aerial that landed before its hit was over carries on until this move frame, then lands (-1: not landed). */
+  landAt: number;
 }
 
 export interface ProjectileState {

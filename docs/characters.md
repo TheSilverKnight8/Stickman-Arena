@@ -4,13 +4,13 @@ Each fighter has 8 normal attacks (neutral, up, down and side, on the ground and
 
 Numbers come straight from `src/fighter/sim/chars/`. **Starts** is the first frame that can hit (60 frames = 1 second); **Ends** is when the fighter can act again; **Damage** is the most a single hit does (multi-hit moves list the hit count). These are first-pass values for playtesting.
 
-Shared by everyone: a double jump (once per jump, back on landing); a spot dodge on the ground or in the air (cannot be hit for most of it; the air dodge works once per jump); tap down in the air to fall faster; hold down on a platform to drop through. The up special can be used once in the air and comes back on landing; other specials have no limit.
+Shared by everyone: a double jump (once per jump, back on landing); a spot dodge on the ground or in the air (cannot be hit for most of it; the air dodge works once per jump); tap down in the air to fall faster; hold down on a platform to drop through. The up special can be used once in the air and comes back on landing; other specials have no limit. An aerial that lands before its hit is over keeps going on the ground for up to 8 frames, so it still hits, then the landing lag starts.
 
 ## Fisticuffs — Rushdown
 
 Rushdown. Short reach and quick punches that lead into each other. Light, so Fisticuffs flies early.
 
-Weight 85 · run speed 7.2 · air speed 4.8 · jump 14.2 / double jump 13 · gravity 0.62 · fall speed 10.5 (fast fall 15)
+Weight 85 · run speed 7.2 · air speed 4.8 · jump 13.6 / double jump 12.5 · gravity 0.53 · fall speed 9.5 (fast fall 15)
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -31,7 +31,7 @@ Weight 85 · run speed 7.2 · air speed 4.8 · jump 14.2 / double jump 13 · gra
 
 Swordfighter. The comically large sword is not part of Spartan's hurtbox, so it out-ranges most attacks. Slow on foot.
 
-Weight 108 · run speed 5 · air speed 3.6 · jump 13 / double jump 12 · gravity 0.58 · fall speed 10 (fast fall 14.5) · projectile limit 1
+Weight 108 · run speed 5 · air speed 3.6 · jump 12.5 / double jump 11.5 · gravity 0.49 · fall speed 9 (fast fall 14.5) · projectile limit 1
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -52,7 +52,7 @@ Weight 108 · run speed 5 · air speed 3.6 · jump 13 / double jump 12 · gravit
 
 Zoner. Most attacks fire the bow. Up close, Ranger pushes opponents away with the Bow Bash and two kicks.
 
-Weight 98 · run speed 6 · air speed 4.2 · jump 13.5 / double jump 12.5 · gravity 0.55 · fall speed 9.5 (fast fall 14) · projectile limit 5
+Weight 98 · run speed 6 · air speed 4.2 · jump 13 / double jump 12 · gravity 0.47 · fall speed 8.6 (fast fall 14) · projectile limit 5
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Weight 98 · run speed 6 · air speed 4.2 · jump 13.5 / double jump 12.5 · gra
 
 Heavyweight. Big, slow, hits very hard and survives long. Falls fast, so Buster is easy to combo. Armor on four moves.
 
-Weight 130 · run speed 4.4 · air speed 3.3 · jump 13.2 / double jump 12 · gravity 0.7 · fall speed 11.5 (fast fall 16) · projectile limit 1 · armor holds against knockback under 100
+Weight 130 · run speed 4.4 · air speed 3.3 · jump 12.7 / double jump 11.5 · gravity 0.59 · fall speed 10.3 (fast fall 16) · projectile limit 1 · armor holds against knockback under 100
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -94,7 +94,7 @@ Weight 130 · run speed 4.4 · air speed 3.3 · jump 13.2 / double jump 12 · gr
 
 Hit and run. The fastest and highest-jumping fighter, with quick, safe pokes and low damage. Light and thin: the poses pull the body away while a limb reaches out (agile hurtbox shifting), and Phantom's limbs are thinner targets than anyone else's.
 
-Weight 78 · run speed 8 · air speed 5.2 · jump 14.5 / double jump 14 · gravity 0.5 · fall speed 9 (fast fall 13) · projectile limit 1
+Weight 78 · run speed 8 · air speed 5.2 · jump 13.9 / double jump 13.4 · gravity 0.42 · fall speed 8.1 (fast fall 13) · projectile limit 1
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
