@@ -1,5 +1,5 @@
 import { CHARS } from './chars';
-import { AIR_DODGE, SPOT_DODGE, hitsOf, hittable, hurtOf, jointsOf, moveOf, reflectOf } from './body';
+import { AIR_DODGE, CLIMB_FRAMES, SPOT_DODGE, hitsOf, hittable, hurtOf, jointsOf, ledgeHold, moveOf, reflectOf } from './body';
 import { approach, dcos, dsin, segSegDist2 } from './fmath';
 import type { Capsule } from './skeleton';
 import { STAGES } from './stages';
@@ -46,8 +46,15 @@ const RESPAWN_X = [-80, 80, -160, 160];
 const LAND_LAG = 4;
 const AIRDODGE_LAND_LAG = 8;
 const HURT_LAND_LAG = 14;
-/** Hitting the side of the stage this close below its top steps up onto it. */
-const STEP_UP = 26;
+// Ledges: the two top corners of the main stage.
+/** A fresh grab (after landing or being hit) can't be hit for this long. */
+const LEDGE_INVINCIBLE = 24;
+/** Hanging longer than this lets go. */
+const LEDGE_HOLD_MAX = 300;
+/** Frames on the ledge before climbing, jumping or letting go. */
+const LEDGE_WAIT = 6;
+/** After leaving a ledge, frames before a ledge can be grabbed again. */
+const REGRAB_FRAMES = 30;
 const UNTIL_LAND_MAX = 45;
 const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 18, orb: 13, boulder: 22, shock: 14 };
 const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30 };
@@ -132,6 +139,10 @@ function newFighter(slot: number, char: CharId, palette: number, x: number, y: n
     tpY: 0,
     jumpAnim: 99,
     halted: false,
+    ledgeSide: 0,
+    regrab: 0,
+    ledgeFresh: true,
+    ledgeLock: 0,
   };
 }
 
@@ -265,6 +276,7 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
   }
   if (f.invincible > 0) f.invincible--;
   if (f.dropT > 0) f.dropT--;
+  if (f.regrab > 0) f.regrab--;
   if (f.jumpAnim < 99) f.jumpAnim++;
   f.t++;
 
@@ -303,6 +315,13 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
     case 'move':
       advanceMove(s, f, input, ev);
       break;
+    case 'ledge':
+      onLedge(f, input, ev, frozen);
+      if (f.act === 'ledge' || f.act === 'climb') return;
+      break;
+    case 'climb':
+      climbing(s, f);
+      return;
   }
 
   if (f.act === 'idle' || f.act === 'run' || f.act === 'air') {
@@ -357,7 +376,6 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
   }
 
   // ---- position, launch, collision
-  const prevX = f.x;
   const prevY = f.y;
   let kx = 0;
   let ky = 0;
@@ -368,7 +386,114 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
   }
   f.x += f.vx + kx;
   if (!f.grounded) f.y += f.vy + ky;
-  collide(s, f, prevX, prevY, ev);
+  collide(s, f, prevY, ev);
+  if (!f.grounded && !frozen) tryGrabLedge(s, f, input, ev);
+}
+
+// ---------------------------------------------------------------- ledges
+
+function tryGrabLedge(s: MatchState, f: FighterState, input: number, ev: SimEvent[]) {
+  if (f.regrab > 0 || input & BTN.down) return;
+  const m = moveOf(f);
+  // While falling (or during an up special, which can reach for the ledge on the way up). Not while launched.
+  const reaching = f.act === 'move' && f.move === 'uspec';
+  if (!(f.act === 'air' || f.act === 'airdodge' || f.act === 'move') || (m?.hidden && f.t >= m.hidden[0] && f.t <= m.hidden[1])) return;
+  if (!reaching && f.vy + f.kbSpeed * f.kbY > 0) return;
+  const c = CHARS[f.char];
+  const main = STAGES[s.stage].main;
+  const hold = ledgeHold(f.char);
+  // The ledge has to be within reach of the hands: between chest height and a little above the head.
+  if (f.y > -c.height * 0.5 || f.y < -hold.y - 22) return;
+  for (const side of [-1, 1]) {
+    const ledgeX = side > 0 ? main.x2 : main.x1;
+    const out = side * (f.x - ledgeX);
+    if (out < -4 || out > c.halfWidth + 30) continue;
+    if (s.fighters.some((o) => o !== f && (o.act === 'ledge' || o.act === 'climb') && o.ledgeSide === side)) continue;
+    enter(f, 'ledge');
+    f.ledgeSide = side;
+    f.facing = (side > 0 ? -1 : 1) as 1 | -1;
+    f.x = ledgeX + side * hold.x;
+    f.y = -hold.y;
+    f.vx = 0;
+    f.vy = 0;
+    f.kbSpeed = 0;
+    f.fastFall = false;
+    f.buf = 0;
+    f.bufT = 0;
+    // A direction held while recovering does not climb or let go by itself: it has to be pressed again.
+    f.ledgeLock = input & DIRS;
+    // Grabbing a ledge gives back the double jump, the up special and the air dodge.
+    f.doubleJump = true;
+    f.upSpecial = true;
+    f.airDodge = true;
+    if (f.ledgeFresh) {
+      f.invincible = Math.max(f.invincible, LEDGE_INVINCIBLE);
+      f.ledgeFresh = false;
+    }
+    ev.push({ type: 'ledge', slot: f.slot });
+    return;
+  }
+}
+
+/** Hanging: toward the stage or up climbs, jump jumps, away or down lets go. */
+function onLedge(f: FighterState, input: number, ev: SimEvent[], frozen: boolean) {
+  const side = f.ledgeSide;
+  const toward = side > 0 ? BTN.left : BTN.right;
+  const away = side > 0 ? BTN.right : BTN.left;
+  f.ledgeLock &= input;
+  const dirs = input & DIRS & ~f.ledgeLock;
+  if (f.t >= LEDGE_HOLD_MAX) return letGo(f);
+  if (frozen || f.t < LEDGE_WAIT) return;
+  if (f.buf & BTN.jump) {
+    const c = CHARS[f.char];
+    f.buf = 0;
+    enter(f, 'air');
+    f.vy = c.stats.jump;
+    f.vx = -side * 2;
+    f.regrab = REGRAB_FRAMES;
+    f.ledgeSide = 0;
+    ev.push({ type: 'jump', slot: f.slot, double: false });
+  } else if (dirs & (toward | BTN.up) || f.buf & BTN.dodge) {
+    f.buf = 0;
+    enter(f, 'climb');
+  } else if (dirs & (away | BTN.down)) {
+    letGo(f);
+  }
+}
+
+function letGo(f: FighterState) {
+  enter(f, 'air');
+  f.x += f.ledgeSide * 4;
+  f.vy = 0;
+  f.regrab = REGRAB_FRAMES;
+  f.ledgeSide = 0;
+}
+
+/** Climbing up: rise to the top first, then step onto the stage. */
+function climbing(s: MatchState, f: FighterState) {
+  const c = CHARS[f.char];
+  const main = STAGES[s.stage].main;
+  const side = f.ledgeSide;
+  const ledgeX = side > 0 ? main.x2 : main.x1;
+  const hold = ledgeHold(f.char);
+  const fromX = ledgeX + side * hold.x;
+  const toX = ledgeX - side * (c.halfWidth + 6);
+  const up = Math.min(1, f.t / 12);
+  const over = Math.max(0, Math.min(1, (f.t - 8) / 14));
+  f.y = -hold.y * (1 - up);
+  f.x = fromX + (toX - fromX) * over;
+  if (f.t >= CLIMB_FRAMES) {
+    f.x = toX;
+    f.y = 0;
+    f.grounded = true;
+    f.surface = 0;
+    f.ledgeSide = 0;
+    f.doubleJump = true;
+    f.upSpecial = true;
+    f.airDodge = true;
+    f.ledgeFresh = true;
+    enter(f, 'idle');
+  }
 }
 
 function leaveGround(f: FighterState) {
@@ -527,7 +652,7 @@ function moveEffects(s: MatchState, f: FighterState, m: MoveDef, input: number, 
 
 // ---------------------------------------------------------------- stage collision
 
-function collide(s: MatchState, f: FighterState, prevX: number, prevY: number, ev: SimEvent[]) {
+function collide(s: MatchState, f: FighterState, prevY: number, ev: SimEvent[]) {
   const st = STAGES[s.stage];
   const c = CHARS[f.char];
   const m = st.main;
@@ -546,19 +671,24 @@ function collide(s: MatchState, f: FighterState, prevX: number, prevY: number, e
   }
 
   const dy = f.y - prevY;
-  // The main stage is solid from every side.
-  if (f.x + hw > m.x1 && f.x - hw < m.x2 && f.y < 0 && f.y + c.height > m.bottom) {
-    if (prevY >= -0.01 && dy <= 0) return landOn(s, f, 0, 0, prevY, ev);
-    if (prevY + c.height <= m.bottom + 0.01) {
+  // The main stage is solid from every side. Landing and bumping into its
+  // underside go by the fighter's centre; the sides push the body out by how
+  // far its feet are below the top (like a diamond-shaped body), so a fighter
+  // stepping off the edge slides off smoothly instead of landing again.
+  if (f.y < 0 && f.y + c.height > m.bottom) {
+    const over = f.x >= m.x1 && f.x <= m.x2;
+    if (over && prevY >= -0.01 && dy <= 0) return landOn(s, f, 0, 0, prevY, ev);
+    if (over && prevY + c.height <= m.bottom + 0.01) {
       f.y = m.bottom - c.height;
       if (f.vy > 0) f.vy = 0;
       if (f.kbY > 0) f.kbY = -f.kbY * 0.5;
-    } else if (f.y > -STEP_UP && f.act !== 'hurt') {
-      return landOn(s, f, 0, 0, 0, ev);
     } else {
-      f.x = prevX < (m.x1 + m.x2) / 2 ? m.x1 - hw : m.x2 + hw;
-      if (f.act === 'hurt') f.kbX = -f.kbX * 0.6;
-      f.vx = 0;
+      const reach = Math.min(hw, -f.y);
+      if (f.x + reach > m.x1 && f.x - reach < m.x2) {
+        f.x = f.x < (m.x1 + m.x2) / 2 ? m.x1 - reach : m.x2 + reach;
+        if (f.act === 'hurt') f.kbX = -f.kbX * 0.6;
+        f.vx = 0;
+      }
     }
   }
 
@@ -590,6 +720,7 @@ function landOn(s: MatchState, f: FighterState, surface: number, y: number, prev
   f.airDodge = true;
   f.jumpAnim = 99;
   f.dropT = 0;
+  f.ledgeFresh = true;
   ev.push({ type: 'land', slot: f.slot, x: f.x, y });
   switch (f.act) {
     case 'air':
@@ -711,6 +842,8 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   const kx = dcos(h.ang) * dir;
   let ky = dsin(h.ang);
   enter(v, 'hurt');
+  v.ledgeSide = 0;
+  v.ledgeFresh = true;
   v.hitstun = Math.max(1, Math.floor(kb * HITSTUN));
   v.kbSpeed = kb * LAUNCH;
   v.vx = 0;

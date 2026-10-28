@@ -108,7 +108,11 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Spot dodge (ground) | 24 frames; cannot be hit on frames 3–17. No limit. |
 | Spot dodge (air) | 30 frames; cannot be hit on frames 3–20; keeps falling, no steering. Once per jump, back on landing. |
 | Up special | Once in the air, back on landing (spec). There is no helpless state afterward. |
-| Getting back to the stage | No ledge grab (not in the spec). Touching the side of the stage within 26 units of its top steps up onto it, so a recovery that just reaches the edge counts. **Worth playtesting.** |
+| Ledges (Caleb's request after Stage 2) | The two top corners of the main stage are ledges (platforms have none). A fighter grabs one automatically when falling (or rising during an up special) with the corner within reach of the hands, unless holding down or still launched. One fighter per ledge. Grabbing gives back the double jump, up special and air dodge. |
+| Ledge invincibility | A grab after landing or being hit can't be hit for 24 frames. A regrab without landing in between gets none, so hanging can't be repeated forever for safety. |
+| On the ledge | After 6 frames: toward the stage or up climbs (22 frames; can't be hit for the first 14), jump jumps up from the ledge, away or down lets go. A direction already held when grabbing doesn't count until it is let go and pressed again, so holding toward the stage while recovering doesn't climb by itself. Dodge also climbs. Attack and special do nothing (a ledge attack would be a 13th move). After 5 seconds hanging, the fighter lets go. |
+| Regrab | After leaving a ledge, it can't be grabbed again for 30 frames. |
+| Stage edge collision (fixes the back-and-forth clipping Caleb saw) | Landing on the stage needs the fighter's centre over the stage. The sides push the body out by how far its feet are below the top, so stepping off the edge slides off smoothly. Before, the collision box could land a fighter whose centre was already past the edge; the next frame found no ground under it, and it flickered between standing and falling. The old "step-up" onto the stage is gone; ledges replace it. |
 | Input buffer | A button pressed up to 6 frames before the fighter can act still counts. |
 
 ### Armor, reflect and projectiles

@@ -1,7 +1,10 @@
 import { CHARS } from './chars';
+import { CLIMB_FRAMES } from './chars/common';
 import { clamp } from './fmath';
 import { hurtboxes, sample, solve, type Capsule, type Joints, type Pose } from './skeleton';
-import type { FighterState, HitDef, MoveDef } from './types';
+import type { CharId, FighterState, HitDef, MoveDef } from './types';
+
+export { CLIMB_FRAMES };
 
 // Where a fighter's body is right now: its pose, joints, hurtboxes and active
 // hitboxes. Used by the simulation, the renderer and the CPU.
@@ -30,6 +33,10 @@ export function poseOf(f: FighterState): Pose | null {
       return sample(a.dodge, f.t);
     case 'airdodge':
       return sample(a.airdodge, f.t);
+    case 'ledge':
+      return sample(a.ledge, f.t, true);
+    case 'climb':
+      return sample(a.climb, f.t);
     case 'hurt':
       return f.hitstun > 25 && f.kbSpeed > 6 ? sample(a.tumble, f.t, true) : sample(a.hurt, f.t, true);
     case 'air':
@@ -55,6 +62,8 @@ export function hittable(f: FighterState): boolean {
   if (f.act === 'dead' || f.act === 'out' || f.act === 'respawn' || f.invincible > 0) return false;
   if (f.act === 'dodge') return !(f.t >= SPOT_DODGE.from && f.t <= SPOT_DODGE.to);
   if (f.act === 'airdodge') return !(f.t >= AIR_DODGE.from && f.t <= AIR_DODGE.to);
+  // Climbing up from a ledge can't be hit until the fighter is nearly up.
+  if (f.act === 'climb') return f.t > CLIMB_INTANGIBLE;
   const m = moveOf(f);
   if (m?.intangible && f.t >= m.intangible[0] && f.t <= m.intangible[1]) return false;
   if (m?.hidden && f.t >= m.hidden[0] && f.t <= m.hidden[1]) return false;
@@ -68,6 +77,25 @@ export function hidden(f: FighterState): boolean {
 }
 
 export const SPOT_DODGE = { total: 24, from: 3, to: 17 };
+export const CLIMB_INTANGIBLE = 14;
+
+const holdCache = new Map<CharId, { x: number; y: number }>();
+
+/**
+ * Where a hanging fighter's body is, relative to the ledge corner: x outward
+ * from the stage, y below its top. Worked out from the hanging pose so the
+ * hands sit on the corner.
+ */
+export function ledgeHold(id: CharId): { x: number; y: number } {
+  let h = holdCache.get(id);
+  if (!h) {
+    const c = CHARS[id];
+    const j = solve(c.body, sample(c.anims.ledge, 0), 0, 0, 1, false);
+    h = { x: Math.max(c.halfWidth * 0.5, j.hand1[0] + 2), y: j.hand1[1] - 2 };
+    holdCache.set(id, h);
+  }
+  return h;
+}
 export const AIR_DODGE = { total: 30, from: 3, to: 20 };
 
 export function hurtOf(f: FighterState, j: Joints | null = jointsOf(f)): Capsule[] {

@@ -161,6 +161,8 @@ export interface CharDef {
     dodge: Anim;
     airdodge: Anim;
     djump: Anim;
+    ledge: Anim;
+    climb: Anim;
   };
   moves: Record<MoveSlot, MoveDef> & Record<string, MoveDef>;
 }
@@ -184,7 +186,7 @@ export interface StageDef {
 
 // ---------------------------------------------------------------- match state (plain data, copyable)
 
-export type Act = 'idle' | 'run' | 'squat' | 'air' | 'land' | 'move' | 'hurt' | 'dodge' | 'airdodge' | 'dead' | 'respawn' | 'out';
+export type Act = 'idle' | 'run' | 'squat' | 'air' | 'land' | 'move' | 'hurt' | 'dodge' | 'airdodge' | 'ledge' | 'climb' | 'dead' | 'respawn' | 'out';
 
 export interface FighterState {
   slot: number;
@@ -247,6 +249,14 @@ export interface FighterState {
   jumpAnim: number;
   /** The current move hit something and stopped (moves with stopOnHit). */
   halted: boolean;
+  /** Which ledge the fighter holds or is climbing: -1 left, 1 right, 0 none. */
+  ledgeSide: number;
+  /** Frames until a ledge can be grabbed again. */
+  regrab: number;
+  /** The next ledge grab gives a moment of invincibility (reset by landing or being hit). */
+  ledgeFresh: boolean;
+  /** Directions already held when the ledge was grabbed; they count only after being let go. */
+  ledgeLock: number;
 }
 
 export interface ProjectileState {
@@ -311,4 +321,5 @@ export type SimEvent =
   | { type: 'game' }
   | { type: 'sudden' }
   | { type: 'shatter'; x: number; y: number; kind: ProjKind }
-  | { type: 'teleport'; slot: number; x: number; y: number };
+  | { type: 'teleport'; slot: number; x: number; y: number }
+  | { type: 'ledge'; slot: number };

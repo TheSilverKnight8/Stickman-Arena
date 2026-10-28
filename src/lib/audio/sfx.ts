@@ -176,6 +176,11 @@ export const sfx = {
   shatter() {
     for (let i = 0; i < 4; i++) noise({ filter: 'bandpass', hz: 800 + i * 400, at: i * 0.03, dur: 0.08, gain: 0.2 });
   },
+  /** Grabbing a ledge. */
+  ledge() {
+    noise({ filter: 'bandpass', hz: 1400, q: 2, dur: 0.05, gain: 0.25 });
+    tone(midiHz(67), { type: 'triangle', dur: 0.06, gain: 0.08 });
+  },
   teleport() {
     tone(midiHz(84), { type: 'sine', dur: 0.2, to: midiHz(96), gain: 0.1 });
   },

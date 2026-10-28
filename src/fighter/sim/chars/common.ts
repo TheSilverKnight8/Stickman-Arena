@@ -38,6 +38,7 @@ export function baseAnims(s: StanceSet): BaseAnims {
   const hurt = pose(stand, { lean: -28, a1: 150, f1: 195, a2: -150, f2: -175, t1: 45, s1: 15, t2: -30, s2: -55, dx: 0 });
   const hurt2 = pose(hurt, { a1: 175, f1: 215, a2: -130, f2: -150, t1: 30, s1: -5 });
   const tuck = pose(air, { lean: 30, t1: 105, s1: -15, t2: 85, s2: -30, a1: 60, f1: 130, a2: 45, f2: 120 });
+  const hang = pose(air, { lean: 4, a1: 146, f1: 162, a2: 138, f2: 158, t1: 14, s1: -6, t2: -4, s2: -20, rot: 0, dx: 0, dy: 0, w: 60 });
   const idleFrames = s.idleFrames ?? 48;
   return {
     idle: s.idleShift ? [[0, stand], [idleFrames / 2, pose(stand, s.idleShift)], [idleFrames, stand]] : [[0, stand]],
@@ -84,8 +85,24 @@ export function baseAnims(s: StanceSet): BaseAnims {
       [16, pose(tuck, { rot: -360 })],
       [22, pose(rise, { rot: -360 })],
     ],
+    // Hanging from a ledge by both hands, body against the stage.
+    ledge: [
+      [0, hang],
+      [30, pose(hang, { t1: 18, s1: -8, t2: -2, s2: -14 })],
+      [60, hang],
+    ],
+    // Pulling up: a knee onto the stage, then standing.
+    climb: [
+      [0, hang],
+      [9, pose(hang, { lean: 35, a1: 120, f1: 150, a2: 110, f2: 140, t1: 95, s1: 10, t2: 10, s2: -20 })],
+      [16, pose(crouch, { a1: 60, f1: 90 })],
+      [CLIMB_FRAMES, stand],
+    ],
   };
 }
+
+/** Frames to climb up from a ledge (the simulation uses the same number). */
+export const CLIMB_FRAMES = 22;
 
 /** Keyframes from [frame, base pose, changes] triples. */
 export function keys(...frames: [number, Pose, PoseInput?][]): Anim {

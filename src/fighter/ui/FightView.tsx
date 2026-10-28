@@ -162,6 +162,9 @@ function playSounds(events: SimEvent[], mySlot: number) {
       case 'teleport':
         sfx.teleport();
         break;
+      case 'ledge':
+        sfx.ledge();
+        break;
       case 'count':
         sfx.count(e.n);
         break;

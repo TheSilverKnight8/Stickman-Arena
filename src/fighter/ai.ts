@@ -18,10 +18,10 @@ export const DIFFICULTIES: Record<Difficulty, { name: string; about: string }> =
   hard: { name: 'Hard', about: 'Reacts fast, aims ahead of you, dodges often, goes for KOs at high damage.' },
 };
 
-const LEVEL: Record<Difficulty, { think: number; aggression: number; dodge: number; recover: number; predict: boolean; wander: number; reach: number }> = {
-  easy: { think: 16, aggression: 0.35, dodge: 0, recover: 0.55, predict: false, wander: 0.3, reach: 0.75 },
-  normal: { think: 8, aggression: 0.72, dodge: 0.12, recover: 0.95, predict: false, wander: 0.08, reach: 1 },
-  hard: { think: 3, aggression: 0.95, dodge: 0.38, recover: 1, predict: true, wander: 0, reach: 1 },
+const LEVEL: Record<Difficulty, { think: number; aggression: number; dodge: number; recover: number; predict: boolean; wander: number; reach: number; ledgeWait: number; ledgeJump: number }> = {
+  easy: { think: 16, aggression: 0.35, dodge: 0, recover: 0.55, predict: false, wander: 0.3, reach: 0.75, ledgeWait: 50, ledgeJump: 0.2 },
+  normal: { think: 8, aggression: 0.72, dodge: 0.12, recover: 0.95, predict: false, wander: 0.08, reach: 1, ledgeWait: 22, ledgeJump: 0.35 },
+  hard: { think: 3, aggression: 0.95, dodge: 0.38, recover: 1, predict: true, wander: 0, reach: 1, ledgeWait: 8, ledgeJump: 0.45 },
 };
 
 /** Characters whose side special carries them sideways (useful for getting back to the stage). */
@@ -177,6 +177,17 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
     return;
   }
   if (me.act === 'hurt' || me.hitlag > 0) return;
+
+  // On a ledge: wait a moment with the stick let go, then climb or jump up.
+  if (me.act === 'ledge') {
+    if (me.t < L.ledgeWait + Math.floor(r() * 12)) return;
+    if (r() < L.ledgeJump) {
+      cpu.tap = BTN.jump;
+      cpu.jumpHold = 6;
+    } else cpu.hold = toward(0);
+    return;
+  }
+  if (me.act === 'climb') return;
 
   // Recovery: get back to the stage. Drift in first, cover distance with a
   // moving side special when far out, save the double jump until near stage
