@@ -213,10 +213,10 @@ export const buster: CharDef = {
         [30, S, { lean: -5, a1: 175, f1: 178, a2: 165, f2: 170, t1: 10, s1: -10, t2: -20, s2: -40 }],
         [50, A],
       ),
-      // Hits only around his feet as he takes off from the ground (nothing in the air, nothing on the way up).
+      // A blast around his feet just before he jumps (on the ground or in the air); nothing on the way up.
       hits: [
-        { f: [7, 10], at: 'foot1', r: 22, dmg: 13, ang: 80, bkb: 52, kbg: 76, ground: true },
-        { f: [7, 10], at: 'foot2', r: 22, dmg: 13, ang: 80, bkb: 52, kbg: 76, ground: true },
+        { f: [7, 9], at: 'foot1', r: 22, dmg: 13, ang: 80, bkb: 52, kbg: 76 },
+        { f: [7, 9], at: 'foot2', r: 22, dmg: 13, ang: 80, bkb: 52, kbg: 76 },
       ],
       vel: [{ f: 10, vx: 3, vy: 16.2 }],
     },
