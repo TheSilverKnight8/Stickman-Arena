@@ -148,6 +148,7 @@ function newFighter(slot: number, char: CharId, palette: number, x: number, y: n
     ledgeFresh: true,
     ledgeLock: 0,
     landAt: -1,
+    armorUsed: false,
   };
 }
 
@@ -591,6 +592,7 @@ function startMove(s: MatchState, f: FighterState, id: string, input: number, si
   f.hitLog = [];
   f.charge = 0;
   f.halted = false;
+  f.armorUsed = false;
   if (m.hits?.length) ev.push({ type: 'swing', slot: f.slot, heavy: m.hits.some((h) => h.dmg >= 12) });
   moveEffects(s, f, m, input, ev);
 }
@@ -845,7 +847,7 @@ function resolveHits(s: MatchState, ev: SimEvent[]) {
   // All hits on a frame land together, so two fighters can trade.
   for (const { a, v, h, x, y } of pending) {
     a.hitLog.push(h.group ?? 0, v.slot, a.t);
-    const dir = h.away ? (v.x >= a.x ? 1 : -1) : a.facing;
+    const dir = h.away ? (v.x >= a.x ? 1 : -1) : h.pull ? (v.x >= a.x ? -1 : 1) : a.facing;
     applyHit(s, a, v, h, dir, x, y, ev);
   }
 }
@@ -856,12 +858,16 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   const p = v.damage;
   const d = h.dmg;
   const kb = ((p / 10 + (p * d) / 20) * (200 / (vc.stats.weight + 100)) * 1.4 + 18) * (h.kbg / 100) + h.bkb;
+  // Hitstun comes from the same formula without the weight: heavy fighters fly less far but are stunned as long.
+  const stunKb = ((p / 10 + (p * d) / 20) * 1.4 + 18) * (h.kbg / 100) + h.bkb;
   const lag = h.rehit ? 2 : Math.min(18, Math.floor(d * 0.6 + 4));
   v.lastHitBy = a ? a.slot : -1;
 
   // Armor: the hit does damage but no knockback.
   const vm = moveOf(v);
-  if (vm?.armor && v.t >= vm.armor[0] && v.t <= vm.armor[1] && kb < vc.armorKb) {
+  if (vm?.armor && v.t >= vm.armor[0] && v.t <= vm.armor[1] && kb < vc.armorKb && !v.armorUsed) {
+    // Armor holds against one hit per move; the next hit goes through.
+    v.armorUsed = true;
     v.hitlag = Math.floor(lag / 2);
     if (a) a.hitlag = lag;
     ev.push({ type: 'armor', x, y, victim: v.slot });
@@ -873,7 +879,9 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   enter(v, 'hurt');
   v.ledgeSide = 0;
   v.ledgeFresh = true;
-  v.hitstun = Math.max(1, Math.floor(kb * HITSTUN * (h.hitstun ?? 1)));
+  v.hitstun = Math.max(1, Math.floor(stunKb * HITSTUN * (h.hitstun ?? 1)));
+  // Being hit gives back the up special, so a fighter knocked offstage can always try to recover.
+  v.upSpecial = true;
   v.kbSpeed = kb * LAUNCH;
   v.vx = 0;
   v.vy = 0;

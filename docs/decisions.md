@@ -89,10 +89,10 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | --- | --- |
 | Simulation | 60 steps per second, fixed, whatever the screen's refresh rate. The whole match is one plain object that can be copied, and only exact arithmetic is used (angles go through a fixed polynomial instead of `Math.sin`), so the same inputs give the same match on any device. That is what Stage 3's rollback netcode needs. Tested: identical inputs give identical matches, and a rewound match replays identically. |
 | Size | A standing fighter is about 100 units tall. The main stage is 760 wide; the blast zones are 770 beyond each edge, 1000 above and 600 below. |
-| Knockback | The Smash formula: knockback grows with the victim's damage after the hit, the move's damage, and its knockback growth, and shrinks with weight. Launch speed falls off steadily. Hitstun is 0.4 frames per point of knockback. |
+| Knockback | The Smash formula: knockback grows with the victim's damage after the hit, the move's damage, and its knockback growth, and shrinks with weight. Launch speed falls off steadily. Hitstun is 0.4 frames per point of knockback, worked out without the weight (Caleb's change in Balance pass 3), so heavy fighters fly less far but are stunned as long as anyone. |
 | Hitlag | Both fighters freeze briefly on a hit (4 to 18 frames, by damage). Multi-hit moves freeze for 2 frames per hit. |
 | Hitboxes and hurtboxes | Hurtboxes come from the stick figure's own limbs, head and torso, so they follow every animation (this is how Phantom's hurtbox shifts). Spartan's sword is not a hurtbox (a disjoint). A hitbox on a fist or foot covers the forearm or shin too, so point-blank hits connect. |
-| Rough KO percents | Against a mid-weight fighter in the middle of the stage: Spartan's Grand Slash about 80%, Buster's Hammer Fist about 100%, Fisticuffs' Haymaker about 100%, Ranger's fully charged shot about 110%, Phantom's Reaper Kick about 120% (heel only; Phantom's other finishers about 190%). Edge KOs come earlier. |
+| Rough KO percents | Against a mid-weight fighter in the middle of the stage: Spartan's Grand Slash about 80%, Buster's Hammer Fist about 100%, Fisticuffs' Haymaker about 100%, Ranger's fully charged shot about 110%, Phantom's Reaper Kick about 120% (heel only; Phantom's other finishers about 170%). Edge KOs come earlier. |
 | Respawn | After a KO: 1 second off screen, then a platform above the stage for up to 2.5 seconds (any button drops), then 2 seconds where the fighter cannot be hit (blinking). |
 | End of match | Last fighter with stocks wins. At 3:00, most stocks wins. A tie goes to sudden death: 1 stock each at 300%, with a new countdown; after 1 minute it is a draw. If both fighters lose their last stock on the same frame, that is also a sudden death (or a draw, if it happens in sudden death). |
 | Leaving a CPU match | Ends it (Leave button, or Escape), back to character select. |
@@ -109,7 +109,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Platforms | Pass through from below; hold down for 3 frames to drop through. |
 | Spot dodge (ground) | 24 frames; cannot be hit on frames 3–17. No limit. |
 | Spot dodge (air) | 30 frames; cannot be hit on frames 3–20; keeps falling, no steering. Once per jump, back on landing. |
-| Up special | Once in the air, back on landing (spec). There is no helpless state afterward. |
+| Up special | Once in the air, back on landing (spec). There is no helpless state afterward. Getting hit also gives it back (Caleb's change in Balance pass 3; the spec only names landing), so being knocked offstage right after using it is not an automatic loss. |
 | Recovery boost (Caleb's change before merging Stage 3) | Every up special goes about 20–25% higher, and holding a direction during it carries the fighter about 15–60% further sideways. (After the fighters were made floatier, the heights were kept the same and the sideways distances grew a little more with the slower fall: Fisticuffs 290, Spartan 235, Ranger 346, Buster 229, Phantom 467.) The sideways part is steering (more air control during the move), not a built-in push, so a fighter going straight up next to the stage does not get carried in under it. Measured from a standstill in the air, height / sideways before → after: Fisticuffs 177 / 168 → 215 / 266; Spartan 162 / 143 → 201 / 212; Ranger 209 / 235 → 254 / 318; Buster 148 / 147 → 184 / 213; Phantom's teleport 210 → 250 (250 / 377 → 307 / 436). Side specials are unchanged (Caleb: up specials only). |
 | Ledges (Caleb's request after Stage 2) | The two top corners of the main stage are ledges (platforms have none). A fighter grabs one automatically when falling (or rising during an up special) with the corner within reach of the hands, unless holding down or still launched. One fighter per ledge. Grabbing gives back the double jump, up special and air dodge. |
 | Ledge invincibility | A grab after landing or being hit can't be hit for 24 frames. A regrab without landing in between gets none, so hanging can't be repeated forever for safety. |
@@ -123,7 +123,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 
 | Item | Choice |
 | --- | --- |
-| Armor | Buster only, on 4 moves: Hammer Fist (wind-up), Charging Tackle, Rocket Leap (crouch), Ground Pound (the whole fall). A hit with knockback under 100 does its damage but does not launch or interrupt. Harder hits (or any hit once Buster's damage is high) break through. A yellow glow shows when armor is on. |
+| Armor | Buster only, on 4 moves: Hammer Fist (wind-up), Charging Tackle, Rocket Leap (crouch), Ground Pound (the whole fall). A hit with knockback under 100 does its damage but does not launch or interrupt. Harder hits (or any hit once Buster's damage is high) break through. A yellow glow shows when armor is on. Armor holds against one hit per move; the next hit in the same move goes through (Caleb's change in Balance pass 3). |
 | Reflect | Spartan's Deflect. Sends arrows, orbs and boulders back 15% faster and 25% stronger, now owned by Spartan. The thrown sword and shockwaves are not reflected. |
 | Ranger | Up to 5 arrows at once; a shot past the limit does not fire. Arrows fall slightly, stop at the stage, and keep flying if Ranger is hit. Charged Shot: speed up to +60%, damage up to +8, more knockback. |
 | Ranger's ending lag (Caleb's change before merging Stage 3) | More frames before Ranger can act again after shooting: Quick Shot, Skyward Shot and Up Shot 26 → 34; Air Shot 28 → 36; Dive Shot 30 → 38; Charged Shot 36 → 46; Triple Shot 38 → 48. Landing lag is unchanged. Rocket Arrow (the up special) is left out (Caleb). |
@@ -162,6 +162,23 @@ How it was measured: for each move, an opponent (Ranger's body) is placed at eve
 Spartan's target area: side tilt 601 → 333, down tilt 294 → 238. In CPU matches the thrown sword went from 52% of Spartan's damage to 27%.
 
 CPU vs CPU check (Hard against Hard, every pairing 16 times; this measures the CPU's way of playing each fighter as much as the fighters). Wins before the pass → after the hitboxes → after the Spartan changes: Spartan 97% → 95% → 64%, Buster 72% → 73% → 94%, Ranger 50% → 44% → 53%, Fisticuffs 31% → 38% → 39%, Phantom 0% → 0% → 0%. With Spartan toned down, the CPU's Buster now wins most matchups (15–1 against Spartan). The CPU playing Phantom mostly throws its slow orb and Blink Strike from far away (in four matches against Ranger: 237 orbs, 176 Blink Strikes, under 20 of everything else), which is a CPU problem rather than a hitbox one.
+
+### Balance pass 3 (Caleb's requests after Balance pass 2)
+
+Caleb: Phantom's moves connect unreliably and its movement makes them awkward; it should do more damage, combo better, and have offstage tools, as it is meant to excel at edgeguarding. Buster's range and Boulder Lob should come down, and his weakness (easily comboed) does not show in play. Getting hit should give back the up special. Caleb picked: fix Dive Kick's movement only; a spike and a pull-in hit as the offstage tools; armor that holds for one hit, and hitstun that does not depend on weight.
+
+| Item | Choice |
+| --- | --- |
+| Phantom: Dive Kick → **Hover Stomp** (down aerial) | No more plunge (it dove diagonally down with gravity off for 13 frames). Now Phantom hovers a moment with the knees tucked (falls under 20 units in its first 14 frames), then stomps both feet down: frames 8–9 spike (10 damage, sent straight down), frames 10–14 a weaker hit (6). |
+| Phantom: Whirl (neutral aerial) pulls in | Its hits now launch toward Phantom's centre and a little up, with low knockback (6 damage, was 5): the opponent ends up close and above Phantom, ready for a follow-up on stage or off it. Chosen because Whirl hits all around and is Phantom's easiest move to land. |
+| Phantom: damage and combos | Damage up by 1–2 on Quick Poke (3 → 4), Lunge Poke (7 → 9), Arc Kick (6 → 8), Slide (6 → 8), Air Lunge (8 → 10, its near part 6 → 8), Scissor Kick (6 → 8) and Blink Strike (7 → 9). Knockback growth lowered on the combo moves so opponents stay closer (Slide, Scissor Kick, Lunge Poke, Blink Strike, Quick Poke) and trimmed on the finishers so the extra damage does not make them much stronger: Air Lunge now KOs at about 170% (was 190%), Arc Kick 230% (was 250%). Lunge Poke, Slide, Air Lunge, Blink Strike and Reaper Kick keep their movement (Caleb). |
+| Buster: range | Every hitbox 3 units smaller (net +2 compared with before Balance pass 1). |
+| Buster: Boulder Lob | Damage 16 → 12, less knockback: KOs a mid-weight in the middle of the stage at about 190% (was 120%). |
+| Armor (all four of Buster's armored moves) | Holds against one hit per move; the next hit in the same move goes through. |
+| Hitstun and weight (everyone) | Hitstun is now the same for every fighter for the same hit at the same damage; weight still shortens how far they fly. Compared with before, at high damage Buster is stunned up to about 15% longer, Spartan about 4% longer, Ranger about the same, Fisticuffs about 7% shorter and Phantom about 11% shorter (less difference at low damage, where a hit's base knockback dominates). |
+| Up special after being hit (everyone) | Being hit gives back the air up special. |
+
+CPU vs CPU (Hard against Hard, every pairing 16 times; this measures the CPU's way of playing each fighter as much as the fighters), wins after Balance pass 2 → after pass 3: Buster 94% → 92%, Spartan 64% → 69%, Ranger 53% → 47%, Fisticuffs 39% → 42%, Phantom 0% → 0%. Phantom's 0% is the CPU's way of playing it (mostly throwing its orb from far away), so the CPU numbers say nothing yet about the Phantom changes.
 
 Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
 
@@ -205,7 +222,7 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after Balance pass 2): Hard beats Easy 28–1 (1 draw) and Normal 24–5 (1 draw); Normal beats Easy 29–1.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after Balance pass 3): Hard beats Easy 29–0 (1 draw) and Normal 27–3; Normal beats Easy 28–2.
 
 ### Online (Stage 3)
 

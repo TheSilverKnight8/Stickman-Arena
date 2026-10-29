@@ -63,6 +63,8 @@ export interface HitDef {
   rehit?: number;
   /** Launch away from the attacker's centre instead of in the facing direction. */
   away?: boolean;
+  /** Launch toward the attacker's centre: pulls the opponent in. */
+  pull?: boolean;
   /** Hitstun multiplier (default 1). */
   hitstun?: number;
 }
@@ -263,6 +265,8 @@ export interface FighterState {
   ledgeLock: number;
   /** An aerial that landed before its hit was over carries on until this move frame, then lands (-1: not landed). */
   landAt: number;
+  /** Armor has already taken a hit during the current move (armor holds against one hit). */
+  armorUsed: boolean;
 }
 
 export interface ProjectileState {
