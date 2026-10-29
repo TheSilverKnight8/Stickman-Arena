@@ -4,10 +4,8 @@ import { baseAnims, keys } from './common';
 
 // BUSTER: heavyweight. Great survivability and damage, decent neutral; low
 // speed, easily comboed (falls fast, big target). Large sprite and hurtbox,
-// slow frame data, armor on some moves (spec).
-//
-// Armor: during the armored frames, a hit whose knockback is under 100 does
-// its damage but does not launch or interrupt Buster. Harder hits break through.
+// slow frame data (spec). The spec's armor was taken out at Caleb's request:
+// Buster takes less knockback while standing on the ground instead.
 
 const S = pose({ lean: 10, a1: 40, f1: 80, a2: 25, f2: 70, t1: 22, s1: 5, t2: -22, s2: -10 });
 const A = pose(S, { t1: 45, s1: -10, t2: -15, s2: -35, a1: 70, f1: 100, a2: 60, f2: 90 });
@@ -24,7 +22,9 @@ export const buster: CharDef = {
   halfWidth: 22,
   height: 118,
   projLimit: 1,
-  armorKb: 100,
+  armorKb: 0,
+  // No armor (Caleb): instead, Buster takes 15% less knockback while standing on the ground.
+  groundKb: 0.85,
   stats: {
     weight: 130,
     run: 4.8,
@@ -70,17 +70,16 @@ export const buster: CharDef = {
     },
     ftilt: {
       name: 'Hammer Fist',
-      total: 44,
+      total: 50,
       turn: true,
-      armor: [6, 16],
       anim: keys(
         [0, S],
-        [12, S, { lean: -20, a1: 200, f1: 210, a2: 190, f2: 200 }],
-        [15, S, { lean: 30, a1: 100, f1: 80, a2: 100, f2: 80, t1: 45, s1: 5, t2: -35, s2: -40 }],
-        [24, S, { lean: 30, a1: 100, f1: 80, a2: 100, f2: 80, t1: 45, s1: 5, t2: -35, s2: -40 }],
-        [44, S],
+        [16, S, { lean: -20, a1: 200, f1: 210, a2: 190, f2: 200 }],
+        [19, S, { lean: 30, a1: 100, f1: 80, a2: 100, f2: 80, t1: 45, s1: 5, t2: -35, s2: -40 }],
+        [28, S, { lean: 30, a1: 100, f1: 80, a2: 100, f2: 80, t1: 45, s1: 5, t2: -35, s2: -40 }],
+        [50, S],
       ),
-      hits: [{ f: [14, 17], at: 'hand1', r: 20, dmg: 15, ang: 42, bkb: 42, kbg: 90 }],
+      hits: [{ f: [18, 21], at: 'hand1', r: 20, dmg: 15, ang: 42, bkb: 42, kbg: 90 }],
     },
     utilt: {
       name: 'Overhead Clap',
@@ -170,22 +169,22 @@ export const buster: CharDef = {
       ],
     },
     nspec: {
-      name: 'Boulder Lob',
+      // Bowls a boulder underhand: it rolls slowly along the floor and drops off ledges.
+      name: 'Boulder Roll',
       total: 46,
       anim: keys(
         [0, S],
-        [14, S, { lean: -25, a1: 210, f1: 200, a2: 200, f2: 190 }],
-        [20, S, { lean: 25, a1: 120, f1: 110, a2: 120, f2: 110 }],
-        [28, S, { lean: 25, a1: 120, f1: 110, a2: 120, f2: 110 }],
+        [14, crouch, { lean: 15, a1: -40, f1: -25, a2: -40, f2: -25 }],
+        [20, crouch, { lean: 40, a1: 60, f1: 65, a2: 60, f2: 65 }],
+        [28, crouch, { lean: 40, a1: 60, f1: 65, a2: 60, f2: 65 }],
         [46, S],
       ),
-      proj: [{ f: 20, kind: 'boulder', x: 30, y: 85, speed: 9, ang: 40, dmg: 12, hitAng: 45, bkb: 42, kbg: 64 }],
+      proj: [{ f: 20, kind: 'boulder', x: 55, y: -25, speed: 4, ang: 0, dmg: 12, hitAng: 50, bkb: 42, kbg: 64 }],
     },
     sspec: {
       name: 'Charging Tackle',
       total: 52,
       turn: true,
-      armor: [5, 30],
       stopOnHit: true,
       anim: keys(
         [0, S],
@@ -206,7 +205,6 @@ export const buster: CharDef = {
     uspec: {
       name: 'Rocket Leap',
       total: 50,
-      armor: [1, 10],
       drift: 1.2,
       anim: keys(
         [0, S],
@@ -221,7 +219,6 @@ export const buster: CharDef = {
     dspec: {
       name: 'Ground Pound',
       total: 14,
-      armor: [6, 12],
       untilLand: 12,
       onLand: 'dspecLand',
       anim: keys(

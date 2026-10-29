@@ -30,6 +30,15 @@ const SIDE_RECOVERY = new Set<CharId>(['fisticuffs', 'buster', 'phantom']);
 /** How far each character likes to stay from its target. */
 const PREFERRED: Record<CharId, number> = { fisticuffs: 35, spartan: 120, ranger: 360, buster: 70, phantom: 95 };
 
+/**
+ * Characters that fight in the air: how often they jump in toward the target,
+ * how close they drift in the air, and how near the target has to be before
+ * they stop throwing their projectile and use aerials instead.
+ */
+const AERIAL: Partial<Record<CharId, { jumpIn: number; airDistance: number; projectileFrom: number }>> = {
+  phantom: { jumpIn: 0.5, airDistance: 40, projectileFrom: 200 },
+};
+
 // ---------------------------------------------------------------- what each move covers
 
 interface Reach {
@@ -247,14 +256,23 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
       cpu.tap = bits & (BTN.attack | BTN.special);
       cpu.hold = bits & (BTN.left | BTN.right | BTN.up | BTN.down);
       // Phantom hits and runs.
-      if (me.char === 'phantom') cpu.retreat = 40;
+      if (me.char === 'phantom') cpu.retreat = 24;
       return;
     }
   }
 
-  // Move to a comfortable distance.
-  const want = PREFERRED[me.char];
   const dist = Math.abs(dx);
+  // Air fighters jump in to use their aerials (a short hop when close, a full jump when further).
+  const air = AERIAL[me.char];
+  if (air && me.grounded && cpu.retreat === 0 && dist > 50 && dist < 300 && Math.abs(dy) < 120 && r() < air.jumpIn * L.aggression) {
+    cpu.hold = toward(target.x);
+    cpu.tap = BTN.jump;
+    cpu.jumpHold = dist > 170 ? 6 : 0;
+    return;
+  }
+
+  // Move to a comfortable distance.
+  const want = air && !me.grounded ? air.airDistance : PREFERRED[me.char];
   const edge = st.main.x2 - 50;
   let move = 0;
   if (cpu.retreat > 0 || dist < want - 70) move = -face;
@@ -296,6 +314,9 @@ function chooseMove(me: FighterState, target: FighterState, face: number, cpu: C
     if (rch.slot === 'uspec' && !me.upSpecial) continue;
     const m = c.moves[rch.slot];
     if (m.needsWeapon && me.weaponOut) continue;
+    // Air fighters keep the projectile for targets further away; closer in, they jump in instead.
+    const air = AERIAL[me.char];
+    if (air && rch.slot === 'nspec' && Math.abs(target.x - me.x) < air.projectileFrom) continue;
     // Where the target will be when the move comes out.
     const ahead = L.predict ? rch.startup : 0;
     const tx = target.x + (target.vx + target.kbSpeed * target.kbX) * ahead - me.x;

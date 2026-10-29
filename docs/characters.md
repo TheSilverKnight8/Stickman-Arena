@@ -71,43 +71,43 @@ Weight 98 · run speed 6 · air speed 4.2 · jump 13 / double jump 12 · gravity
 
 ## Buster — Heavyweight
 
-Heavyweight. Big, slow, hits very hard and survives long. Falls fast, so Buster is easy to combo. Armor on four moves; it holds against one hit per move.
+Heavyweight. Big, slow, hits very hard and survives long. Falls fast, so Buster is easy to combo. No armor; instead Buster takes 15% less knockback while standing on the ground.
 
-Weight 130 · run speed 4.8 · air speed 3.6 · jump 12.7 / double jump 11.5 · gravity 0.59 · fall speed 10.3 (fast fall 16) · projectile limit 1 · armor holds against knockback under 100
+Weight 130 · run speed 4.8 · air speed 3.6 · jump 12.7 / double jump 11.5 · gravity 0.59 · fall speed 10.3 (fast fall 16) · projectile limit 1 · takes 15% less knockback while standing on the ground
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Neutral (ground) | **Palm Shove** — Palm Shove with both hands. | 9 | 30 | 9 |  |
-| Side (ground) | **Hammer Fist** — Raises both fists and slams them forward. Armored while winding up. | 14 | 44 | 15 | armor frames 6–16 |
+| Side (ground) | **Hammer Fist** — Raises both fists and slams them forward. | 18 | 50 | 15 |  |
 | Up (ground) | **Overhead Clap** — Claps both hands together overhead. | 12 | 40 | 13 |  |
 | Down (ground) | **Ground Punch** — Punches the floor in front. | 12 | 38 | 12 |  |
 | Neutral (air) | **Body Spin** — Body Spin with both arms out. | 10 | 40 | 11 | landing lag 14 |
 | Side (air) | **Double Slam** — Both fists down in front. The fists spike; the arms launch. | 16 | 46 | 17 | landing lag 18; spikes |
 | Up (air) | **Headbutt** — Headbutt upward. | 11 | 38 | 14 | landing lag 12 |
 | Down (air) | **Drill Stomp** — Both feet down, spikes. | 14 | 44 | 15 | landing lag 18; spikes |
-| Neutral special | **Boulder Lob** — The projectile. Throws a heavy boulder in an arc; it breaks on the stage. One at a time. | 20 | 46 | 12 | projectile (boulder) |
-| Side special | **Charging Tackle** — An armored shoulder charge. Stops when it hits. | 8 | 52 | 12 | armor frames 5–30 |
-| Up special | **Rocket Leap** — Armored crouch, then a big jump with fists up. The recovery move. | 10 | 50 | 13 | armor frames 1–10 |
-| Down special | **Ground Pound** — Hops if on the ground, then plummets (armored, spikes in the air); landing sends shockwaves along the floor both ways. | 12 | 14 + 26 on landing | 14 | armor frames 6–12; falls until landing; spikes |
+| Neutral special | **Boulder Roll** — The projectile. Bowls a boulder underhand: it rolls slowly along the floor (or drops to it first if thrown in the air), rolls off ledges, and breaks when it hits someone. One at a time. | 20 | 46 | 12 | projectile (boulder) |
+| Side special | **Charging Tackle** — A shoulder charge. Stops when it hits. | 8 | 52 | 12 |  |
+| Up special | **Rocket Leap** — A crouch, then a big jump with fists up. The recovery move. | 10 | 50 | 13 |  |
+| Down special | **Ground Pound** — Hops if on the ground, then plummets (spikes in the air); landing sends shockwaves along the floor both ways. | 12 | 14 + 26 on landing | 14 | falls until landing; spikes |
 
 ## Phantom — Hit and Run
 
 Hit and run. The fastest and highest-jumping fighter, with quick, safe pokes and low damage. Light and thin: the poses pull the body away while a limb reaches out (agile hurtbox shifting), and Phantom's limbs are thinner targets than anyone else's.
 
-Weight 78 · run speed 8 · air speed 5.2 · jump 13.9 / double jump 13.4 · gravity 0.42 · fall speed 8.1 (fast fall 13) · projectile limit 1
+Weight 78 · run speed 8 · air speed 5.2 · jump 13.9 / double jump 13.4 · gravity 0.42 · fall speed 8.1 (fast fall 13) · projectile limit 2
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Neutral (ground) | **Quick Poke** — The arm shoots out while the body leans back. | 2 | 12 | 4 |  |
-| Side (ground) | **Lunge Poke** — A long low lunge forward. | 6 | 24 | 9 |  |
-| Up (ground) | **Arc Kick** — Arches backward under a kick that sweeps overhead. | 4 | 22 | 8 |  |
-| Down (ground) | **Slide** — Drops almost flat and slides feet-first, popping the opponent up. | 4 | 26 | 8 |  |
-| Neutral (air) | **Whirl** — A quick spin that pulls opponents in toward Phantom (and a little up), to set up a follow-up on stage or off it. | 4 | 22 | 6 | landing lag 5 |
-| Side (air) | **Air Lunge** — Stretches forward with a poke; the fingertips hit harder. | 6 | 24 | 10 | landing lag 6 |
-| Up (air) | **Scissor Kick** — Both legs scissor overhead. | 4 | 22 | 8 | landing lag 5 |
-| Down (air) | **Hover Stomp** — Hovers a moment with the knees tucked, then stomps both feet straight down. The first two frames of the stomp spike (send straight down), for finishing opponents offstage; it does not drop Phantom. | 8 | 30 | 10 | landing lag 8; spikes |
-| Neutral special | **Phantom Orb** — The projectile. A slow orb drifts forward. One at a time; it fades if Phantom is hit. | 10 | 28 | 6 | projectile (orb) |
-| Side special | **Blink Strike** — A fast dash; cannot be hit for the first few frames. | 6 | 30 | 9 | can't be hit frames 2–7 |
-| Up special | **Phase Rise** — Vanishes and reappears up to about two and a half body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 32 | 5 | can't be hit frames 3–14 |
-| Down special | **Reaper Kick** — The kill move. The knee comes up, then the heel drives straight out while Phantom leans far back. Only the heel is the strong hit; the shin does a weak one. Slow to start and slow to finish, so a miss is easy to punish. | 13 | 46 | 13 |  |
+| Neutral (ground) | **Quick Poke** — The arm shoots out while the body leans back. | 2 | 10 | 4 |  |
+| Side (ground) | **Lunge Poke** — A long low lunge forward. | 6 | 20 | 9 |  |
+| Up (ground) | **Arc Kick** — Arches backward under a kick that sweeps overhead. | 4 | 18 | 8 |  |
+| Down (ground) | **Slide** — Drops almost flat and slides feet-first, popping the opponent up. | 4 | 22 | 8 |  |
+| Neutral (air) | **Whirl** — A quick spin that pulls opponents in toward Phantom (and a little up), to set up a follow-up on stage or off it. | 4 | 18 | 6 | landing lag 4 |
+| Side (air) | **Air Lunge** — Stretches forward with a poke; the fingertips hit harder. | 6 | 20 | 10 | landing lag 4 |
+| Up (air) | **Scissor Kick** — Both legs scissor overhead. | 4 | 18 | 8 | landing lag 4 |
+| Down (air) | **Hover Stomp** — Hovers a moment with the knees tucked, then stomps both feet straight down. The first two frames of the stomp spike (send straight down), for finishing opponents offstage; it does not drop Phantom. | 8 | 25 | 10 | landing lag 6; spikes |
+| Neutral special | **Phantom Orb** — The projectile. An orb flies forward. Two at a time; they fade if Phantom is hit. | 10 | 23 | 8 | projectile (orb) |
+| Side special | **Blink Strike** — A fast dash; cannot be hit for the first few frames. | 6 | 25 | 9 | can't be hit frames 2–7 |
+| Up special | **Phase Rise** — Vanishes and reappears up to about two and a half body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 27 | 5 | can't be hit frames 3–14 |
+| Down special | **Reaper Kick** — The kill move. The knee comes up, then the heel drives straight out while Phantom leans far back. The heel is the strongest hit (KOs a mid-weight at about 100% in the middle of the stage); the rest of the leg launches too. Slow to start, so it needs a read or a set-up. | 13 | 36 | 15 |  |
 

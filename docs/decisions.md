@@ -92,7 +92,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Knockback | The Smash formula: knockback grows with the victim's damage after the hit, the move's damage, and its knockback growth, and shrinks with weight. Launch speed falls off steadily. Hitstun is 0.4 frames per point of knockback, worked out without the weight (Caleb's change in Balance pass 3), so heavy fighters fly less far but are stunned as long as anyone. |
 | Hitlag | Both fighters freeze briefly on a hit (4 to 18 frames, by damage). Multi-hit moves freeze for 2 frames per hit. |
 | Hitboxes and hurtboxes | Hurtboxes come from the stick figure's own limbs, head and torso, so they follow every animation (this is how Phantom's hurtbox shifts). Spartan's sword is not a hurtbox (a disjoint). A hitbox on a fist or foot covers the forearm or shin too, so point-blank hits connect. |
-| Rough KO percents | Against a mid-weight fighter in the middle of the stage: Spartan's Grand Slash about 80%, Buster's Hammer Fist about 100%, Fisticuffs' Haymaker about 100%, Ranger's fully charged shot about 110%, Phantom's Reaper Kick about 120% (heel only; Phantom's other finishers about 170%). Edge KOs come earlier. |
+| Rough KO percents | Against a mid-weight fighter in the middle of the stage: Spartan's Grand Slash about 80%, Buster's Hammer Fist about 100%, Fisticuffs' Haymaker about 100%, Ranger's fully charged shot about 110%, Phantom's Reaper Kick about 100% from the heel (Air Lunge about 160%, Arc Kick about 210%). Edge KOs come earlier. |
 | Respawn | After a KO: 1 second off screen, then a platform above the stage for up to 2.5 seconds (any button drops), then 2 seconds where the fighter cannot be hit (blinking). |
 | End of match | Last fighter with stocks wins. At 3:00, most stocks wins. A tie goes to sudden death: 1 stock each at 300%, with a new countdown; after 1 minute it is a draw. If both fighters lose their last stock on the same frame, that is also a sudden death (or a draw, if it happens in sudden death). |
 | Leaving a CPU match | Ends it (Leave button, or Escape), back to character select. |
@@ -123,14 +123,14 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 
 | Item | Choice |
 | --- | --- |
-| Armor | Buster only, on 4 moves: Hammer Fist (wind-up), Charging Tackle, Rocket Leap (crouch), Ground Pound (the whole fall). A hit with knockback under 100 does its damage but does not launch or interrupt. Harder hits (or any hit once Buster's damage is high) break through. A yellow glow shows when armor is on. Armor holds against one hit per move; the next hit in the same move goes through (Caleb's change in Balance pass 3). |
+| Armor | Removed in Balance pass 4 (Caleb's change; the spec gives Buster armor on some moves). Before that: Buster only, on Hammer Fist, Charging Tackle, Rocket Leap and Ground Pound; a hit with knockback under 100 did its damage without launching, and from Balance pass 3 it held for one hit per move. Instead, Buster now takes 15% less knockback while standing on the ground. The armor code stays in the simulation, unused. |
 | Reflect | Spartan's Deflect. Sends arrows, orbs and boulders back 15% faster and 25% stronger, now owned by Spartan. The thrown sword and shockwaves are not reflected. |
 | Ranger | Up to 5 arrows at once; a shot past the limit does not fire. Arrows fall slightly, stop at the stage, and keep flying if Ranger is hit. Charged Shot: speed up to +60%, damage up to +8, more knockback. |
 | Ranger's ending lag (Caleb's change before merging Stage 3) | More frames before Ranger can act again after shooting: Quick Shot, Skyward Shot and Up Shot 26 → 34; Air Shot 28 → 36; Dive Shot 30 → 38; Charged Shot 36 → 46; Triple Shot 38 → 48. Landing lag is unchanged. Rocket Arrow (the up special) is left out (Caleb). |
 | Spartan | One sword, thrown as a stab (Caleb's change before merging Stage 3), aimed 30° upward since Balance pass 2 (Caleb's change): it flies straight out along that line point first, slows down, and comes straight back along the same line without turning; it can hit on the way out and again on the way back. It hits along the front of the blade, from just behind the middle to the tip. Spartan catches it when it reaches the hand; if Spartan has moved off its line (for example, is in the air), it flies on and is back in hand once it leaves the screen, about a second later than a catch. While it is out, moves that need the sword do not start. If Spartan is KO'd, the sword is back in hand on respawn. |
 | Phantom's kill power (Caleb's change before merging Stage 3) | More knockback growth on the three finishers: Air Lunge 82 → 92, Recoil Kick 76 → 86, Arc Kick 78 → 88. Against a mid-weight fighter in the middle of the stage they now KO at about 190%, 190% and 260% (were 210%, 220% and 300%). Phantom stays the weakest finisher, as the spec's weakness says. (Recoil Kick was later replaced by Reaper Kick: see Balance pass 1.) |
-| Buster | One boulder at a time (Boulder Lob waits until the last one is gone). Ground Pound's shockwaves are separate and not limited. |
-| Phantom | One orb at a time. The orb fades if Phantom is hit. |
+| Buster | One boulder at a time (Boulder Roll waits until the last one is gone). It rolls along the floor at 4 units a frame, drops to the floor first if thrown in the air, rolls off ledges, and breaks when it hits someone or after 4 seconds. Ground Pound's shockwaves are separate and not limited. |
+| Phantom | Two orbs at a time (Balance pass 4; was one). Orbs fade if Phantom is hit. |
 
 ### Weight, speed and jump
 
@@ -180,6 +180,23 @@ Caleb: Phantom's moves connect unreliably and its movement makes them awkward; i
 
 CPU vs CPU (Hard against Hard, every pairing 16 times; this measures the CPU's way of playing each fighter as much as the fighters), wins after Balance pass 2 → after pass 3: Buster 94% → 92%, Spartan 64% → 69%, Ranger 53% → 47%, Fisticuffs 39% → 42%, Phantom 0% → 0%. Phantom's 0% is the CPU's way of playing it (mostly throwing its orb from far away), so the CPU numbers say nothing yet about the Phantom changes.
 
+### Balance pass 4 (Caleb's requests after Balance pass 3)
+
+Before changing anything, the CPU matches were measured fighter by fighter (Hard against Hard, every pairing 8 times). Buster was winning on his kill moves, not armor: Boulder Lob made 47 of his 89 KOs and Hammer Fist 22, while armor absorbed about 2 hits a match. Phantom made 12 KOs and lost 83 stocks: the CPU threw its slow orb 1,387 times, which chips but almost never KOs, and rarely used its kill moves. Caleb then asked for the changes below.
+
+| Item | Choice |
+| --- | --- |
+| Buster: Boulder Lob → **Boulder Roll** | Bowled underhand along the floor instead of lobbed in an arc: it rolls slowly (4 units a frame), drops to the floor first if thrown in the air, rolls off ledges, and breaks on a hit or after 4 seconds. Damage and knockback as after pass 3 (12 damage). It only hits opponents on or near the floor now, so it is no longer an anti-air. |
+| Buster: no armor | All armor removed; Buster takes 15% less knockback while standing on the ground instead. |
+| Buster: Hammer Fist | Hits 4 frames later (frame 18 instead of 14), with 6 more frames in total. Damage and knockback unchanged. |
+| Phantom: Reaper Kick, a kill move to win with | Same start (frame 13), less ending lag (46 → 36 frames in total). The heel is a bigger, stronger hit (15 damage, KOs a mid-weight in the middle of the stage at about 100%), and the rest of the leg now launches too (11 damage) instead of a weak 7. |
+| Phantom: less ending lag | Caleb asked not to make moves faster, so startup and active frames are unchanged. Every other move keeps 70% of its ending lag (the frames after its last hit): for example Quick Poke 12 → 10 frames in total, Lunge Poke and Air Lunge 24 → 20, Arc Kick, Whirl and Scissor Kick 22 → 18, Hover Stomp 30 → 25, Phantom Orb 28 → 23, Phase Rise 32 → 27. Landing lag on its aerials is 4 (Hover Stomp 6). The animations are shortened to match. |
+| Phantom: more consequential hitboxes | Every hitbox 4 units larger; Air Lunge's tip and Arc Kick hit a little harder (KO at about 160% and 210%). |
+| Phantom: stronger orb | Flies almost twice as fast (9 units a frame instead of 5), 8 damage instead of 6, two at a time. Its knockback was kept the same: a trial with more knockback made the orb Phantom's main way to KO (53 of 71 KOs), which is not what Reaper Kick is for. |
+| CPU: Phantom fights in the air | See the CPU section. With the orb allowed from further than 300 units, the CPU Phantom used its aerials and Reaper Kick the most but won 16%; from further than 200 units, it mixes orbs at range with aerials up close and wins 22–25%. 200 was kept. |
+
+CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Buster 88%, Spartan 53%, Ranger 47%, Fisticuffs 41%, Phantom 22% (was 0%). Phantom's KOs: orb 28, Reaper Kick 15, Air Lunge 5, Hover Stomp 2. Buster still wins most matches: his rolling boulder does the most damage of any move in the game (the CPU bowls it constantly), and Rocket Leap (his up special, 13 damage, KOs at about 130%) became his main KO move (42 of 88).
+
 Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
 
 | Fighter | Weight | Run speed | Jump height |
@@ -222,7 +239,7 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after Balance pass 3): Hard beats Easy 29–0 (1 draw) and Normal 27–3; Normal beats Easy 28–2.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close. Phantom (since Balance pass 4, Caleb's request) fights in the air: it jumps in toward the opponent (a short hop when close, a full jump when further), uses its aerials and specials up close, throws orbs only when the opponent is more than 200 units away, and backs off briefly after a hit. Measured over 30 matches each (after Balance pass 4): Hard beats Easy 30–0 and Normal 27–3; Normal beats Easy 29–1.
 
 ### Online (Stage 3)
 

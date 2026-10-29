@@ -936,7 +936,8 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
     owner: f.slot,
     kind: def.kind,
     x: j.hip[0] + f.facing * def.x,
-    y: def.kind === 'shock' ? f.y : j.hip[1] + def.y,
+    // Shockwaves run along the floor; a boulder thrown on the ground starts resting on it.
+    y: def.kind === 'shock' ? f.y : def.kind === 'boulder' && f.grounded ? f.y + PROJ_R.boulder : j.hip[1] + def.y,
     vx,
     vy: def.kind === 'shock' ? 0 : vy,
     dir: vx < -0.001 ? -1 : vx > 0.001 ? 1 : f.facing,
@@ -971,7 +972,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         p.vy -= 0.06;
         break;
       case 'boulder':
-        p.vy -= 0.4;
+        p.vy -= 0.5;
         break;
       case 'sword': {
         // A stab throw: straight out along its aim, point first, slowing down; then straight back along the same line.
@@ -997,9 +998,14 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         break;
       }
     }
+    const prevY = p.y;
     p.x += p.vx;
     p.y += p.vy;
-    if (p.t > PROJ_LIFE[p.kind]) gone = true;
+    if (p.kind === 'boulder') rollOnFloor(st, p, prevY);
+    if (p.t > PROJ_LIFE[p.kind]) {
+      gone = true;
+      if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
+    }
     // Arrows, orbs and boulders stop at the stage; the sword flies through it.
     if (p.kind !== 'sword' && p.kind !== 'shock' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
       gone = true;
@@ -1016,6 +1022,20 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
     keep.push(p);
   }
   s.projectiles = keep;
+}
+
+/** The boulder rolls: it rests on the floor or a platform it comes down onto, and falls off their edges. */
+function rollOnFloor(st: (typeof STAGES)[keyof typeof STAGES], p: ProjectileState, prevY: number) {
+  if (p.vy > 0) return;
+  const r = PROJ_R.boulder;
+  for (const sf of [{ x1: st.main.x1, x2: st.main.x2, y: 0 }, ...st.plats]) {
+    if (p.x < sf.x1 || p.x > sf.x2) continue;
+    if (prevY - r >= sf.y - 0.01 && p.y - r <= sf.y) {
+      p.y = sf.y + r;
+      p.vy = 0;
+      return;
+    }
+  }
 }
 
 /** Returns true when the projectile is used up. */
