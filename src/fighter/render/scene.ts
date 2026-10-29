@@ -1,14 +1,20 @@
 import { CHARS } from '../sim/chars';
-import { hidden, jointsOf, moveOf } from '../sim/body';
+import { hidden, hitsOf, jointsOf, moveOf } from '../sim/body';
+import type { Joints } from '../sim/skeleton';
 import { STAGES } from '../sim/stages';
-import type { FighterState, MatchState, ProjectileState, SimEvent } from '../sim/types';
+import { step } from '../sim/step';
+import type { Act, FighterState, MatchState, ProjectileState, SimEvent } from '../sim/types';
 import { CREAM, NAVY, RED, drawFigure, drawSword, shade } from './figure';
 
-// Draws a match: the stage, fighters, projectiles, hit effects and the HUD.
+// Draws a match: the stage, fighters, projectiles, effects and the HUD.
 // Nothing here changes the match; effects and the camera live only on screen.
+//
+// Two kinds of effects: hit effects (sparks, KO bursts, the kill spark) and
+// movement and move effects (jump puffs, dash dust, fast-fall streaks,
+// afterimages on dodges and travelling moves, swing trails).
 
 interface Effect {
-  kind: 'spark' | 'ko' | 'dust' | 'shatter' | 'flash' | 'puff' | 'armor';
+  kind: 'spark' | 'ko' | 'dust' | 'shatter' | 'flash' | 'puff' | 'armor' | 'jumpdust' | 'ring' | 'dash' | 'streak';
   x: number;
   y: number;
   t: number;
@@ -16,7 +22,35 @@ interface Effect {
   size: number;
   angle: number;
   color: string;
+  /** Facing, for effects that point one way (dash dust). */
+  dir?: number;
 }
+
+/** What the renderer remembers about each fighter from the frames before (for movement effects). */
+interface Track {
+  act: Act;
+  facing: number;
+  fastFall: boolean;
+  hidden: boolean;
+  /** Recent poses, newest last (afterimages). */
+  ghosts: Joints[];
+  /** Recent lead points of an active hitbox, newest last (swing trails); null on frames with no hitbox. */
+  trail: ([number, number, number] | null)[];
+}
+
+/** A hit that will KO: the background changes for a moment. */
+interface KillSpark {
+  x: number;
+  y: number;
+  t: number;
+  life: number;
+  spin: number;
+}
+
+/** Hits with less knockback than this are never checked for a KO. */
+const KILL_CHECK_KB = 60;
+/** How far ahead (frames) to look for the KO. */
+const KILL_LOOKAHEAD = 150;
 
 export interface PlayerLabel {
   name: string;
@@ -33,6 +67,8 @@ export class Scene {
   /** Damage shown in the HUD bounces when it goes up. */
   private bump: number[] = [];
   private lastDamage: number[] = [];
+  private tracks: (Track | undefined)[] = [];
+  private kill: KillSpark | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -41,14 +77,42 @@ export class Scene {
     this.ctx = canvas.getContext('2d')!;
   }
 
-  /** Turns simulation events into on-screen effects. */
+  /** Called once per simulation frame: turns events into effects and follows each fighter's movement. */
   onEvents(s: MatchState, events: SimEvent[]) {
     for (const e of events) {
       switch (e.type) {
         case 'hit': {
           const big = e.kb > 90;
+          if (e.kb >= KILL_CHECK_KB && this.willKo(s, e.victim)) {
+            this.kill = { x: e.x, y: e.y, t: 0, life: 44, spin: (this.time * 0.7) % 6.28 };
+            this.add('spark', e.x, e.y, 26, 70, RED);
+            this.add('flash', e.x, e.y, 22, 70, CREAM);
+            this.shake = Math.max(this.shake, 20);
+            break;
+          }
           this.add('spark', e.x, e.y, big ? 18 : 12, Math.min(48, 18 + e.dmg * 2.2), RED);
           if (big) this.shake = Math.max(this.shake, Math.min(14, e.kb / 12));
+          break;
+        }
+        case 'jump': {
+          const f = s.fighters[e.slot];
+          if (e.double) this.add('ring', f.x, f.y + 4, 18, CHARS[f.char].halfWidth * 3, this.colorOf(f));
+          else this.add('jumpdust', f.x, f.y, 14, 1, NAVY);
+          break;
+        }
+        case 'dodge': {
+          const f = s.fighters[e.slot];
+          this.add('puff', f.x, f.y + CHARS[f.char].height * 0.5, 12, 26, shade(CREAM, -0.2));
+          break;
+        }
+        case 'ledge': {
+          const f = s.fighters[e.slot];
+          this.add('flash', f.x, f.y + CHARS[f.char].height * 0.85, 10, 18, NAVY);
+          break;
+        }
+        case 'shoot': {
+          const p = [...s.projectiles].reverse().find((q) => q.owner === e.slot);
+          if (p) this.add('flash', p.x, p.y, 8, 14, this.colorOf(s.fighters[e.slot]));
           break;
         }
         case 'armor':
@@ -74,6 +138,56 @@ export class Scene {
           break;
       }
     }
+    this.track(s);
+  }
+
+  /** Follows each fighter from frame to frame for the movement effects. */
+  private track(s: MatchState) {
+    for (const f of s.fighters) {
+      const was = this.tracks[f.slot];
+      const j = f.act === 'dead' || f.act === 'out' ? null : jointsOf(f);
+      const isHidden = hidden(f);
+      const tr: Track = was ?? { act: f.act, facing: f.facing, fastFall: f.fastFall, hidden: isHidden, ghosts: [], trail: [] };
+      if (was) {
+        const c = CHARS[f.char];
+        // Dust kicked up when a run starts or turns around.
+        if (f.act === 'run' && (was.act !== 'run' || was.facing !== f.facing)) {
+          this.effects.push({ kind: 'dash', x: f.x - f.facing * c.halfWidth, y: f.y, t: 0, life: 16, size: 1, angle: 0, color: NAVY, dir: f.facing });
+        }
+        // A streak above the head when a fast fall starts.
+        if (f.fastFall && !was.fastFall) this.add('streak', f.x, f.y + c.height, 12, c.height * 0.6, this.colorOf(f));
+        // Reappearing after a teleport.
+        if (was.hidden && !isHidden && j) this.add('puff', f.x, f.y + 45, 18, 30, this.colorOf(f));
+      }
+      tr.act = f.act;
+      tr.facing = f.facing;
+      tr.fastFall = f.fastFall;
+      tr.hidden = isHidden;
+      if (j && !isHidden) tr.ghosts.push(j);
+      else tr.ghosts.length = 0;
+      if (tr.ghosts.length > 8) tr.ghosts.shift();
+      const lead = j && !isHidden ? hitsOf(f, j)[0] : undefined;
+      tr.trail.push(lead ? [lead.shape[2], lead.shape[3], lead.shape[4]] : null);
+      if (tr.trail.length > 6) tr.trail.shift();
+      this.tracks[f.slot] = tr;
+    }
+  }
+
+  /**
+   * Whether this hit's launch carries the fighter past a blast zone: plays a
+   * copy of the match forward with nobody pressing anything. A fighter who is
+   * no longer flying from the hit by then (and could still recover) does not count.
+   */
+  private willKo(s: MatchState, slot: number): boolean {
+    const sim = structuredClone(s);
+    const none = sim.fighters.map(() => 0);
+    for (let i = 0; i < KILL_LOOKAHEAD; i++) {
+      const v = sim.fighters[slot];
+      const flying = v.act === 'hurt' || v.kbSpeed > 0.5 || v.hitlag > 0;
+      if (!flying || sim.phase === 'over') return false;
+      if (step(sim, none).some((e) => e.type === 'ko' && e.slot === slot)) return true;
+    }
+    return false;
   }
 
   private add(kind: Effect['kind'], x: number, y: number, life: number, size: number, color: string) {
@@ -103,6 +217,7 @@ export class Scene {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#f6e7cf';
     ctx.fillRect(0, 0, W, H);
+    if (this.kill) this.drawKillSpark(W, H);
     this.drawBackdrop(W, H);
 
     // World transform: y up.
@@ -241,6 +356,20 @@ export class Scene {
     let alpha = 1;
     if (f.act === 'dodge' || f.act === 'airdodge') alpha = 0.45;
     const m = moveOf(f);
+    const tr = this.tracks[f.slot];
+    // Afterimages while dodging or during a move that carries the fighter fast.
+    if (tr && (f.act === 'dodge' || f.act === 'airdodge' || (f.act === 'move' && (Math.abs(f.vx) > 8.5 || m?.teleport)))) {
+      const g = tr.ghosts;
+      [
+        [g.length - 3, 0.26],
+        [g.length - 5, 0.17],
+        [g.length - 7, 0.09],
+      ].forEach(([i, a]) => {
+        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing });
+      });
+    }
+    // Swing trail: a fading smear along the path of the attack's leading hitbox.
+    if (tr && tr.trail.some(Boolean)) this.drawTrail(tr.trail, this.colorOf(f));
     if (m?.intangible && f.t >= m.intangible[0] && f.t <= m.intangible[1]) alpha = 0.55;
     // Respawn invincibility blinks.
     if ((f.invincible > 0 || f.act === 'respawn') && Math.floor(this.time / 4) % 2 === 0) alpha = Math.min(alpha, 0.55);
@@ -270,6 +399,62 @@ export class Scene {
       ctx.arc(j.hand1[0], j.hand1[1], 6 + (f.charge / m.charge.max) * 18, 0, Math.PI * 2);
       ctx.stroke();
     }
+  }
+
+  private drawTrail(trail: Track['trail'], color: string) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    for (let i = 1; i < trail.length; i++) {
+      const a = trail[i - 1];
+      const b = trail[i];
+      if (!a || !b) continue;
+      const k = i / trail.length;
+      ctx.globalAlpha = 0.32 * k;
+      ctx.lineWidth = b[2] * 1.3 * (0.4 + 0.6 * k);
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ---------------------------------------------------------------- kill spark
+
+  /** The background turns red with rays from the hit, then fades back. */
+  private drawKillSpark(W: number, H: number) {
+    const k = this.kill!;
+    k.t++;
+    if (k.t >= k.life) {
+      this.kill = null;
+      return;
+    }
+    const p = k.t / k.life;
+    const a = p < 0.2 ? 1 : 1 - (p - 0.2) / 0.8;
+    const ctx = this.ctx;
+    const [hx, hy] = this.toScreen(k.x, k.y, W, H);
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = RED;
+    ctx.fillRect(0, 0, W, H);
+    ctx.translate(hx, hy);
+    ctx.rotate(k.spin + k.t * 0.004);
+    const R = Math.hypot(W, H);
+    const rays = 18;
+    for (let i = 0; i < rays; i++) {
+      const a0 = (i / rays) * Math.PI * 2;
+      const w = (Math.PI / rays) * (i % 2 === 0 ? 0.55 : 0.3);
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(0, 38, 87, 0.45)' : 'rgba(250, 238, 218, 0.35)';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a0 - w) * R, Math.sin(a0 - w) * R);
+      ctx.lineTo(Math.cos(a0 + w) * R, Math.sin(a0 + w) * R);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   // ---------------------------------------------------------------- projectiles
@@ -448,6 +633,63 @@ export class Scene {
           ctx.beginPath();
           ctx.arc(0, 0, e.size * (0.5 + k), 0, Math.PI * 2);
           ctx.stroke();
+          break;
+        case 'jumpdust':
+          // Two puffs pushed out along the floor, and a short line under the feet.
+          ctx.globalAlpha = (1 - k) * 0.75;
+          ctx.fillStyle = shade(CREAM, -0.38);
+          for (const s of [-1, 1]) {
+            for (let i = 0; i < 2; i++) {
+              ctx.beginPath();
+              ctx.arc(s * (10 + i * 14 + k * 34), 6 + i * 4 + k * 4, (14 - i * 4) * (1 - k * 0.6), 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          ctx.strokeStyle = NAVY;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(-16 - k * 30, 1);
+          ctx.lineTo(16 + k * 30, 1);
+          ctx.stroke();
+          break;
+        case 'ring':
+          // Double jump: a flat ring under the feet that widens and fades.
+          ctx.globalAlpha = (1 - k) * 0.8;
+          ctx.strokeStyle = e.color;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, e.size * (0.6 + k * 0.8), e.size * 0.22 * (0.6 + k * 0.8), 0, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+        case 'dash': {
+          // Dust kicked back from the feet when a run starts.
+          const d = -(e.dir ?? 1);
+          ctx.globalAlpha = (1 - k) * 0.75;
+          ctx.fillStyle = shade(CREAM, -0.38);
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(d * (8 + i * 15 + k * 26), 6 + i * 5 + k * 8, (13 - i * 3) * (1 - k * 0.5), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        }
+        case 'streak':
+          // Fast fall: a short line above the head that shoots up and fades.
+          ctx.globalAlpha = 1 - k;
+          ctx.strokeStyle = e.color;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(0, 6 + k * 20);
+          ctx.lineTo(0, 6 + k * 20 + e.size * (1 - k));
+          ctx.stroke();
+          ctx.strokeStyle = NAVY;
+          ctx.lineWidth = 2;
+          for (const s of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(s * 10, 2 + k * 14);
+            ctx.lineTo(s * 10, 2 + k * 14 + e.size * 0.5 * (1 - k));
+            ctx.stroke();
+          }
           break;
         case 'puff':
           ctx.globalAlpha = (1 - k) * 0.7;
