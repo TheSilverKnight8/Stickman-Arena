@@ -16,7 +16,7 @@ export const BTN = {
 
 // ---------------------------------------------------------------- characters
 
-export type CharId = 'fisticuffs' | 'spartan' | 'ranger' | 'buster' | 'phantom';
+export type CharId = 'fisticuffs' | 'spartan' | 'ranger' | 'buster' | 'phantom' | 'valkyrie';
 
 /** The 12 moves from the spec. */
 export type MoveSlot = 'jab' | 'ftilt' | 'utilt' | 'dtilt' | 'nair' | 'fair' | 'uair' | 'dair' | 'nspec' | 'sspec' | 'uspec' | 'dspec';
@@ -37,6 +37,8 @@ export interface Stats {
   jump: number;
   shortHop: number;
   doubleJump: number;
+  /** Jumps in the air before landing again (default 1, the double jump). */
+  airJumps?: number;
   /** Frames crouched before leaving the ground. */
   squat: number;
 }
@@ -217,7 +219,8 @@ export interface FighterState {
   grounded: boolean;
   /** -1 in the air, 0 on the main stage, 1+ on a platform. */
   surface: number;
-  doubleJump: boolean;
+  /** Air jumps left before landing again. */
+  airJumps: number;
   upSpecial: boolean;
   airDodge: boolean;
   fastFall: boolean;

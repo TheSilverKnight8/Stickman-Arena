@@ -365,7 +365,7 @@ export class Scene {
         [g.length - 5, 0.17],
         [g.length - 7, 0.09],
       ].forEach(([i, a]) => {
-        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing });
+        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing, airborne: !f.grounded });
       });
     }
     // Swing trail: a fading smear along the path of the attack's leading hitbox.
@@ -380,6 +380,7 @@ export class Scene {
       noWeapon: f.weaponOut,
       time: this.time,
       facing: f.facing,
+      airborne: !f.grounded,
     });
     // Armor: a yellow glow while armored frames are on.
     if (m?.armor && f.t >= m.armor[0] && f.t <= m.armor[1]) {

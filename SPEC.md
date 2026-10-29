@@ -80,7 +80,7 @@ Pazaak: the same flow, with deck selection in place of character and stage selec
 - Dodge details (duration, invulnerability, any limit) are **Claude Code decides**.
 
 ### Characters
-Five characters, one per archetype. Characters differ in moves, weight, move speed and jump height. Duplicates are allowed in a match, with a slight palette change for the second.
+Six characters, one per archetype. Characters differ in moves, weight, move speed and jump height. Duplicates are allowed in a match, with a slight palette change for the second.
 
 | Name | Archetype | Color | Strengths | Weaknesses |
 |---|---|---|---|---|
@@ -89,6 +89,7 @@ Five characters, one per archetype. Characters differ in moves, weight, move spe
 | Ranger | Zoner | Green | Average mobility and survivability, plenty of ranged tools | Less effective close up, needs precision to use well |
 | Buster | Heavyweight | Yellow | Great survivability and damage, decent neutral | Low speed, easily comboed |
 | Phantom | Hit and Run | Purple | Excellent mobility, safe moves | Inconsistent damage and kill power, poor survivability and defense |
+| Valkyrie | Aerial Ace | Teal (**Claude Code decides**) | 4 jumps, stronger aerials over ground moves, great air mobility | Poor ground mobility, poor move range |
 
 Per-character constraints:
 - **Fisticuffs:** short range, punchy, has combos.
@@ -96,6 +97,7 @@ Per-character constraints:
 - **Ranger:** an archer, with many attacks that shoot a bow. Ranger still needs some answer to opponents who get close (**Claude Code decides**).
 - **Buster:** large (sprite and hurtbox) with slow frame data, and armor on some moves.
 - **Phantom:** plenty of movement and poking moves. The sprite should have agile hurtbox shifting, which is a deliberate animation and collision detail and should not be left to default hitboxes.
+- **Valkyrie:** a small build with wings. Has 4 jumps. Uses a sword, with poor move range. An emphasis on vertical combos.
 
 ### Stages
 - Five stages. Each has a flat base. Four have some arrangement of 1-4 platforms, and one is the flat base only.

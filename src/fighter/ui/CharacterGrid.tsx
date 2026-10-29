@@ -8,10 +8,10 @@ import { Portrait } from './Portrait';
 
 export type Pick = CharId | 'random';
 
-/** The five fighters and Random, as big buttons. */
+/** The fighters and Random, as big buttons. */
 export function CharacterGrid({ value, onChange, disabled = false }: { value: Pick | null; onChange: (p: Pick) => void; disabled?: boolean }) {
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6" role="radiogroup" aria-label="Fighters">
+    <div className="grid grid-cols-4 gap-3 sm:grid-cols-7" role="radiogroup" aria-label="Fighters">
       {CHAR_IDS.map((id) => (
         <button
           key={id}
@@ -53,7 +53,7 @@ export function CharacterGrid({ value, onChange, disabled = false }: { value: Pi
           <Shuffle className="size-10 text-accent" />
         </span>
         <span className="font-display text-base uppercase leading-none">Random</span>
-        <span className="mt-1 text-[0.6875rem] text-muted">Any of the five</span>
+        <span className="mt-1 text-[0.6875rem] text-muted">Any fighter</span>
       </button>
     </div>
   );
@@ -66,7 +66,7 @@ export function CharacterInfo({ pick }: { pick: Pick | null }) {
     return (
       <div>
         <p className="font-display text-2xl uppercase">Random</p>
-        <p className="mt-1 text-sm text-muted">One of the five fighters, chosen when the match starts.</p>
+        <p className="mt-1 text-sm text-muted">One of the fighters, chosen when the match starts.</p>
       </div>
     );
   const c = CHARS[pick];

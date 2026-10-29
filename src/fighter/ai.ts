@@ -28,18 +28,19 @@ const LEVEL: Record<
 };
 
 /** Characters whose side special carries them sideways (useful for getting back to the stage). */
-const SIDE_RECOVERY = new Set<CharId>(['fisticuffs', 'buster', 'phantom']);
+const SIDE_RECOVERY = new Set<CharId>(['fisticuffs', 'buster', 'phantom', 'valkyrie']);
 
 /** How far each character likes to stay from its target. */
-const PREFERRED: Record<CharId, number> = { fisticuffs: 35, spartan: 120, ranger: 360, buster: 70, phantom: 95 };
+const PREFERRED: Record<CharId, number> = { fisticuffs: 35, spartan: 120, ranger: 360, buster: 70, phantom: 95, valkyrie: 45 };
 
 /**
  * Characters that fight in the air: how often they jump in toward the target,
  * how close they drift in the air, and how near the target has to be before
  * they stop throwing their projectile and use aerials instead.
  */
-const AERIAL: Partial<Record<CharId, { jumpIn: number; airDistance: number; projectileFrom: number }>> = {
+const AERIAL: Partial<Record<CharId, { jumpIn: number; airDistance: number; projectileFrom?: number }>> = {
   phantom: { jumpIn: 0.5, airDistance: 40, projectileFrom: 200 },
+  valkyrie: { jumpIn: 0.6, airDistance: 30 },
 };
 
 // ---------------------------------------------------------------- what each move covers
@@ -213,9 +214,9 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
       if (gap > 140 && SIDE_RECOVERY.has(me.char) && !cpu.triedSide && me.y > -120 && r() < L.recover) {
         cpu.triedSide = true;
         cpu.tap = BTN.special;
-      } else if (me.doubleJump && me.y < 20) {
+      } else if (me.airJumps > 0 && me.y < 20) {
         cpu.tap = BTN.jump;
-      } else if (me.upSpecial && !cpu.triedUp && (me.y < -10 || (!me.doubleJump && me.y < 40))) {
+      } else if (me.upSpecial && !cpu.triedUp && (me.y < -10 || (me.airJumps === 0 && me.y < 40))) {
         cpu.triedUp = true;
         // Easy sometimes forgets.
         if (r() < L.recover) {
@@ -345,7 +346,7 @@ function chooseMove(me: FighterState, target: FighterState, face: number, cpu: C
     if (m.needsWeapon && me.weaponOut) continue;
     // Air fighters keep the projectile for targets further away; closer in, they jump in instead.
     const air = AERIAL[me.char];
-    if (air && rch.slot === 'nspec' && Math.abs(target.x - me.x) < air.projectileFrom) continue;
+    if (air?.projectileFrom && rch.slot === 'nspec' && Math.abs(target.x - me.x) < air.projectileFrom) continue;
     // Where the target will be when the move comes out.
     const ahead = L.predict ? rch.startup : 0;
     const tx = target.x + (target.vx + target.kbSpeed * target.kbX) * ahead - me.x;

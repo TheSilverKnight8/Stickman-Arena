@@ -10,6 +10,7 @@ export const ROSTER: Record<CharId, { strengths: string; weaknesses: string }> =
   ranger: { strengths: 'Average mobility and survivability, plenty of ranged tools', weaknesses: 'Less effective close up, needs precision to use well' },
   buster: { strengths: 'Great survivability and damage, decent neutral', weaknesses: 'Low speed, easily comboed' },
   phantom: { strengths: 'Excellent mobility, safe moves', weaknesses: 'Inconsistent damage and kill power, poor survivability and defense' },
+  valkyrie: { strengths: 'Great air mobility, four jumps, stronger aerials, vertical combos', weaknesses: 'Poor ground mobility, poor move range' },
 };
 
 /** 1 to 5 ratings worked out from the actual numbers, so they always match how the fighter plays. */
@@ -20,7 +21,7 @@ export function ratings(id: CharId) {
     const hi = Math.max(...values);
     return hi === lo ? 3 : 1 + Math.round(((v - lo) / (hi - lo)) * 4);
   };
-  const jumpHeight = (c: (typeof all)[number]) => (c.stats.jump ** 2 + c.stats.doubleJump ** 2) / (2 * c.stats.gravity);
+  const jumpHeight = (c: (typeof all)[number]) => (c.stats.jump ** 2 + c.stats.doubleJump ** 2 * (c.stats.airJumps ?? 1)) / (2 * c.stats.gravity);
   const c = CHARS[id];
   return {
     weight: scale(c.stats.weight, all.map((x) => x.stats.weight)),

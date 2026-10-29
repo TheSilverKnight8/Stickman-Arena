@@ -4,7 +4,7 @@ import type { CharDef, CharId } from '../sim/types';
 
 // Draws one stick figure from its joints. Every figure has a navy outline under
 // its colour so it reads on the cream background (Buster's yellow especially),
-// plus one prop that says who it is: gloves, the sword, the bow, big fists, a scarf.
+// plus one prop that says who it is: gloves, the sword, the bow, big fists, a scarf, wings.
 
 export const NAVY = '#002657';
 export const CREAM = '#faeeda';
@@ -18,9 +18,11 @@ export interface FigureStyle {
   flash?: boolean;
   /** Spartan's sword is flying: draw no sword. */
   noWeapon?: boolean;
-  /** For animated bits that are not part of the simulation (scarf flutter). */
+  /** For animated bits that are not part of the simulation (scarf flutter, wing flaps). */
   time?: number;
   facing?: number;
+  /** In the air: Valkyrie's wings spread and flap. */
+  airborne?: boolean;
 }
 
 type Ctx = CanvasRenderingContext2D;
@@ -51,8 +53,9 @@ export function drawFigure(ctx: Ctx, c: CharDef, j: Joints, st: FigureStyle) {
   const frontLeg: P[] = [j.hip, j.knee1, j.foot1];
   const torso: P[] = [j.hip, j.neck];
 
-  // Phantom's scarf trails behind the neck (decoration only).
+  // Phantom's scarf trails behind the neck, Valkyrie's wings spread from the back (decoration only).
   if (c.id === 'phantom') drawScarf(ctx, j, st);
+  if (c.id === 'valkyrie') drawWings(ctx, j, st);
 
   // Back limbs are a little darker, so arms and legs read in front/behind.
   const parts: [P[], string][] = [
@@ -118,7 +121,52 @@ function drawProp(ctx: Ctx, id: CharId, c: CharDef, j: Joints, st: FigureStyle, 
     case 'ranger':
       drawBow(ctx, j.elbow1, j.hand1);
       break;
+    case 'valkyrie':
+      drawSword(ctx, j.hand1, j.tip, c.body.weapon);
+      break;
   }
+}
+
+/**
+ * Two wings from the upper back: folded down behind on the ground, spread up
+ * and beating in the air. They follow the torso, so they turn with spins.
+ */
+function drawWings(ctx: Ctx, j: Joints, st: FigureStyle) {
+  const facing = st.facing ?? 1;
+  const tx = j.neck[0] - j.hip[0];
+  const ty = j.neck[1] - j.hip[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const u: P = [tx / tl, ty / tl];
+  const back: P = [-facing * u[1], facing * u[0]];
+  const base: P = [j.hip[0] + tx * 0.72, j.hip[1] + ty * 0.72];
+  const t = st.time ?? 0;
+  const flap = st.airborne ? Math.sin(t * 0.32) * 22 : Math.sin(t * 0.05) * 3;
+  const spread = st.airborne ? 1 : 0;
+  const len = st.airborne ? 40 : 33;
+  const one = (deg: number, fill: string) => {
+    const a = (deg * Math.PI) / 180;
+    const d: P = [back[0] * Math.cos(a) + u[0] * Math.sin(a), back[1] * Math.cos(a) + u[1] * Math.sin(a)];
+    const n: P = [u[0] * Math.cos(a) - back[0] * Math.sin(a), u[1] * Math.cos(a) - back[1] * Math.sin(a)];
+    const at = (along: number, out: number): P => [base[0] + d[0] * len * along + n[0] * len * out, base[1] + d[1] * len * along + n[1] * len * out];
+    const pts: P[] = [at(0, 0), at(0.45, 0.2), at(1, 0.08), at(0.8, -0.12), at(0.7, -0.02), at(0.6, -0.22), at(0.47, -0.08), at(0.36, -0.25), at(0.15, -0.1)];
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = NAVY;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (const p of pts.slice(1)) ctx.lineTo(p[0], p[1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Feather lines in the fighter's colour.
+    ctx.strokeStyle = st.flash ? '#ffffff' : st.color;
+    ctx.lineWidth = 2;
+    line(ctx, [at(0.12, 0.02), at(0.8, 0.06)]);
+    line(ctx, [at(0.2, -0.05), at(0.56, -0.12)]);
+  };
+  const angle = -55 + spread * 90 + flap;
+  one(angle + 14, shade(CREAM, -0.14));
+  one(angle, CREAM);
 }
 
 function blob(ctx: Ctx, p: P, r: number, color: string) {

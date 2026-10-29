@@ -1,10 +1,10 @@
-# The five fighters and their 12 moves
+# The six fighters and their 12 moves
 
 Each fighter has 8 normal attacks (neutral, up, down and side, on the ground and in the air) and 4 specials (the same on the ground and in the air). The direction held when pressing Attack or Special picks the move.
 
 Numbers come straight from `src/fighter/sim/chars/`. **Starts** is the first frame that can hit (60 frames = 1 second); **Ends** is when the fighter can act again; **Damage** is the most a single hit does (multi-hit moves list the hit count). These are first-pass values for playtesting.
 
-Shared by everyone: a double jump (once per jump, back on landing); a spot dodge on the ground or in the air (cannot be hit for most of it; the air dodge works once per jump); tap down in the air to fall faster; hold down on a platform to drop through. The up special can be used once in the air and comes back on landing or when hit; other specials have no limit. An aerial that lands before its hit is over keeps going on the ground for up to 8 frames, so it still hits, then the landing lag starts.
+Shared by everyone: a double jump (once per jump, back on landing; Valkyrie gets three jumps in the air instead of one); a spot dodge on the ground or in the air (cannot be hit for most of it; the air dodge works once per jump); tap down in the air to fall faster; hold down on a platform to drop through. The up special can be used once in the air and comes back on landing or when hit; other specials have no limit. An aerial that lands before its hit is over keeps going on the ground for up to 8 frames, so it still hits, then the landing lag starts.
 
 ## Fisticuffs — Rushdown
 
@@ -110,4 +110,25 @@ Weight 78 · run speed 8 · air speed 5.2 · jump 13.9 / double jump 13.4 · gra
 | Side special | **Blink Strike** — A fast dash; cannot be hit for the first few frames. | 6 | 25 | 9 | can't be hit frames 2–7 |
 | Up special | **Phase Rise** — Vanishes and reappears up to about two and a half body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 27 | 5 | can't be hit frames 3–14 |
 | Down special | **Reaper Kick** — The kill move. The knee comes up, then the heel drives straight out while Phantom leans far back. The heel is the strongest hit (KOs a mid-weight at about 100% in the middle of the stage); the rest of the leg launches too. Slow to start, so it needs a read or a set-up. | 13 | 36 | 15 |  |
+
+## Valkyrie — Aerial Ace
+
+Aerial ace. Four jumps (the jump from the ground and three in the air) and the best air speed, but the slowest on foot and the lightest. Small, with a short sword: the ground moves are quick and short and pop opponents up, and the aerials do the damage and the KOs. The wings are drawn only; they are not part of the hurtbox.
+
+Weight 76 · run speed 4.5 · air speed 5.8 · jump 12 / double jump 10.5 (3 in the air) · gravity 0.4 · fall speed 7.6 (fast fall 12)
+
+| Input | Move | Starts | Ends | Damage | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Neutral (ground) | **Hilt Poke** — A quick, short poke that bumps the opponent up a little. | 2 | 14 | 3 |  |
+| Side (ground) | **Short Slash** — A short overhead slash forward, sending up and away. | 7 | 26 | 6 |  |
+| Up (ground) | **Rising Cut** — Crouches, then cuts straight up. Sends straight up with little growth: the start of a juggle. | 5 | 24 | 6 |  |
+| Down (ground) | **Low Flick** — A low flick of the sword from a crouch that pops the opponent up. | 5 | 18 | 4 |  |
+| Neutral (air) | **Wing Spin** — A full spin with the sword out. Hits all around (the sword and the body), sending away from Valkyrie. | 4 | 30 | 8 | landing lag 8 |
+| Side (air) | **Sky Cleave** — A big overhead cleave forward. The best KO move (a mid-weight at about 160% in the middle of the stage). | 8 | 32 | 11 | landing lag 11 |
+| Up (air) | **Updraft Slash** — Sweeps the sword overhead from front to back. Sends straight up with moderate growth, so Valkyrie can jump after the opponent and hit again. | 5 | 26 | 8 | landing lag 6 |
+| Down (air) | **Talon Stab** — Stabs straight down. The tip spikes (sends straight down); the rest of the blade knocks up and away. | 9 | 34 | 13 | landing lag 12; spikes |
+| Neutral special | **Gale Burst** — A beat of the wings: a burst around Valkyrie that pops anyone close straight up. In the air, Valkyrie stops and hangs for a moment. | 6 | 30 | 5 |  |
+| Side special | **Wing Dash** — Dashes forward with the sword out, level even in the air (no falling during the dash). Also a way back to the stage. | 6 | 32 | 8 |  |
+| Up special | **Ascent** — Flies straight up sword first, hitting several times, then a final hit that launches straight up (KOs a mid-weight at about 230%). The recovery move: less height than most, but it steers far sideways. | 7 | 42 | 6 | 2+ hits of 2 |
+| Down special | **Spear Dive** — Hops if on the ground, then dives straight down sword first (the tip spikes in the air); landing pops nearby opponents up on both sides. | 10 | 12 + 20 on landing | 8 | falls until landing; spikes |
 

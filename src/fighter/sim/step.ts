@@ -117,7 +117,7 @@ function newFighter(slot: number, char: CharId, palette: number, x: number, y: n
     move: null,
     grounded: true,
     surface: 0,
-    doubleJump: true,
+    airJumps: CHARS[char].stats.airJumps ?? 1,
     upSpecial: true,
     airDodge: true,
     fastFall: false,
@@ -429,8 +429,8 @@ function tryGrabLedge(s: MatchState, f: FighterState, input: number, ev: SimEven
     f.bufT = 0;
     // A direction held while recovering does not climb or let go by itself: it has to be pressed again.
     f.ledgeLock = input & DIRS;
-    // Grabbing a ledge gives back the double jump, the up special and the air dodge.
-    f.doubleJump = true;
+    // Grabbing a ledge gives back the air jumps, the up special and the air dodge.
+    f.airJumps = CHARS[f.char].stats.airJumps ?? 1;
     f.upSpecial = true;
     f.airDodge = true;
     if (f.ledgeFresh) {
@@ -495,7 +495,7 @@ function climbing(s: MatchState, f: FighterState) {
     f.grounded = true;
     f.surface = 0;
     f.ledgeSide = 0;
-    f.doubleJump = true;
+    f.airJumps = CHARS[f.char].stats.airJumps ?? 1;
     f.upSpecial = true;
     f.airDodge = true;
     f.ledgeFresh = true;
@@ -553,9 +553,9 @@ function tryActions(s: MatchState, f: FighterState, input: number, ev: SimEvent[
       return;
     }
   }
-  if (b & BTN.jump && !f.grounded && f.doubleJump) {
+  if (b & BTN.jump && !f.grounded && f.airJumps > 0) {
     f.buf &= ~BTN.jump;
-    f.doubleJump = false;
+    f.airJumps--;
     f.fastFall = false;
     f.vy = c.stats.doubleJump;
     if (side !== 0) f.vx = side * c.stats.air;
@@ -732,7 +732,7 @@ function landOn(s: MatchState, f: FighterState, surface: number, y: number, prev
   f.surface = surface;
   f.vy = 0;
   f.fastFall = false;
-  f.doubleJump = true;
+  f.airJumps = CHARS[f.char].stats.airJumps ?? 1;
   f.upSpecial = true;
   f.airDodge = true;
   f.jumpAnim = 99;

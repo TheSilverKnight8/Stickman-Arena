@@ -101,7 +101,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 
 | Item | Choice |
 | --- | --- |
-| Double jump | One per jump, back on landing. |
+| Double jump | One per jump, back on landing. Valkyrie has three (see Valkyrie). |
 | Short hop | Let go of jump during the crouch before the jump for a lower jump. |
 | Fast fall | Tap down in the air while falling. |
 | Floatier fighters (Caleb's change before merging Stage 3, to make aerials easier to use) | Everyone's gravity is 15% lower and normal falling speed 10% lower; jump speeds are 4% lower so jumps get longer more than they get higher. Fast-fall speed is unchanged, so coming down quickly is still there when wanted. Measured: short hops and full jumps last 13–15% longer (Fisticuffs' short hop 29 → 33 frames, Buster's 25 → 28, Phantom's 37 → 42) and are 7–10% higher. Up special launch speeds were trimmed to keep their heights where they were just set (Fisticuffs 17 → 15.6, Spartan 16 → 14.7, Ranger 17.5 → 16.1, Buster 18 → 16.2). Launched fighters fly a little further, so some upward KOs come about 10 percentage points earlier (e.g. Spartan's Rising Slash 250% → 230%). |
@@ -131,8 +131,6 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Phantom's kill power (Caleb's change before merging Stage 3) | More knockback growth on the three finishers: Air Lunge 82 → 92, Recoil Kick 76 → 86, Arc Kick 78 → 88. Against a mid-weight fighter in the middle of the stage they now KO at about 190%, 190% and 260% (were 210%, 220% and 300%). Phantom stays the weakest finisher, as the spec's weakness says. (Recoil Kick was later replaced by Reaper Kick: see Balance pass 1.) |
 | Buster | One boulder at a time (Boulder Roll waits until the last one is gone). It rolls along the floor at 4 units a frame, drops to the floor first if thrown in the air, rolls off ledges, and breaks when it hits someone or after 4 seconds. Ground Pound's shockwaves are separate and not limited. |
 | Phantom | Two orbs at a time (Balance pass 4; was one). Orbs fade if Phantom is hit. |
-
-### Weight, speed and jump
 
 ### Balance pass 1 (Caleb's changes after Stage 3)
 
@@ -208,7 +206,30 @@ CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Buster 88
 
 CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Spartan 72%, Phantom 53%, Fisticuffs 47%, Buster 44% (was 88%), Ranger 34%. Rocket Leap went from 42 of Buster's KOs to none; his KOs are now spread over the boulder (16), Hammer Fist (15) and Charging Tackle (10). Spartan is on top again because his matchup against Buster turned around (Buster beat him 15–1 before); with the fist version of Rocket Leap and no extra jumping in general, Spartan was also 75%, so the jumping is not the cause.
 
-Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
+### Valkyrie (Caleb's new fighter after Balance pass 5)
+
+Caleb's definition is in the spec. The rest is Claude Code's reading of it; the moves and their numbers are in [`characters.md`](characters.md).
+
+| Item | Choice |
+| --- | --- |
+| 4 jumps | The jump from the ground plus three in the air, where everyone else has one (the double jump). They come back on landing and on a ledge grab, like the double jump. The first jump is about as high as Ranger's (174); each air jump adds about 132, so all four reach 571 above the stage (Phantom's two reach 430, the most of the others). |
+| Great air mobility, poor ground mobility | Air speed 5.8, the fastest (Phantom 5.2), with quick air acceleration and the floatiest fall (gravity 0.4, falling speed 7.6). Run speed 4.5, the slowest (Buster 4.8), and slow to get going on the ground. |
+| Small build | About three quarters the size of the others (76 tall, where a standing fighter is about 100), with thinner limbs. Weight 76, the lightest (Phantom 78), so Valkyrie flies early. |
+| Wings | Drawn from the upper back: folded on the ground, spread and flapping in the air. They are not part of the hurtbox, so they do not make Valkyrie easier to hit. |
+| Sword, poor range | A short sword (28 long; Spartan's is 94). Like Spartan's, it is not a hurtbox. Measured from Valkyrie's centre, the ground moves reach 102–108: about the same as Phantom (81–108), a little more than Fisticuffs' fists (93–96), less than Buster (108–117), and well under Spartan (180–189). The first version reached up to 129; the sword was shortened twice and the ground poses lean in less. |
+| Stronger aerials | The ground moves do 3–6 damage, are quick, and send up with little growth (none KOs before 300%). The aerials do 8–13 and most of the KOs: Sky Cleave KOs a mid-weight at about 160% in the middle of the stage, and Talon Stab's tip spikes (sends straight down) for finishing offstage. Ascent's last hit KOs at about 230%. |
+| Vertical combos | Most hits send nearly straight up: Hilt Poke, Low Flick, Rising Cut and Gale Burst pop opponents up with little growth, and Updraft Slash sends straight up a bit further, so with three air jumps and the best air speed Valkyrie can follow upward and keep hitting. Ascent hits several times on the way up, then launches straight up. |
+| No projectile | Caleb's definition has none (the spec names projectiles for Ranger, Phantom, Buster and Spartan). Gale Burst, a beat of the wings, hits only close around Valkyrie. |
+| Recovery | Ascent goes up 196, less than everyone but Buster (182), but steers 396 sideways, second to Phantom (467). With the three air jumps first, Valkyrie gets back from as far as Phantom: 750 out, or 600 straight below the ledge. |
+| Color | Teal (Caleb did not give one); the second copy is a darker teal. |
+| CPU | Plays in the air like Phantom: often jumps in toward the opponent (a little more often than Phantom), attacks with aerials from close in the air, and steers sideways with Ascent when recovering. On the ground it keeps close (about 45 away). |
+| Balance | The first version won 78% of CPU matches (Hard against Hard, against the other five). Trimmed: damage and knockback growth on Sky Cleave (KO 130% → 160%), Wing Spin (220% → over 300%), Spear Dive and its landing, and Ascent's last hit (200% → 230%); landing lag on Wing Spin 6 → 8 and Sky Cleave 9 → 11; weight 82 → 76. |
+
+CPU vs CPU with Valkyrie (Hard against Hard, every pairing 8 times, 40 matches per fighter): Spartan 75%, Ranger 50%, Fisticuffs 48%, Buster 45%, Valkyrie 43%, Phantom 40%. With 40 matches each, a difference of under about 8 points is within chance. Valkyrie's KOs come mostly from Sky Cleave (49 of 80), then Ascent (13); the damage is spread over Wing Spin, Ascent, Sky Cleave and Spear Dive.
+
+### Weight, speed and jump
+
+Ratings from the archetypes (1 = lowest of the six, 5 = highest, worked out from the numbers):
 
 | Fighter | Weight | Run speed | Jump height |
 | --- | --- | --- | --- |
@@ -216,9 +237,10 @@ Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out fro
 | Spartan | 108 (heavy-ish) | 5.0 (slow) | low |
 | Ranger | 98 (average) | 6.0 (average) | average |
 | Buster | 130 (heaviest) | 4.8 (slowest) | lowest, falls fastest |
-| Phantom | 78 (lightest) | 8.0 (fastest) | highest |
+| Phantom | 78 (very light) | 8.0 (fastest) | highest per jump |
+| Valkyrie | 76 (lightest) | 4.5 (slowest on foot; fastest in the air, 5.8) | highest in all (four jumps) |
 
-Recovery distance, measured by script, follows the same order: Phantom, then Ranger, Fisticuffs, then Spartan and Buster (about even after the recovery boost).
+Recovery distance, measured by script, follows the same order: Phantom and Valkyrie (even), then Ranger, Fisticuffs, then Spartan and Buster (about even after the recovery boost).
 
 ### Stages
 
@@ -250,7 +272,7 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close. Phantom (since Balance pass 4, Caleb's request) fights in the air: it jumps in toward the opponent (a short hop when close, a full jump when further), uses its aerials and specials up close, throws orbs only when the opponent is more than 200 units away, and backs off briefly after a hit. Every CPU jumps over a boulder or shockwave rolling toward it (Hard nearly always, Normal about half the time, Easy rarely), and now and then jumps in toward the opponent instead of walking. Measured over 30 matches each (after Balance pass 5): Hard beats Easy 30–0 and Normal 29–1; Normal beats Easy 30–0.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close. Phantom (since Balance pass 4, Caleb's request) fights in the air: it jumps in toward the opponent (a short hop when close, a full jump when further), uses its aerials and specials up close, throws orbs only when the opponent is more than 200 units away, and backs off briefly after a hit. Every CPU jumps over a boulder or shockwave rolling toward it (Hard nearly always, Normal about half the time, Easy rarely), and now and then jumps in toward the opponent instead of walking. Measured over 30 matches each (after Balance pass 5, and the same again with Valkyrie added): Hard beats Easy 30–0 and Normal 29–1; Normal beats Easy 30–0.
 
 ### Online (Stage 3)
 
@@ -273,11 +295,11 @@ Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays 
 
 ### Look and sound
 
-- Stick figures with a navy outline under each colour (so yellow reads on cream), a ring for the head like the app icon, and one prop each: Fisticuffs' gloves and headband, Spartan's sword and helmet crest, Ranger's bow, Buster's big fists, Phantom's red scarf.
-- A second copy of the same fighter uses a lighter or darker shade (red → salmon, blue → sky blue, green → lime, gold → bronze, purple → pink-violet).
+- Stick figures with a navy outline under each colour (so yellow reads on cream), a ring for the head like the app icon, and one prop each: Fisticuffs' gloves and headband, Spartan's sword and helmet crest, Ranger's bow, Buster's big fists, Phantom's red scarf, Valkyrie's sword and wings.
+- A second copy of the same fighter uses a lighter or darker shade (red → salmon, blue → sky blue, green → lime, gold → bronze, purple → pink-violet, teal → dark teal).
 - The camera follows both fighters and zooms between a close and a wide limit. A bubble at the screen edge shows a fighter who is off camera, with their damage.
 - HUD: the clock at the top; a card per player at the bottom with damage (turning red past 75%) and stocks.
 - Effects: hit sparks (bigger and with screen shake for strong hits), staggered-stripe bursts for KOs, landing dust, boulder rubble, reflect and armor rings.
-- Movement and move effects (Caleb's request, kept separate from hit effects): dust pushed out along the floor on a jump; a ring in the fighter's colour under the feet on a double jump; dust kicked back when a run starts or turns around; a short streak above the head when a fast fall starts; a puff on a dodge and when Phantom reappears from Phase Rise; a small flash on a ledge grab and where a projectile leaves the hand; afterimages (fading copies of the last few poses) during spot and air dodges and during moves that carry a fighter fast (Blink Strike, Dash Punch, Charging Tackle, Slide, Lunge Poke) or teleport; and a fading smear along the path of an attack's leading hitbox (fist, foot or sword tip) while it is active.
+- Movement and move effects (Caleb's request, kept separate from hit effects): dust pushed out along the floor on a jump; a ring in the fighter's colour under the feet on a double jump; dust kicked back when a run starts or turns around; a short streak above the head when a fast fall starts; a puff on a dodge and when Phantom reappears from Phase Rise; a small flash on a ledge grab and where a projectile leaves the hand; afterimages (fading copies of the last few poses) during spot and air dodges and during moves that carry a fighter fast (Blink Strike, Dash Punch, Charging Tackle, Slide, Lunge Poke, Wing Dash) or teleport; and a fading smear along the path of an attack's leading hitbox (fist, foot or sword tip) while it is active.
 - Kill spark (Caleb's request, after Rivals of Aether II): when a hit will KO, the background turns red with navy and cream rays coming from the hit, a bigger spark and ring go off, and the screen shakes harder; it fades back over about three quarters of a second. Whether the hit will KO is worked out on screen only: a copy of the match is played forward (up to 2.5 seconds) with nobody pressing anything, and it counts only if the fighter is still flying from the hit when they cross a blast zone (falling later because they did not recover does not count). Only hits with knockback of 60 or more are checked. Nothing in the match itself changes, so online matches stay in step.
 - A fast fight track (D minor) during matches. Effects for hits by strength, swings, jumps, landing, dodges, each projectile, reflect, armor, KOs, the countdown and "GAME!".
