@@ -155,6 +155,8 @@ export interface CharDef {
   projLimit: number;
   /** Knockback below this is absorbed by armor. */
   armorKb: number;
+  /** Knockback taken while standing on the ground is multiplied by this (default 1). */
+  groundKb?: number;
   anims: {
     idle: Anim;
     run: Anim;

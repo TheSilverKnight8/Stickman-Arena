@@ -857,7 +857,7 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   v.damage = Math.min(999, v.damage + h.dmg);
   const p = v.damage;
   const d = h.dmg;
-  const kb = ((p / 10 + (p * d) / 20) * (200 / (vc.stats.weight + 100)) * 1.4 + 18) * (h.kbg / 100) + h.bkb;
+  const kb = (((p / 10 + (p * d) / 20) * (200 / (vc.stats.weight + 100)) * 1.4 + 18) * (h.kbg / 100) + h.bkb) * (v.grounded ? (vc.groundKb ?? 1) : 1);
   // Hitstun comes from the same formula without the weight: heavy fighters fly less far but are stunned as long.
   const stunKb = ((p / 10 + (p * d) / 20) * 1.4 + 18) * (h.kbg / 100) + h.bkb;
   const lag = h.rehit ? 2 : Math.min(18, Math.floor(d * 0.6 + 4));
