@@ -932,6 +932,8 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
     vx,
     vy: def.kind === 'shock' ? 0 : vy,
     dir: vx < -0.001 ? -1 : vx > 0.001 ? 1 : f.facing,
+    ux: dcos(def.ang) * f.facing,
+    uy: dsin(def.ang),
     t: 0,
     dmg: Math.round(dmg),
     ang: def.hitAng,
@@ -964,19 +966,20 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         p.vy -= 0.4;
         break;
       case 'sword': {
-        // A stab throw: straight out, point first, slowing down; then straight back along the same line.
+        // A stab throw: straight out along its aim, point first, slowing down; then straight back along the same line.
         if (!p.back) {
-          p.vx -= p.dir * 0.55;
-          if (p.vx * p.dir <= 0) {
+          p.vx -= p.ux * 0.55;
+          p.vy -= p.uy * 0.55;
+          if (p.vx * p.ux + p.vy * p.uy <= 0) {
             p.back = true;
             p.hit = [];
           }
         } else {
-          p.vx = approach(p.vx, -p.dir * 15, 0.8);
+          p.vx = approach(p.vx, -p.ux * 15, 0.8 * Math.abs(p.ux));
+          p.vy = approach(p.vy, -p.uy * 15, 0.8 * Math.abs(p.uy));
           // Caught when it reaches Spartan's hand. If he has moved off the line, it flies on until it is gone.
           if (Math.abs(owner.x - p.x) < 40 && Math.abs(owner.y + 55 - p.y) < 60) gone = true;
         }
-        p.vy = 0;
         if (owner.act === 'dead' || owner.act === 'out') gone = true;
         break;
       }
@@ -1032,7 +1035,9 @@ function projectileHits(s: MatchState, p: ProjectileState, joints: ReturnType<ty
     }
     if (!hittable(v)) continue;
     const shape: [number, number, number, number, number] =
-      p.kind === 'sword' ? [p.x - p.dir * SWORD_HIT.back, p.y, p.x + p.dir * SWORD_HIT.front, p.y, r] : [p.x, p.y, p.x, p.y, r];
+      p.kind === 'sword'
+        ? [p.x - p.ux * SWORD_HIT.back, p.y - p.uy * SWORD_HIT.back, p.x + p.ux * SWORD_HIT.front, p.y + p.uy * SWORD_HIT.front, r]
+        : [p.x, p.y, p.x, p.y, r];
     if (!touches(shape, hurtOf(v, j))) continue;
     p.hit.push(v.slot);
     const owner = s.fighters[p.owner];

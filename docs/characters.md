@@ -36,15 +36,15 @@ Weight 108 · run speed 5 · air speed 3.6 · jump 12.5 / double jump 11.5 · gr
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Neutral (ground) | **Sword Poke** — Sword poke straight ahead. | 6 | 22 | 7 | needs the sword in hand |
-| Side (ground) | **Wide Slash** — Wide horizontal slash, back to front. The tip hits harder. | 8 | 36 | 13 | needs the sword in hand |
+| Side (ground) | **Lunging Thrust** — A precise thrust: the sword draws back level at chest height, then drives straight forward. Hits along the blade at that one height for 3 frames; the tip hits harder. | 9 | 36 | 13 | needs the sword in hand |
 | Up (ground) | **Overhead Arc** — Swings the sword in an arc overhead, front to back. | 8 | 34 | 10 | needs the sword in hand |
-| Down (ground) | **Low Sweep** — A crouching sweep of the sword along the floor. | 8 | 30 | 9 | needs the sword in hand |
+| Down (ground) | **Low Thrust** — A low thrust: crouched, the sword draws back level near the floor, then stabs straight forward. The tip hits harder. | 8 | 30 | 9 | needs the sword in hand |
 | Neutral (air) | **Sword Spin** — Spins the sword all the way around the body. | 7 | 38 | 9 | landing lag 10; needs the sword in hand |
 | Side (air) | **Arc Chop** — Chops from overhead down in front. | 10 | 38 | 13 | landing lag 12; needs the sword in hand |
 | Up (air) | **Sky Arc** — Swings the sword overhead in the air. | 8 | 34 | 11 | landing lag 10; needs the sword in hand |
 | Down (air) | **Plunge** — Plunges the sword straight down. The tip spikes. | 9 | 40 | 13 | landing lag 16; needs the sword in hand; spikes |
 | Neutral special | **Grand Slash** — A slow, huge overhead slam. Spartan's strongest hit. | 21 | 58 | 19 | needs the sword in hand |
-| Side special | **Sword Throw** — The projectile. A stab throw: the sword flies straight out point first, slows down, and comes straight back along the same line, hitting on the way out and again on the way back. Spartan catches it when it reaches the hand; if Spartan has moved off its line (in the air, say), it flies on and is back in hand once it is gone. Until then, attacks that need the sword cannot be used (moving, jumping, dodging and Rising Slash still work). | 12 | 30 | 8 | projectile (sword); needs the sword in hand |
+| Side special | **Sword Throw** — The projectile. A stab throw aimed 30 degrees upward: the sword flies straight out along that line point first, slows down, and comes straight back along the same line, hitting on the way out and again on the way back. Spartan catches it when it reaches the hand; if Spartan has moved off its line (in the air, say), it flies on and is back in hand once it is gone. Until then, attacks that need the sword cannot be used (moving, jumping, dodging and Rising Slash still work). | 12 | 30 | 8 | projectile (sword); needs the sword in hand |
 | Up special | **Rising Slash** — Rises spinning with the sword up, several hits then a launcher. Shorter than most recoveries. | 7 | 42 | 6 | 3+ hits of 3 |
 | Down special | **Deflect** — Twirls the sword in front. Sends arrows, orbs and boulders back at their thrower (reflect), harder and faster. | 4 | 30 | 4 | reflects frames 3–20; needs the sword in hand |
 

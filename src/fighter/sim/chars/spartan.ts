@@ -67,19 +67,19 @@ export const spartan: CharDef = {
       hits: blade([6, 8], { dmg: 7, ang: 35, bkb: 30, kbg: 50 }, { dmg: 5, ang: 40, bkb: 25, kbg: 40 }, 11),
     },
     ftilt: {
-      name: 'Wide Slash',
+      // A precise thrust: the sword draws back level at chest height, then drives straight forward.
+      name: 'Lunging Thrust',
       total: 36,
       needsWeapon: true,
       turn: true,
       anim: keys(
         [0, S],
-        [6, S, { lean: -10, a1: -60, f1: -40, w: -20, t1: 20, s1: 0, t2: -25, s2: -30 }],
-        [9, S, { lean: 15, a1: 50, f1: 80, w: 0 }],
-        [12, S, { lean: 20, a1: 100, f1: 120, w: 0, t1: 35, s1: 0, t2: -30, s2: -35 }],
-        [20, S, { lean: 20, a1: 100, f1: 120, w: 0, t1: 35, s1: 0, t2: -30, s2: -35 }],
+        [6, S, { lean: -8, a1: 20, f1: 85, w: 5, t1: 20, s1: 0, t2: -25, s2: -30 }],
+        [9, S, { lean: 24, a1: 90, f1: 90, w: 0, t1: 50, s1: 5, t2: -40, s2: -40 }],
+        [18, S, { lean: 24, a1: 90, f1: 90, w: 0, t1: 50, s1: 5, t2: -40, s2: -40 }],
         [36, S],
       ),
-      hits: blade([8, 12], { dmg: 13, ang: 40, bkb: 35, kbg: 92 }, { dmg: 11, ang: 40, bkb: 35, kbg: 85 }, 13),
+      hits: blade([9, 11], { dmg: 13, ang: 40, bkb: 35, kbg: 92 }, { dmg: 11, ang: 40, bkb: 35, kbg: 85 }, 13),
     },
     utilt: {
       name: 'Overhead Arc',
@@ -97,14 +97,15 @@ export const spartan: CharDef = {
       hits: blade([8, 14], { dmg: 10, ang: 92, bkb: 40, kbg: 82 }, { dmg: 9, ang: 95, bkb: 40, kbg: 78 }, 13),
     },
     dtilt: {
-      name: 'Low Sweep',
+      // A low thrust: crouched, the sword draws back level near the floor, then stabs straight forward.
+      name: 'Low Thrust',
       total: 30,
       needsWeapon: true,
       anim: keys(
         [0, S],
-        [5, crouch, { lean: 35, t1: 60, s1: -5, t2: 50, s2: -60, a1: 60, f1: 70, w: 0 }],
-        [8, crouch, { lean: 40, t1: 60, s1: -5, t2: 50, s2: -60, a1: 80, f1: 92, w: 0 }],
-        [12, crouch, { lean: 40, t1: 60, s1: -5, t2: 50, s2: -60, a1: 80, f1: 92, w: 0 }],
+        [5, crouch, { lean: 30, t1: 60, s1: -5, t2: 50, s2: -60, a1: 25, f1: 82, w: 4 }],
+        [8, crouch, { lean: 42, t1: 62, s1: -5, t2: 52, s2: -62, a1: 82, f1: 84, w: 0 }],
+        [12, crouch, { lean: 42, t1: 62, s1: -5, t2: 52, s2: -62, a1: 82, f1: 84, w: 0 }],
         [30, S],
       ),
       hits: blade([8, 10], { dmg: 9, ang: 22, bkb: 38, kbg: 68 }, { dmg: 7, ang: 25, bkb: 35, kbg: 60 }, 11),
@@ -183,8 +184,9 @@ export const spartan: CharDef = {
       total: 30,
       needsWeapon: true,
       turn: true,
-      anim: keys([0, S], [8, S, { lean: -15, a1: -40, f1: -20, w: 0 }], [12, S, { lean: 20, a1: 90, f1: 95, w: 0 }], [18, S, { lean: 20, a1: 90, f1: 95, w: 0 }], [30, S]),
-      proj: [{ f: 12, kind: 'sword', x: 50, y: 30, speed: 15, ang: 0, dmg: 8, hitAng: 40, bkb: 35, kbg: 62 }],
+      anim: keys([0, S], [8, S, { lean: -15, a1: -40, f1: -20, w: 0 }], [12, S, { lean: 15, a1: 120, f1: 122, w: 0 }], [18, S, { lean: 15, a1: 120, f1: 122, w: 0 }], [30, S]),
+      // Thrown 30 degrees upward.
+      proj: [{ f: 12, kind: 'sword', x: 45, y: 45, speed: 15, ang: 30, dmg: 8, hitAng: 40, bkb: 35, kbg: 62 }],
     },
     uspec: {
       name: 'Rising Slash',

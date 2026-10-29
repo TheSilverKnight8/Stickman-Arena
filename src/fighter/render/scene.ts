@@ -305,9 +305,9 @@ export class Scene {
         break;
       }
       case 'sword': {
-        // Point first the whole way, out and back: no spin.
+        // Point first along its aim the whole way, out and back: no spin.
         const half = 49;
-        drawSword(ctx, [p.x - p.dir * half, p.y], [p.x + p.dir * half, p.y], half * 2);
+        drawSword(ctx, [p.x - p.ux * half, p.y - p.uy * half], [p.x + p.ux * half, p.y + p.uy * half], half * 2);
         break;
       }
       case 'orb': {

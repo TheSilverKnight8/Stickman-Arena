@@ -275,6 +275,9 @@ export interface ProjectileState {
   vy: number;
   /** 1 or -1: the way it faces, for launch angles. */
   dir: 1 | -1;
+  /** The aim it was thrown along, as a unit vector (the thrown sword flies out and back along it). */
+  ux: number;
+  uy: number;
   t: number;
   dmg: number;
   ang: number;
