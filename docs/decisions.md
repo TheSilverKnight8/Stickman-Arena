@@ -201,11 +201,12 @@ CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Buster 88
 
 | Item | Choice |
 | --- | --- |
-| Buster: Rocket Leap | Hits only at the launch (frames 9–11, as he comes out of the crouch) instead of the whole way up (frames 10–24), so it is no longer a raw anti-air. It still hits opponents beside Buster and up to about 160 above his feet (just over his raised fists); before, it reached 280 and more. Damage and knockback unchanged. |
+| Buster: Rocket Leap | Hits only around his feet as he takes off from the ground (frames 7–9), instead of with his fists the whole way up (frames 10–24): it hits an opponent beside him on the ground and nothing above (before, it reached 280 and more above his feet), and it never hits when used in the air. Damage and knockback unchanged (KOs at about 130% when it lands). A first try that kept the fist hit for the first 3 frames of the jump still reached about 160 above him, so Caleb asked for the feet only. Hitboxes can now be marked to work only while the attacker is on the ground. |
+| Buster: Boulder Roll | Slower (3.2 units a frame, was 4) and smaller (radius 19, was 22). |
 | CPU: jumping over rolling shots | All levels jump over a boulder or shockwave rolling toward them along the floor, counting their own movement toward it. Measured with a boulder bowled at a CPU 300 away: Hard now gets hit 8 times in 48 (was every time), Normal 24 in 48 (was 22 in 24), Easy 42 in 48 (about as before). |
 | CPU: more jumping in general | Walking up to an opponent from 80–260 away, the CPU now and then jumps in instead (Hard most often, Easy rarely). |
 
-CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Spartan 75%, Fisticuffs 50%, Buster 47% (was 88%), Phantom 47%, Ranger 31%. Rocket Leap went from 42 of Buster's KOs to 11, and his boulder's damage roughly halved. Spartan is on top again because his matchup against Buster turned around (Buster beat him 15–1 before); without the extra jumping in general, Spartan was also 75%, Buster 59% and Phantom 31%.
+CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Spartan 72%, Phantom 53%, Fisticuffs 47%, Buster 44% (was 88%), Ranger 34%. Rocket Leap went from 42 of Buster's KOs to none; his KOs are now spread over the boulder (16), Hammer Fist (15) and Charging Tackle (10). Spartan is on top again because his matchup against Buster turned around (Buster beat him 15–1 before); with the fist version of Rocket Leap and no extra jumping in general, Spartan was also 75%, so the jumping is not the cause.
 
 Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
 

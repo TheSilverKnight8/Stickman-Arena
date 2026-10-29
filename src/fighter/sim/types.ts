@@ -67,6 +67,8 @@ export interface HitDef {
   pull?: boolean;
   /** Hitstun multiplier (default 1). */
   hitstun?: number;
+  /** Only hits while the attacker is standing on the ground. */
+  ground?: boolean;
 }
 
 export interface ProjSpawn {

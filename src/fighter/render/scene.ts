@@ -327,12 +327,12 @@ export class Scene {
       }
       case 'boulder': {
         ctx.translate(p.x, p.y);
-        ctx.rotate(-p.t * 0.12 * p.dir);
+        ctx.rotate(-p.t * 0.17 * p.dir);
         ctx.fillStyle = '#b07a3b';
         ctx.strokeStyle = NAVY;
         ctx.lineWidth = 3.5;
         ctx.beginPath();
-        const pts = [22, 18, 23, 19, 21, 24, 18, 22];
+        const pts = [19, 16, 20, 16, 18, 21, 16, 19];
         pts.forEach((r, i) => {
           const a = (i / pts.length) * Math.PI * 2;
           if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
@@ -344,8 +344,8 @@ export class Scene {
         ctx.strokeStyle = 'rgba(0, 38, 87, 0.35)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(-8, 4);
-        ctx.lineTo(4, -6);
+        ctx.moveTo(-7, 3);
+        ctx.lineTo(3, -5);
         ctx.stroke();
         break;
       }

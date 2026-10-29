@@ -58,7 +58,7 @@ const LEDGE_WAIT = 6;
 /** After leaving a ledge, frames before a ledge can be grabbed again. */
 const REGRAB_FRAMES = 30;
 const UNTIL_LAND_MAX = 45;
-const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 22, shock: 14 };
+const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14 };
 /** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
 const SWORD_HIT = { back: 9, front: 45 };
 const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30 };

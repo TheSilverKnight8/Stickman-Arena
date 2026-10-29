@@ -179,7 +179,7 @@ export const buster: CharDef = {
         [28, crouch, { lean: 40, a1: 60, f1: 65, a2: 60, f2: 65 }],
         [46, S],
       ),
-      proj: [{ f: 20, kind: 'boulder', x: 55, y: -25, speed: 4, ang: 0, dmg: 12, hitAng: 50, bkb: 42, kbg: 64 }],
+      proj: [{ f: 20, kind: 'boulder', x: 55, y: -25, speed: 3.2, ang: 0, dmg: 12, hitAng: 50, bkb: 42, kbg: 64 }],
     },
     sspec: {
       name: 'Charging Tackle',
@@ -213,8 +213,11 @@ export const buster: CharDef = {
         [30, S, { lean: -5, a1: 175, f1: 178, a2: 165, f2: 170, t1: 10, s1: -10, t2: -20, s2: -40 }],
         [50, A],
       ),
-      // Hits only as the jump starts (not the whole way up), so it is not a raw anti-air.
-      hits: [{ f: [9, 11], at: 'hand1', r: 20, dmg: 13, ang: 80, bkb: 52, kbg: 76 }],
+      // Hits only around his feet as he takes off from the ground (nothing in the air, nothing on the way up).
+      hits: [
+        { f: [7, 10], at: 'foot1', r: 22, dmg: 13, ang: 80, bkb: 52, kbg: 76, ground: true },
+        { f: [7, 10], at: 'foot2', r: 22, dmg: 13, ang: 80, bkb: 52, kbg: 76, ground: true },
+      ],
       vel: [{ f: 10, vx: 3, vy: 16.2 }],
     },
     dspec: {

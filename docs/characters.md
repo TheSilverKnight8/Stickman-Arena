@@ -85,9 +85,9 @@ Weight 130 · run speed 4.8 · air speed 3.6 · jump 12.7 / double jump 11.5 · 
 | Side (air) | **Double Slam** — Both fists down in front. The fists spike; the arms launch. | 16 | 46 | 17 | landing lag 18; spikes |
 | Up (air) | **Headbutt** — Headbutt upward. | 11 | 38 | 14 | landing lag 12 |
 | Down (air) | **Drill Stomp** — Both feet down, spikes. | 14 | 44 | 15 | landing lag 18; spikes |
-| Neutral special | **Boulder Roll** — The projectile. Bowls a boulder underhand: it rolls slowly along the floor (or drops to it first if thrown in the air), rolls off ledges, and breaks when it hits someone. One at a time. | 20 | 46 | 12 | projectile (boulder) |
+| Neutral special | **Boulder Roll** — The projectile. Bowls a boulder underhand: it rolls slowly along the floor (or drops to it first if thrown in the air), rolls off ledges, and breaks when it hits someone. Small enough to jump over. One at a time. | 20 | 46 | 12 | projectile (boulder) |
 | Side special | **Charging Tackle** — A shoulder charge. Stops when it hits. | 8 | 52 | 12 |  |
-| Up special | **Rocket Leap** — A crouch, then a big jump with fists up. The recovery move. It hits only as the jump starts (beside Buster or just above his head), not on the way up. | 9 | 50 | 13 |  |
+| Up special | **Rocket Leap** — A crouch, then a big jump with fists up. The recovery move. It hits only around his feet as he takes off from the ground: nothing on the way up, and nothing when used in the air. | 7 | 50 | 13 |  |
 | Down special | **Ground Pound** — Hops if on the ground, then plummets (spikes in the air); landing sends shockwaves along the floor both ways. | 12 | 14 + 26 on landing | 14 | falls until landing; spikes |
 
 ## Phantom — Hit and Run

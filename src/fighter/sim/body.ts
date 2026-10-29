@@ -121,6 +121,7 @@ export function hitsOf(f: FighterState, j: Joints | null = jointsOf(f)): ActiveH
   const out: ActiveHit[] = [];
   for (const h of m.hits) {
     if (f.t < h.f[0] || f.t > h.f[1]) continue;
+    if (h.ground && !f.grounded) continue;
     // A hitbox on a fist or foot covers the forearm or shin too, so a point-blank hit still connects.
     const start = h.to ? h.at : ((typeof h.at === 'string' ? LIMB_BASE[h.at] : undefined) ?? h.at);
     const a = pointOf(f, j, start);
