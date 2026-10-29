@@ -146,6 +146,20 @@ Caleb named the five changes; the amounts and the details are Claude Code's.
 | Phantom's down special | Recoil Kick (kick, then hop back) is replaced by **Reaper Kick**, a kill move: the knee comes up, then the heel drives out while Phantom leans far back. Only the heel is the strong hit (13 damage, KOs a mid-weight in the middle of the stage at about 120%); the shin does a weak 7. Starts on frame 13, can act again at 46, so a miss is easy to punish. A first version KO'd at 90%, stronger than Buster's and Fisticuffs' best, so it was toned down to keep Phantom behind the heavy hitters. |
 | Fisticuffs' combo moves | Taken to be the moves made for combos: One-Two (both punches), Uppercut, Low Sweep, Double Jab (both punches) and Flip Kick. Damage up: 3 → 4, 4 → 6, 6 → 8, 5 → 7, 4 → 5 and 6 → 8, 7 → 9. Knockback down 16–20% at every percent, so opponents stay closer for follow-ups. The finishers (Straight Punch, Spin Kick, Stomp, Haymaker) are unchanged. Double Jab and Flip Kick no longer KO before 300% (they did at about 290% and 230%). |
 
+### Balance pass 2: hitboxes (Caleb's request after Balance pass 1)
+
+Caleb: Ranger and Spartan seem strongest; the others need more generous hitboxes, especially Fisticuffs, whose hits connect inconsistently. Ranger and Spartan are unchanged.
+
+| Fighter | Change |
+| --- | --- |
+| Fisticuffs | Every hitbox 5 units larger in radius (most fist and foot hitboxes go from 9–12 to 14–17). Active frames longer: One-Two +1 frame on each punch, Straight Punch +2, Uppercut, Low Sweep, both Double Jab punches and Haymaker +1. |
+| Phantom | Every hitbox 4 units larger (Reaper Kick's heel sweet spot +2, so it stays a precise hit). Active frames +1 on Quick Poke, Lunge Poke, Arc Kick, Air Lunge and Scissor Kick. |
+| Buster | Every hitbox 2 units larger (on top of Balance pass 1's +3). |
+
+How it was measured: for each move, an opponent (Ranger's body) is placed at every point of a 6-unit grid around the attacker, and the points where any active frame of the move touches them are counted (a bigger count is a bigger target area). Fisticuffs, before → after: One-Two 154 → 192, Straight Punch 151 → 188, Uppercut 257 → 305, Low Sweep 93 → 119, Double Jab 241 → 314, Flip Kick 504 → 585. For comparison, Spartan's Sword Poke is 340, Wide Slash 601 and Overhead Arc 1113 (the sword's range is the spec's "great range"). Fisticuffs' reach is about the same against every fighter's body, so no single matchup was the cause. Hits slipping between two frames of a fast swing were checked too: it barely happens (only Spartan's Sword Spin and Sky Arc lose a little), so it was not changed.
+
+CPU vs CPU check (Hard against Hard, every pairing 16 times; this measures the CPU's way of playing each fighter as much as the fighters): wins before → after: Spartan 97% → 95%, Buster 72% → 73%, Ranger 50% → 44%, Fisticuffs 31% → 38%, Phantom 0% → 0%. The CPU playing Phantom mostly throws its slow orb and Blink Strike from far away (in four matches against Ranger: 237 orbs, 176 Blink Strikes, under 20 of everything else), which is a CPU problem rather than a hitbox one.
+
 Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
 
 | Fighter | Weight | Run speed | Jump height |
@@ -188,7 +202,7 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after Balance pass 1): Hard beats Easy 28–1 (1 draw) and Normal 25–4 (1 draw); Normal beats Easy 28–2.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after Balance pass 2): Hard beats Easy 28–1 (1 draw) and Normal 24–5 (1 draw); Normal beats Easy 29–1.
 
 ### Online (Stage 3)
 

@@ -60,14 +60,14 @@ export const phantom: CharDef = {
       name: 'Quick Poke',
       total: 12,
       anim: keys([0, S], [2, S, { lean: 0, dx: -6, a1: 90, f1: 90 }], [6, S, { lean: 0, dx: -6, a1: 90, f1: 90 }], [12, S]),
-      hits: [{ f: [2, 4], at: 'hand1', r: 9, dmg: 3, ang: 45, bkb: 25, kbg: 32 }],
+      hits: [{ f: [2, 5], at: 'hand1', r: 13, dmg: 3, ang: 45, bkb: 25, kbg: 32 }],
     },
     ftilt: {
       name: 'Lunge Poke',
       total: 24,
       turn: true,
       anim: keys([0, S], [4, S, { lean: 50, t1: 70, s1: 30, t2: -60, s2: -60, a1: 90, f1: 90, dx: 6 }], [10, S, { lean: 50, t1: 70, s1: 30, t2: -60, s2: -60, a1: 90, f1: 90, dx: 6 }], [24, S]),
-      hits: [{ f: [6, 9], at: 'hand1', r: 10, dmg: 7, ang: 40, bkb: 30, kbg: 58 }],
+      hits: [{ f: [6, 10], at: 'hand1', r: 14, dmg: 7, ang: 40, bkb: 30, kbg: 58 }],
       vel: [{ f: 5, vx: 10, when: 'ground' }],
     },
     utilt: {
@@ -80,7 +80,7 @@ export const phantom: CharDef = {
         [9, S, { lean: -50, dx: -8, t1: 210, s1: 220, t2: -10, s2: -30, a1: -60, f1: -80, a2: -100, f2: -120 }],
         [22, S],
       ),
-      hits: [{ f: [4, 9], at: 'foot1', r: 11, dmg: 6, ang: 95, bkb: 35, kbg: 88 }],
+      hits: [{ f: [4, 10], at: 'foot1', r: 15, dmg: 6, ang: 95, bkb: 35, kbg: 88 }],
     },
     dtilt: {
       name: 'Slide',
@@ -91,7 +91,7 @@ export const phantom: CharDef = {
         [16, S, { lean: -70, t1: 95, s1: 95, t2: 60, s2: 40, a1: -100, f1: -110, a2: -60, f2: -90 }],
         [26, S],
       ),
-      hits: [{ f: [4, 14], at: 'foot1', r: 10, dmg: 6, ang: 72, bkb: 45, kbg: 32 }],
+      hits: [{ f: [4, 14], at: 'foot1', r: 14, dmg: 6, ang: 72, bkb: 45, kbg: 32 }],
       vel: [{ f: 3, vx: 11, when: 'ground' }],
     },
     nair: {
@@ -105,9 +105,9 @@ export const phantom: CharDef = {
         [22, A, { rot: 360 }],
       ),
       hits: [
-        { f: [4, 10], at: 'foot1', r: 9, dmg: 5, ang: 50, bkb: 25, kbg: 52, away: true },
-        { f: [4, 10], at: 'foot2', r: 9, dmg: 5, ang: 50, bkb: 25, kbg: 52, away: true },
-        { f: [4, 10], at: 'hand1', r: 8, dmg: 5, ang: 50, bkb: 25, kbg: 52, away: true },
+        { f: [4, 10], at: 'foot1', r: 13, dmg: 5, ang: 50, bkb: 25, kbg: 52, away: true },
+        { f: [4, 10], at: 'foot2', r: 13, dmg: 5, ang: 50, bkb: 25, kbg: 52, away: true },
+        { f: [4, 10], at: 'hand1', r: 12, dmg: 5, ang: 50, bkb: 25, kbg: 52, away: true },
       ],
     },
     fair: {
@@ -117,8 +117,8 @@ export const phantom: CharDef = {
       turn: true,
       anim: keys([0, A], [5, A, { lean: 60, a1: 92, f1: 90, t1: 20, s1: -10, t2: -60, s2: -80 }], [10, A, { lean: 60, a1: 92, f1: 90, t1: 20, s1: -10, t2: -60, s2: -80 }], [24, A]),
       hits: [
-        { f: [6, 9], at: 'hand1', r: 9, dmg: 8, ang: 38, bkb: 30, kbg: 92 },
-        { f: [6, 9], at: 'elbow1', to: 'hand1', r: 7, dmg: 6, ang: 45, bkb: 25, kbg: 50 },
+        { f: [6, 10], at: 'hand1', r: 13, dmg: 8, ang: 38, bkb: 30, kbg: 92 },
+        { f: [6, 10], at: 'elbow1', to: 'hand1', r: 11, dmg: 6, ang: 45, bkb: 25, kbg: 50 },
       ],
       vel: [{ f: 5, vx: 3, add: true }],
     },
@@ -134,8 +134,8 @@ export const phantom: CharDef = {
         [22, A],
       ),
       hits: [
-        { f: [4, 8], at: 'foot1', r: 10, dmg: 6, ang: 85, bkb: 30, kbg: 58 },
-        { f: [4, 8], at: 'foot2', r: 10, dmg: 6, ang: 85, bkb: 30, kbg: 58 },
+        { f: [4, 9], at: 'foot1', r: 14, dmg: 6, ang: 85, bkb: 30, kbg: 58 },
+        { f: [4, 9], at: 'foot2', r: 14, dmg: 6, ang: 85, bkb: 30, kbg: 58 },
       ],
     },
     dair: {
@@ -143,7 +143,7 @@ export const phantom: CharDef = {
       total: 28,
       landLag: 8,
       anim: keys([0, A], [5, A, { lean: -10, t1: 40, s1: 30, t2: -20, s2: -40, a1: 160, f1: 170, a2: 140, f2: 150 }], [24, A, { lean: -10, t1: 40, s1: 30, t2: -20, s2: -40, a1: 160, f1: 170, a2: 140, f2: 150 }], [28, A]),
-      hits: [{ f: [6, 18], at: 'foot1', r: 11, dmg: 7, ang: 60, bkb: 30, kbg: 45 }],
+      hits: [{ f: [6, 18], at: 'foot1', r: 15, dmg: 7, ang: 60, bkb: 30, kbg: 45 }],
       vel: [{ f: 5, vx: 7, vy: -11 }],
       gravity: { f: [5, 18], mul: 0 },
     },
@@ -159,7 +159,7 @@ export const phantom: CharDef = {
       turn: true,
       intangible: [2, 7],
       anim: keys([0, S], [3, S, { lean: 70, a1: 95, f1: 92, t1: 30, s1: 10, t2: -80, s2: -90 }], [14, S, { lean: 70, a1: 95, f1: 92, t1: 30, s1: 10, t2: -80, s2: -90 }], [30, S]),
-      hits: [{ f: [6, 12], at: 'hand1', to: 'neck', r: 11, dmg: 7, ang: 35, bkb: 42, kbg: 45 }],
+      hits: [{ f: [6, 12], at: 'hand1', to: 'neck', r: 15, dmg: 7, ang: 35, bkb: 42, kbg: 45 }],
       vel: [
         { f: 3, vx: 17 },
         { f: 3, vy: 0, when: 'air' },
@@ -180,7 +180,7 @@ export const phantom: CharDef = {
         [14, A, { lean: -10, a1: 170, f1: 180, a2: 160, f2: 170, t1: 10, s1: -10, t2: -20, s2: -40 }],
         [32, A],
       ),
-      hits: [{ f: [13, 16], at: [0, 40], r: 22, dmg: 5, ang: 80, bkb: 42, kbg: 42 }],
+      hits: [{ f: [13, 16], at: [0, 40], r: 26, dmg: 5, ang: 80, bkb: 42, kbg: 42 }],
       vel: [{ f: 3, vx: 0, vy: 0 }],
       gravity: { f: [3, 16], mul: 0 },
     },
@@ -198,8 +198,8 @@ export const phantom: CharDef = {
         [46, S],
       ),
       hits: [
-        { f: [13, 15], at: 'foot1', to: 'foot1', r: 12, dmg: 13, ang: 40, bkb: 40, kbg: 88 },
-        { f: [13, 17], at: 'knee1', to: 'foot1', r: 8, dmg: 7, ang: 50, bkb: 35, kbg: 55 },
+        { f: [13, 15], at: 'foot1', to: 'foot1', r: 14, dmg: 13, ang: 40, bkb: 40, kbg: 88 },
+        { f: [13, 17], at: 'knee1', to: 'foot1', r: 12, dmg: 7, ang: 50, bkb: 35, kbg: 55 },
       ],
       vel: [{ f: 11, vx: 4, when: 'ground' }],
     },

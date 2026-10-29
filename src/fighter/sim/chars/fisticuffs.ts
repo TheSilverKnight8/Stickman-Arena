@@ -43,14 +43,14 @@ export const fisticuffs: CharDef = {
       name: 'One-Two (first punch)',
       total: 16,
       anim: keys([0, S], [2, S, { lean: 16, a1: 70, f1: 95 }], [4, S, { lean: 22, a1: 88, f1: 90, a2: 20, f2: 150 }], [9, S, { lean: 22, a1: 88, f1: 90, a2: 20, f2: 150 }], [16, S]),
-      hits: [{ f: [3, 5], at: 'hand1', r: 9, dmg: 4, ang: 70, bkb: 15, kbg: 10 }],
+      hits: [{ f: [3, 6], at: 'hand1', r: 14, dmg: 4, ang: 70, bkb: 15, kbg: 10 }],
       chain: { into: 'jab2', window: [5, 15] },
     },
     jab2: {
       name: 'One-Two (second punch)',
       total: 22,
       anim: keys([0, S, { lean: 22, a1: 88, f1: 90 }], [2, S, { lean: 18, a2: 60, f2: 100 }], [4, S, { lean: 28, a1: 30, f1: 140, a2: 90, f2: 90, t1: 30 }], [10, S, { lean: 28, a1: 30, f1: 140, a2: 90, f2: 90, t1: 30 }], [22, S]),
-      hits: [{ f: [4, 6], at: 'hand2', r: 10, dmg: 6, ang: 38, bkb: 26, kbg: 34 }],
+      hits: [{ f: [4, 7], at: 'hand2', r: 15, dmg: 6, ang: 38, bkb: 26, kbg: 34 }],
       vel: [{ f: 3, vx: 2.5, add: true, when: 'ground' }],
     },
     ftilt: {
@@ -64,14 +64,14 @@ export const fisticuffs: CharDef = {
         [13, S, { lean: 28, a1: 90, f1: 90, a2: 20, f2: 140, t1: 45, s1: 0, t2: -40, s2: -40 }],
         [28, S],
       ),
-      hits: [{ f: [8, 10], at: 'hand1', r: 11, dmg: 8, ang: 38, bkb: 35, kbg: 95 }],
+      hits: [{ f: [8, 12], at: 'hand1', r: 16, dmg: 8, ang: 38, bkb: 35, kbg: 95 }],
       vel: [{ f: 7, vx: 5, when: 'ground' }],
     },
     utilt: {
       name: 'Uppercut',
       total: 24,
       anim: keys([0, S], [4, crouch, { a1: 20, f1: 40 }], [7, S, { lean: -5, a1: 170, f1: 178, t1: 10, s1: 0, t2: -15, s2: -20 }], [12, S, { lean: -5, a1: 170, f1: 178, t1: 10, s1: 0, t2: -15, s2: -20 }], [24, S]),
-      hits: [{ f: [6, 9], at: 'hand1', r: 11, dmg: 8, ang: 88, bkb: 43, kbg: 32 }],
+      hits: [{ f: [6, 10], at: 'hand1', r: 16, dmg: 8, ang: 88, bkb: 43, kbg: 32 }],
     },
     dtilt: {
       name: 'Low Sweep',
@@ -83,7 +83,7 @@ export const fisticuffs: CharDef = {
         [10, S, { lean: 35, t1: 88, s1: 92, t2: 40, s2: -50, a1: 70, f1: 120, a2: -20, f2: 0 }],
         [20, S],
       ),
-      hits: [{ f: [5, 8], at: 'foot1', r: 10, dmg: 7, ang: 78, bkb: 39, kbg: 25 }],
+      hits: [{ f: [5, 9], at: 'foot1', r: 15, dmg: 7, ang: 78, bkb: 39, kbg: 25 }],
     },
     nair: {
       name: 'Spin Kick',
@@ -96,10 +96,10 @@ export const fisticuffs: CharDef = {
         [30, A, { rot: -360 }],
       ),
       hits: [
-        { f: [4, 7], at: 'foot1', r: 10, dmg: 8, ang: 45, bkb: 30, kbg: 80 },
-        { f: [4, 7], at: 'foot2', r: 10, dmg: 8, ang: 45, bkb: 30, kbg: 80, away: true },
-        { f: [8, 14], at: 'foot1', r: 9, dmg: 5, ang: 50, bkb: 20, kbg: 60, away: true },
-        { f: [8, 14], at: 'foot2', r: 9, dmg: 5, ang: 50, bkb: 20, kbg: 60, away: true },
+        { f: [4, 7], at: 'foot1', r: 15, dmg: 8, ang: 45, bkb: 30, kbg: 80 },
+        { f: [4, 7], at: 'foot2', r: 15, dmg: 8, ang: 45, bkb: 30, kbg: 80, away: true },
+        { f: [8, 14], at: 'foot1', r: 14, dmg: 5, ang: 50, bkb: 20, kbg: 60, away: true },
+        { f: [8, 14], at: 'foot2', r: 14, dmg: 5, ang: 50, bkb: 20, kbg: 60, away: true },
       ],
     },
     fair: {
@@ -116,8 +116,8 @@ export const fisticuffs: CharDef = {
         [30, A],
       ),
       hits: [
-        { f: [4, 6], at: 'hand1', r: 10, dmg: 5, ang: 60, bkb: 21, kbg: 14, group: 0 },
-        { f: [9, 11], at: 'hand2', r: 11, dmg: 8, ang: 40, bkb: 30, kbg: 50, group: 1 },
+        { f: [4, 7], at: 'hand1', r: 15, dmg: 5, ang: 60, bkb: 21, kbg: 14, group: 0 },
+        { f: [9, 12], at: 'hand2', r: 16, dmg: 8, ang: 40, bkb: 30, kbg: 50, group: 1 },
       ],
     },
     uair: {
@@ -131,7 +131,7 @@ export const fisticuffs: CharDef = {
         [20, A, { rot: 360 }],
         [28, A, { rot: 360 }],
       ),
-      hits: [{ f: [6, 11], at: 'foot1', r: 11, dmg: 9, ang: 88, bkb: 30, kbg: 52 }],
+      hits: [{ f: [6, 11], at: 'foot1', r: 16, dmg: 9, ang: 88, bkb: 30, kbg: 52 }],
     },
     dair: {
       name: 'Stomp',
@@ -145,9 +145,9 @@ export const fisticuffs: CharDef = {
         [36, A],
       ),
       hits: [
-        { f: [11, 12], at: 'foot1', r: 11, dmg: 10, ang: -88, bkb: 25, kbg: 70 },
-        { f: [11, 12], at: 'foot2', r: 11, dmg: 10, ang: -88, bkb: 25, kbg: 70 },
-        { f: [13, 17], at: 'foot1', r: 9, dmg: 6, ang: 60, bkb: 25, kbg: 50 },
+        { f: [11, 12], at: 'foot1', r: 16, dmg: 10, ang: -88, bkb: 25, kbg: 70 },
+        { f: [11, 12], at: 'foot2', r: 16, dmg: 10, ang: -88, bkb: 25, kbg: 70 },
+        { f: [13, 17], at: 'foot1', r: 14, dmg: 6, ang: 60, bkb: 25, kbg: 50 },
       ],
     },
     nspec: {
@@ -160,7 +160,7 @@ export const fisticuffs: CharDef = {
         [26, S, { lean: 30, a1: 85, f1: 88, a2: 0, f2: -30, t1: 50, s1: 10, t2: -45, s2: -45 }],
         [48, S],
       ),
-      hits: [{ f: [18, 21], at: 'hand1', r: 13, dmg: 16, ang: 40, bkb: 40, kbg: 88 }],
+      hits: [{ f: [18, 22], at: 'hand1', r: 18, dmg: 16, ang: 40, bkb: 40, kbg: 88 }],
       vel: [{ f: 17, vx: 4 }],
     },
     sspec: {
@@ -175,7 +175,7 @@ export const fisticuffs: CharDef = {
         [22, S, { lean: 45, a1: 90, f1: 90, a2: -40, f2: -20, t1: 60, s1: 30, t2: -60, s2: -60 }],
         [36, S],
       ),
-      hits: [{ f: [8, 18], at: 'hand1', r: 12, dmg: 9, ang: 40, bkb: 45, kbg: 60 }],
+      hits: [{ f: [8, 18], at: 'hand1', r: 17, dmg: 9, ang: 40, bkb: 45, kbg: 60 }],
       vel: [
         { f: 7, vx: 15 },
         { f: 7, vy: 2, when: 'air' },
@@ -195,8 +195,8 @@ export const fisticuffs: CharDef = {
         [42, A, { rot: -360 }],
       ),
       hits: [
-        { f: [6, 18], at: 'hand1', r: 12, dmg: 2, ang: 85, bkb: 35, kbg: 5, rehit: 4, group: 0 },
-        { f: [19, 22], at: 'hand1', r: 14, dmg: 5, ang: 80, bkb: 55, kbg: 80, group: 1 },
+        { f: [6, 18], at: 'hand1', r: 17, dmg: 2, ang: 85, bkb: 35, kbg: 5, rehit: 4, group: 0 },
+        { f: [19, 22], at: 'hand1', r: 19, dmg: 5, ang: 80, bkb: 55, kbg: 80, group: 1 },
       ],
       vel: [{ f: 5, vx: 1.5, vy: 15.6 }],
     },
@@ -206,7 +206,7 @@ export const fisticuffs: CharDef = {
       untilLand: 10,
       onLand: 'dspecLand',
       anim: keys([0, S], [6, A, { t1: 95, s1: 60, t2: 80, s2: 50, a1: 150, f1: 170, a2: 140, f2: 160 }], [10, A, { lean: 0, t1: 0, s1: 0, t2: 5, s2: 0, a1: 160, f1: 175, a2: 150, f2: 170 }], [12, A]),
-      hits: [{ f: [10, 10], at: 'foot1', r: 12, dmg: 9, ang: -80, bkb: 30, kbg: 60 }],
+      hits: [{ f: [10, 10], at: 'foot1', r: 17, dmg: 9, ang: -80, bkb: 30, kbg: 60 }],
       vel: [
         { f: 4, vy: 9, when: 'ground' },
         { f: 10, vx: 0, vy: -17 },
@@ -217,8 +217,8 @@ export const fisticuffs: CharDef = {
       total: 18,
       anim: keys([0, crouch, { a1: 120, f1: 150 }], [18, S]),
       hits: [
-        { f: [0, 2], at: [30, 5], r: 18, dmg: 6, ang: 80, bkb: 55, kbg: 35, away: true },
-        { f: [0, 2], at: [-30, 5], r: 18, dmg: 6, ang: 80, bkb: 55, kbg: 35, away: true },
+        { f: [0, 2], at: [30, 5], r: 23, dmg: 6, ang: 80, bkb: 55, kbg: 35, away: true },
+        { f: [0, 2], at: [-30, 5], r: 23, dmg: 6, ang: 80, bkb: 55, kbg: 35, away: true },
       ],
     },
   },
