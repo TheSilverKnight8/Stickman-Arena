@@ -1,7 +1,7 @@
 import { CHARS } from './chars';
-import { AIR_DODGE, CLIMB_FRAMES, SPOT_DODGE, hitsOf, hittable, hurtOf, jointsOf, ledgeHold, moveOf, reflectOf } from './body';
-import { approach, dcos, dsin, segSegDist2 } from './fmath';
-import type { Capsule } from './skeleton';
+import { AIR_DODGE, CLIMB_FRAMES, SPOT_DODGE, hitsOf, hittable, hurtOf, jointsOf, ledgeHold, moveOf, pointOf, prioOf, reflectOf, type ActiveHit } from './body';
+import { approach, dcos, dsin, dsqrt, segSegDist2 } from './fmath';
+import { airHip, type Capsule, type Joints } from './skeleton';
 import { STAGES } from './stages';
 import {
   BTN,
@@ -58,10 +58,19 @@ const LEDGE_WAIT = 6;
 /** After leaving a ledge, frames before a ledge can be grabbed again. */
 const REGRAB_FRAMES = 30;
 const UNTIL_LAND_MAX = 45;
-const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14 };
+const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14, toss: 16 };
 /** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
 const SWORD_HIT = { back: 9, front: 45 };
-const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30 };
+const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30, toss: 150 };
+/** Spartan's sword (thrown or tossed up) is never used up by a hit or a clash. */
+const KEEPS: ProjKind[] = ['sword', 'toss'];
+// Priority clashes.
+/** Both fighters freeze this long when one attack beats another. */
+const CLASH_LAG = 6;
+/** A move beaten by a higher-priority attack: the fighter is stunned this long and pushed back. */
+const RECOIL = 16;
+/** Gliding ends by itself after this long. */
+const GLIDE_MAX = 240;
 const REFLECTABLE: ProjKind[] = ['arrow', 'orb', 'boulder'];
 
 const DIRS = BTN.left | BTN.right | BTN.up | BTN.down;
@@ -149,6 +158,13 @@ function newFighter(slot: number, char: CharId, palette: number, x: number, y: n
     ledgeLock: 0,
     landAt: -1,
     armorUsed: false,
+    aim: 0,
+    heldBy: -1,
+    holding: -1,
+    tLen: 0,
+    tAng: 0,
+    tSlot: -1,
+    tLedge: 0,
   };
 }
 
@@ -259,7 +275,14 @@ function enter(f: FighterState, act: Act) {
   f.act = act;
   f.t = 0;
   f.landAt = -1;
-  if (act !== 'move') f.move = null;
+  // A held opponent is let go by anything but the throw itself (which sets it again).
+  f.holding = -1;
+  if (act !== 'move') {
+    f.move = null;
+    f.tLen = 0;
+    f.tSlot = -1;
+    f.tLedge = 0;
+  }
 }
 
 function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEvent[], frozen: boolean) {
@@ -286,6 +309,14 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
   if (f.regrab > 0) f.regrab--;
   if (f.jumpAnim < 99) f.jumpAnim++;
   f.t++;
+
+  // Held by a grab: the holder moves this fighter until the throw.
+  if (f.act === 'held') {
+    const h = s.fighters[f.heldBy];
+    if (h && h.holding === f.slot && h.act === 'move') return;
+    f.heldBy = -1;
+    enter(f, 'air');
+  }
 
   const dirX = (input & BTN.right ? 1 : 0) - (input & BTN.left ? 1 : 0);
 
@@ -319,6 +350,10 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
     case 'airdodge':
       if (f.t >= AIR_DODGE.total) enter(f, 'air');
       break;
+    case 'glide':
+      // Any attack, jump or dodge ends the glide and comes out at once (below).
+      if ((f.buf & ACTIONS && !frozen) || f.t >= GLIDE_MAX) enter(f, 'air');
+      break;
     case 'move':
       advanceMove(s, f, input, ev);
       break;
@@ -338,7 +373,11 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
   // ---- movement
   const st = c.stats;
   const m = moveOf(f);
-  if (f.grounded) {
+  // Pulled along a tether: the speed was set by the move.
+  const pulled = !!m?.pull && !f.halted && f.t <= m.pull.until;
+  if (pulled) {
+    // Nothing: the pull sets the speed each frame.
+  } else if (f.grounded) {
     f.vy = 0;
     if (f.act === 'idle' || f.act === 'run') {
       if (dirX !== 0 && !frozen) {
@@ -361,6 +400,15 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
     } else if (f.act !== 'squat') {
       f.vx = approach(f.vx, 0, st.friction);
     }
+  } else if (f.act === 'glide') {
+    // Gliding: up holds altitude but slows down, down dives steeply, back slows.
+    const up = input & BTN.up && !frozen;
+    const down = input & BTN.down && !frozen;
+    const back = dirX === -f.facing && !frozen;
+    const speed = down ? 5.5 : up ? 4.2 : back ? 3.4 : 5.8;
+    const sink = down ? -7 : up ? -0.3 : -1.2;
+    f.vx = approach(f.vx, f.facing * speed, 0.3);
+    f.vy = approach(f.vy, sink, 0.35);
   } else {
     let g = st.gravity;
     if (m?.gravity && f.t >= m.gravity.f[0] && f.t <= m.gravity.f[1]) g *= m.gravity.mul;
@@ -404,7 +452,7 @@ function tryGrabLedge(s: MatchState, f: FighterState, input: number, ev: SimEven
   const m = moveOf(f);
   // While falling (or during an up special, which can reach for the ledge on the way up). Not while launched.
   const reaching = f.act === 'move' && f.move === 'uspec';
-  if (!(f.act === 'air' || f.act === 'airdodge' || f.act === 'move') || (m?.hidden && f.t >= m.hidden[0] && f.t <= m.hidden[1])) return;
+  if (!(f.act === 'air' || f.act === 'airdodge' || f.act === 'move' || f.act === 'glide') || (m?.hidden && f.t >= m.hidden[0] && f.t <= m.hidden[1])) return;
   if (!reaching && f.vy + f.kbSpeed * f.kbY > 0) return;
   const c = CHARS[f.char];
   const main = STAGES[s.stage].main;
@@ -415,31 +463,43 @@ function tryGrabLedge(s: MatchState, f: FighterState, input: number, ev: SimEven
     const ledgeX = side > 0 ? main.x2 : main.x1;
     const out = side * (f.x - ledgeX);
     if (out < -4 || out > c.halfWidth + 30) continue;
-    if (s.fighters.some((o) => o !== f && (o.act === 'ledge' || o.act === 'climb') && o.ledgeSide === side)) continue;
-    enter(f, 'ledge');
-    f.ledgeSide = side;
-    f.facing = (side > 0 ? -1 : 1) as 1 | -1;
-    f.x = ledgeX + side * hold.x;
-    f.y = -hold.y;
-    f.vx = 0;
-    f.vy = 0;
-    f.kbSpeed = 0;
-    f.fastFall = false;
-    f.buf = 0;
-    f.bufT = 0;
-    // A direction held while recovering does not climb or let go by itself: it has to be pressed again.
-    f.ledgeLock = input & DIRS;
-    // Grabbing a ledge gives back the air jumps, the up special and the air dodge.
-    f.airJumps = CHARS[f.char].stats.airJumps ?? 1;
-    f.upSpecial = true;
-    f.airDodge = true;
-    if (f.ledgeFresh) {
-      f.invincible = Math.max(f.invincible, LEDGE_INVINCIBLE);
-      f.ledgeFresh = false;
-    }
-    ev.push({ type: 'ledge', slot: f.slot });
-    return;
+    if (grabLedge(s, f, side, input, ev)) return;
   }
+}
+
+function ledgeTaken(s: MatchState, f: FighterState, side: number) {
+  return s.fighters.some((o) => o !== f && (o.act === 'ledge' || o.act === 'climb') && o.ledgeSide === side);
+}
+
+/** Hangs from the ledge on this side (-1 left, 1 right), unless someone else holds it. */
+function grabLedge(s: MatchState, f: FighterState, side: number, input: number, ev: SimEvent[]): boolean {
+  if (ledgeTaken(s, f, side)) return false;
+  const main = STAGES[s.stage].main;
+  const ledgeX = side > 0 ? main.x2 : main.x1;
+  const hold = ledgeHold(f.char);
+  enter(f, 'ledge');
+  f.ledgeSide = side;
+  f.facing = (side > 0 ? -1 : 1) as 1 | -1;
+  f.x = ledgeX + side * hold.x;
+  f.y = -hold.y;
+  f.vx = 0;
+  f.vy = 0;
+  f.kbSpeed = 0;
+  f.fastFall = false;
+  f.buf = 0;
+  f.bufT = 0;
+  // A direction held while recovering does not climb or let go by itself: it has to be pressed again.
+  f.ledgeLock = input & DIRS;
+  // Grabbing a ledge gives back the air jumps, the up special and the air dodge.
+  f.airJumps = CHARS[f.char].stats.airJumps ?? 1;
+  f.upSpecial = true;
+  f.airDodge = true;
+  if (f.ledgeFresh) {
+    f.invincible = Math.max(f.invincible, LEDGE_INVINCIBLE);
+    f.ledgeFresh = false;
+  }
+  ev.push({ type: 'ledge', slot: f.slot });
+  return true;
 }
 
 /** Hanging: toward the stage or up climbs, jump jumps, away or down lets go. */
@@ -593,13 +653,16 @@ function startMove(s: MatchState, f: FighterState, id: string, input: number, si
   f.charge = 0;
   f.halted = false;
   f.armorUsed = false;
-  if (m.hits?.length) ev.push({ type: 'swing', slot: f.slot, heavy: m.hits.some((h) => h.dmg >= 12) });
+  f.aim = 0;
+  if (m.hits?.some((h) => !h.grab)) ev.push({ type: 'swing', slot: f.slot, heavy: m.hits.some((h) => h.dmg >= 12) });
   moveEffects(s, f, m, input, ev);
 }
 
 function advanceMove(s: MatchState, f: FighterState, input: number, ev: SimEvent[]) {
   const m = moveOf(f);
   if (!m) return enter(f, f.grounded ? 'idle' : 'air');
+  // An aimed shot follows up or down held until it leaves.
+  if (m.aim && f.t <= (m.proj?.[0]?.f ?? 0)) f.aim = input & BTN.up ? m.aim : input & BTN.down ? -m.aim : 0;
   // Charging: hold special to stay on the charge frame.
   if (m.charge && f.t - 1 === m.charge.at && input & BTN.special && f.charge < m.charge.max) {
     f.t--;
@@ -624,7 +687,7 @@ function advanceMove(s: MatchState, f: FighterState, input: number, ev: SimEvent
       return;
     }
   }
-  if (f.t >= m.total) return enter(f, f.grounded ? 'idle' : 'air');
+  if (f.t >= m.total) return enter(f, f.grounded ? 'idle' : m.glide ? 'glide' : 'air');
   moveEffects(s, f, m, input, ev);
 }
 
@@ -644,6 +707,12 @@ function moveEffects(s: MatchState, f: FighterState, m: MoveDef, input: number, 
     }
   }
   if (m.proj) for (const p of m.proj) if (p.f === t) spawnProjectile(s, f, m, p, ev);
+  if (m.throw && f.holding >= 0) {
+    if (t < m.throw.release) holdVictim(s, f, m);
+    else if (t === m.throw.release) throwVictim(s, f, m, ev);
+  }
+  if (m.tether) tether(s, f, m, input, ev);
+  if (m.pull && !f.halted && t <= m.pull.until) pull(s, f, m, input, ev);
   if (m.teleport) {
     const tp = m.teleport;
     if (t === tp.f) {
@@ -665,6 +734,131 @@ function moveEffects(s: MatchState, f: FighterState, m: MoveDef, input: number, 
       f.vy = f.grounded ? 0 : f.tpY * 0.12;
     }
   }
+}
+
+// ---------------------------------------------------------------- grabs, tethers
+
+/** Keeps a grabbed opponent at the holding point (their chest at the hand). */
+function holdVictim(s: MatchState, f: FighterState, m: MoveDef) {
+  const v = s.fighters[f.holding];
+  const j = jointsOf(f);
+  if (!v || !j || !m.throw) return;
+  const p = pointOf(f, j, m.throw.hold);
+  const vb = CHARS[v.char].body;
+  v.x = p[0];
+  v.y = p[1] - airHip(vb) - vb.torso * 0.5;
+}
+
+function throwVictim(s: MatchState, f: FighterState, m: MoveDef, ev: SimEvent[]) {
+  const v = s.fighters[f.holding];
+  const th = m.throw!;
+  f.holding = -1;
+  if (!v || v.act !== 'held') return;
+  v.heldBy = -1;
+  holdVictim(s, f, m);
+  applyHit(s, f, v, th, th.backward ? -f.facing : f.facing, v.x, v.y + CHARS[v.char].height * 0.5, ev);
+}
+
+/** A command grab caught `v`: start the throw with `v` held. */
+function grab(s: MatchState, a: FighterState, v: FighterState, h: HitDef, ev: SimEvent[]) {
+  if (v.act === 'held' || a.act !== 'move' || !h.grab) return;
+  a.hitLog.push(h.group ?? 0, v.slot, a.t);
+  startMove(s, a, h.grab, 0, 0, ev);
+  a.holding = v.slot;
+  enter(v, 'held');
+  v.heldBy = a.slot;
+  v.vx = 0;
+  v.vy = 0;
+  v.kbSpeed = 0;
+  v.hitstun = 0;
+  v.hitlag = 0;
+  v.fastFall = false;
+  v.charge = 0;
+  v.ledgeSide = 0;
+  leaveGround(v);
+  v.facing = a.facing === 1 ? -1 : 1;
+  holdVictim(s, a, CHARS[a.char].moves[h.grab]);
+  ev.push({ type: 'grab', slot: a.slot });
+}
+
+/** Where the tether starts (the shoulder) and its tip. */
+export function tetherLine(f: FighterState, j: Joints): [number, number, number, number] {
+  return [j.neck[0], j.neck[1], j.neck[0] + f.facing * dcos(f.tAng) * f.tLen, j.neck[1] + dsin(f.tAng) * f.tLen];
+}
+
+/** The tether goes out, and catches the first opponent or ledge its tip touches. */
+function tether(s: MatchState, f: FighterState, m: MoveDef, input: number, ev: SimEvent[]) {
+  const tt = m.tether!;
+  const t = f.t;
+  if (t === tt.f[0]) {
+    f.tAng = f.grounded ? 0 : tt.airAng;
+    f.tSlot = -1;
+    f.tLedge = 0;
+  }
+  if (t < tt.f[0]) return;
+  if (t > tt.f[1]) {
+    f.tLen = Math.max(0, f.tLen - tt.speed * 1.5);
+    return;
+  }
+  f.tLen = Math.min(tt.len, (t - tt.f[0] + 1) * tt.speed);
+  const j = jointsOf(f);
+  if (!j) return;
+  const [, , x, y] = tetherLine(f, j);
+  for (const v of s.fighters) {
+    if (v === f || !hittable(v)) continue;
+    if (!touches([x, y, x, y, 10], hurtOf(v))) continue;
+    f.tSlot = v.slot;
+    startMove(s, f, tt.zip, input, 0, ev);
+    leaveGround(f);
+    return;
+  }
+  if (f.grounded) return;
+  const main = STAGES[s.stage].main;
+  for (const side of [-1, 1]) {
+    const cx = side > 0 ? main.x2 : main.x1;
+    if ((x - cx) * (x - cx) + y * y > 32 * 32 || ledgeTaken(s, f, side) || f.regrab > 0) continue;
+    f.tLedge = side;
+    startMove(s, f, tt.reel, input, 0, ev);
+    return;
+  }
+}
+
+/** Flies along the tether: to the caught opponent (a zip) or to the caught ledge (a reel, ending on the ledge). */
+function pull(s: MatchState, f: FighterState, m: MoveDef, input: number, ev: SimEvent[]) {
+  const pl = m.pull!;
+  const c = CHARS[f.char];
+  let tx: number;
+  let ty: number;
+  if (pl.kind === 'zip') {
+    const v = s.fighters[f.tSlot];
+    if (!v || v.act === 'dead' || v.act === 'out') {
+      f.halted = true;
+      return;
+    }
+    tx = v.x;
+    ty = v.y + CHARS[v.char].height * 0.5 - c.height * 0.5;
+    f.facing = tx >= f.x ? 1 : -1;
+  } else {
+    const main = STAGES[s.stage].main;
+    const hold = ledgeHold(f.char);
+    tx = (f.tLedge > 0 ? main.x2 : main.x1) + f.tLedge * hold.x;
+    ty = -hold.y;
+  }
+  const dx = tx - f.x;
+  const dy = ty - f.y;
+  const d = dsqrt(dx * dx + dy * dy);
+  if (pl.kind === 'reel' && d <= pl.speed + 2) {
+    f.x = tx;
+    f.y = ty;
+    if (!grabLedge(s, f, f.tLedge, input, ev)) f.halted = true;
+    return;
+  }
+  if (d < 1) return;
+  f.vx = (dx / d) * pl.speed;
+  f.vy = (dy / d) * pl.speed;
+  if (f.grounded && f.vy > 0) leaveGround(f);
+  // The opponent's line is kept for drawing.
+  if (pl.kind === 'zip') f.tLen = d;
 }
 
 // ---------------------------------------------------------------- stage collision
@@ -748,6 +942,10 @@ function landOn(s: MatchState, f: FighterState, surface: number, y: number, prev
       enter(f, 'land');
       f.landLag = AIRDODGE_LAND_LAG;
       break;
+    case 'glide':
+      enter(f, 'land');
+      f.landLag = LAND_LAG;
+      break;
     case 'hurt':
       f.kbSpeed = 0;
       f.hitstun = 0;
@@ -810,11 +1008,48 @@ interface Strike {
 }
 
 function touches(shape: Capsule, hurt: Capsule[]) {
-  for (const h of hurt) {
-    const r = shape[4] + h[4];
-    if (segSegDist2(shape[0], shape[1], shape[2], shape[3], h[0], h[1], h[2], h[3]) <= r * r) return true;
-  }
+  for (const h of hurt) if (capsTouch(shape, h)) return true;
   return false;
+}
+
+function capsTouch(a: Capsule, b: Capsule) {
+  const r = a[4] + b[4];
+  return segSegDist2(a[0], a[1], a[2], a[3], b[0], b[1], b[2], b[3]) <= r * r;
+}
+
+/** The highest priority among `a`'s hitboxes that touch `b`'s, and the same for `b` (0: no touch). Grabs never clash. */
+function clash(a: FighterState, ba: ActiveHit[], b: FighterState, bb: ActiveHit[]) {
+  const ma = moveOf(a);
+  const mb = moveOf(b);
+  if (!ma || !mb) return null;
+  let pa = 0;
+  let pb = 0;
+  let x = 0;
+  let y = 0;
+  for (const p of ba) {
+    if (p.def.grab || alreadyHit(a, p.def, b.slot)) continue;
+    for (const q of bb) {
+      if (q.def.grab || alreadyHit(b, q.def, a.slot) || !capsTouch(p.shape, q.shape)) continue;
+      pa = Math.max(pa, prioOf(ma, p.def));
+      pb = Math.max(pb, prioOf(mb, q.def));
+      x = (p.shape[2] + q.shape[2]) / 2;
+      y = (p.shape[3] + q.shape[3]) / 2;
+    }
+  }
+  return pa ? { pa, pb, x, y } : null;
+}
+
+/** A move beaten by a higher-priority attack stops; the fighter is pushed back and stunned for a moment. */
+function recoil(f: FighterState, fromX: number) {
+  enter(f, 'hurt');
+  f.hitstun = RECOIL;
+  f.kbSpeed = 3.5;
+  f.kbX = f.x >= fromX ? 1 : -1;
+  f.kbY = 0;
+  f.vx = 0;
+  if (f.vy > 0) f.vy = 0;
+  f.charge = 0;
+  f.hitlag = CLASH_LAG;
 }
 
 /** Whether this hitbox already hit this fighter. Multi-hit timing counts the attacker's move frames, which pause during hitlag. */
@@ -828,10 +1063,24 @@ function alreadyHit(a: FighterState, h: HitDef, victim: number) {
 
 function resolveHits(s: MatchState, ev: SimEvent[]) {
   const joints = s.fighters.map((f) => jointsOf(f));
+  const all = s.fighters.map((f, i) => hitsOf(f, joints[i]));
+  // Attacks touching each other: the higher priority beats the lower; even ones trade (both carry on).
+  for (let i = 0; i < s.fighters.length; i++) {
+    for (let k = i + 1; k < s.fighters.length; k++) {
+      const c = clash(s.fighters[i], all[i], s.fighters[k], all[k]);
+      if (!c || c.pa === c.pb) continue;
+      const win = c.pa > c.pb ? i : k;
+      const lose = win === i ? k : i;
+      recoil(s.fighters[lose], s.fighters[win].x);
+      s.fighters[win].hitlag = Math.max(s.fighters[win].hitlag, CLASH_LAG);
+      all[lose] = [];
+      ev.push({ type: 'clash', x: c.x, y: c.y });
+    }
+  }
   const hurts = s.fighters.map((f, i) => (hittable(f) ? hurtOf(f, joints[i]) : null));
   const pending: { a: FighterState; v: FighterState; h: HitDef; x: number; y: number }[] = [];
   for (const a of s.fighters) {
-    const boxes = hitsOf(a, joints[a.slot]);
+    const boxes = all[a.slot];
     if (!boxes.length) continue;
     for (const v of s.fighters) {
       const hurt = hurts[v.slot];
@@ -846,6 +1095,10 @@ function resolveHits(s: MatchState, ev: SimEvent[]) {
   }
   // All hits on a frame land together, so two fighters can trade.
   for (const { a, v, h, x, y } of pending) {
+    if (h.grab) {
+      grab(s, a, v, h, ev);
+      continue;
+    }
     a.hitLog.push(h.group ?? 0, v.slot, a.t);
     const dir = h.away ? (v.x >= a.x ? 1 : -1) : h.pull ? (v.x >= a.x ? -1 : 1) : a.facing;
     applyHit(s, a, v, h, dir, x, y, ev);
@@ -901,7 +1154,14 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   if (a) {
     a.hitlag = lag;
     const am = moveOf(a);
-    if (am?.stopOnHit) {
+    if (am?.bounce) {
+      // Springs back off the opponent.
+      a.halted = true;
+      a.vx = -a.facing * am.bounce.vx;
+      a.vy = am.bounce.vy;
+      a.fastFall = false;
+      leaveGround(a);
+    } else if (am?.stopOnHit) {
       a.halted = true;
       a.vx = -a.facing * 1.5;
     }
@@ -922,6 +1182,9 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
   let dmg = def.dmg;
   let kbg = def.kbg;
   let bkb = def.bkb;
+  // A shot aimed up or down leaves from the hand along the aim.
+  const aim = m.aim ? f.aim : 0;
+  const ang = def.ang + aim;
   if (m.charge) {
     const k = f.charge / m.charge.max;
     speed *= 1 + 0.6 * k;
@@ -929,31 +1192,36 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
     kbg += 22 * k;
     bkb += 8 * k;
   }
-  const vx = dcos(def.ang) * speed * f.facing;
-  const vy = dsin(def.ang) * speed;
+  const vx = dcos(ang) * speed * f.facing;
+  const vy = dsin(ang) * speed;
   const p: ProjectileState = {
     id: s.nextId++,
     owner: f.slot,
     kind: def.kind,
-    x: j.hip[0] + f.facing * def.x,
+    x: aim ? j.hand1[0] : j.hip[0] + f.facing * def.x,
     // Shockwaves run along the floor; a boulder thrown on the ground starts resting on it.
-    y: def.kind === 'shock' ? f.y : def.kind === 'boulder' && f.grounded ? f.y + PROJ_R.boulder : j.hip[1] + def.y,
+    y: aim ? j.hand1[1] : def.kind === 'shock' ? f.y : def.kind === 'boulder' && f.grounded ? f.y + PROJ_R.boulder : j.hip[1] + def.y,
     vx,
     vy: def.kind === 'shock' ? 0 : vy,
     dir: vx < -0.001 ? -1 : vx > 0.001 ? 1 : f.facing,
-    ux: dcos(def.ang) * f.facing,
-    uy: dsin(def.ang),
+    ux: dcos(ang) * f.facing,
+    uy: dsin(ang),
     t: 0,
     dmg: Math.round(dmg),
-    ang: def.hitAng,
+    ang: def.hitAng + aim * 0.5,
     bkb,
     kbg,
     hitstun: def.hitstun ?? 1,
     hit: [],
     back: false,
     surface: f.surface,
+    prio: def.prio ?? m.prio ?? (dmg <= 6 ? 1 : dmg <= 11 ? 2 : 3),
+    nearBkb: def.near?.bkb ?? 0,
+    nearKbg: def.near?.kbg ?? 0,
+    nearT: def.near?.frames ?? 0,
+    clashed: [],
   };
-  if (def.kind === 'sword') f.weaponOut = true;
+  if (KEEPS.includes(def.kind)) f.weaponOut = true;
   s.projectiles.push(p);
   ev.push({ type: 'shoot', slot: f.slot, kind: def.kind });
 }
@@ -963,6 +1231,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
   const m = st.main;
   const keep: ProjectileState[] = [];
   const joints = s.fighters.map((f) => jointsOf(f));
+  const boxes = s.fighters.map((f, i) => hitsOf(f, joints[i]));
   for (const p of s.projectiles) {
     p.t++;
     const owner = s.fighters[p.owner];
@@ -997,6 +1266,21 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         if (!surf || p.x < surf.x1 || p.x > surf.x2) gone = true;
         break;
       }
+      case 'toss': {
+        // Spartan's sword tossed up: it slows, then falls, easing over to stay above him. Caught in
+        // the hand during his up special; otherwise back in hand once it falls back to him.
+        p.vy -= 0.42;
+        p.vx = (owner.x - p.x) * 0.15;
+        const j = joints[p.owner];
+        if (j && p.t > 8) {
+          const reach = owner.act === 'move' && owner.move === 'uspec' ? 42 : p.vy < 0 && p.t > 40 ? 55 : 0;
+          const dx = j.hand1[0] - p.x;
+          const dy = j.hand1[1] - p.y;
+          if (reach && dx * dx + dy * dy <= reach * reach) gone = true;
+        }
+        if (owner.act === 'dead' || owner.act === 'out') gone = true;
+        break;
+      }
     }
     const prevY = p.y;
     p.x += p.vx;
@@ -1007,21 +1291,89 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
     }
     // Arrows, orbs and boulders stop at the stage; the sword flies through it.
-    if (p.kind !== 'sword' && p.kind !== 'shock' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
+    if (!KEEPS.includes(p.kind) && p.kind !== 'shock' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
       gone = true;
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: Math.max(p.y, 0), kind: p.kind });
     }
     const b = st.blast;
     if (p.x < b.left || p.x > b.right || p.y < b.bottom || p.y > b.top) gone = true;
 
+    if (!gone) gone = projectileClash(s, p, boxes, ev);
     if (!gone) gone = projectileHits(s, p, joints, ev);
     if (gone) {
-      if (p.kind === 'sword') owner.weaponOut = false;
+      if (KEEPS.includes(p.kind)) owner.weaponOut = false;
       continue;
     }
     keep.push(p);
   }
-  s.projectiles = keep;
+  // Projectiles touching each other: the higher priority destroys the lower; even ones destroy each other.
+  const out = keep.map(() => false);
+  for (let i = 0; i < keep.length; i++) {
+    for (let k = i + 1; k < keep.length; k++) {
+      const p = keep[i];
+      const q = keep[k];
+      if (p.owner === q.owner || out[i] || out[k] || p.clashed.includes(q.id)) continue;
+      if (!capsTouch(projShape(p), projShape(q))) continue;
+      p.clashed.push(q.id);
+      q.clashed.push(p.id);
+      ev.push({ type: 'clash', x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 });
+      if (q.prio >= p.prio) out[i] = beaten(p);
+      if (p.prio >= q.prio) out[k] = beaten(q);
+    }
+  }
+  s.projectiles = keep.filter((p, i) => {
+    if (out[i] && KEEPS.includes(p.kind)) s.fighters[p.owner].weaponOut = false;
+    return !out[i];
+  });
+}
+
+/** The area a projectile covers: the thrown sword hits along its blade, the rest are circles. */
+function projShape(p: ProjectileState): Capsule {
+  const r = PROJ_R[p.kind];
+  return p.kind === 'sword'
+    ? [p.x - p.ux * SWORD_HIT.back, p.y - p.uy * SWORD_HIT.back, p.x + p.ux * SWORD_HIT.front, p.y + p.uy * SWORD_HIT.front, r]
+    : [p.x, p.y, p.x, p.y, r];
+}
+
+/** A projectile that lost a clash. True when it is gone; Spartan's sword is never destroyed (thrown, it flies back; tossed, it falls). */
+function beaten(p: ProjectileState): boolean {
+  if (p.kind === 'sword') {
+    p.back = true;
+    return false;
+  }
+  if (p.kind === 'toss') {
+    if (p.vy > 0) p.vy = 0;
+    return false;
+  }
+  return true;
+}
+
+/**
+ * A projectile touching an opponent's attack. The higher priority wins: a
+ * stronger or even attack swats the projectile away (the attack carries on);
+ * a weaker attack is stopped and the projectile flies on. Returns true when
+ * the projectile is gone.
+ */
+function projectileClash(s: MatchState, p: ProjectileState, boxes: ActiveHit[][], ev: SimEvent[]): boolean {
+  const shape = projShape(p);
+  for (const v of s.fighters) {
+    if (v.slot === p.owner || p.hit.includes(v.slot) || !boxes[v.slot].length) continue;
+    const m = moveOf(v);
+    if (!m) continue;
+    // A reflect deals with arrows, orbs and boulders itself.
+    if (REFLECTABLE.includes(p.kind) && reflectOf(v)) continue;
+    let pm = 0;
+    for (const b of boxes[v.slot]) if (!b.def.grab && capsTouch(b.shape, shape)) pm = Math.max(pm, prioOf(m, b.def));
+    if (!pm) continue;
+    ev.push({ type: 'clash', x: p.x, y: p.y });
+    if (pm >= p.prio) {
+      p.hit.push(v.slot);
+      return beaten(p);
+    }
+    recoil(v, p.x);
+    boxes[v.slot] = [];
+  }
+  return false;
 }
 
 /** The boulder rolls: it rests on the floor or a platform it comes down onto, and falls off their edges. */
@@ -1062,17 +1414,16 @@ function projectileHits(s: MatchState, p: ProjectileState, joints: ReturnType<ty
       }
     }
     if (!hittable(v)) continue;
-    const shape: [number, number, number, number, number] =
-      p.kind === 'sword'
-        ? [p.x - p.ux * SWORD_HIT.back, p.y - p.uy * SWORD_HIT.back, p.x + p.ux * SWORD_HIT.front, p.y + p.uy * SWORD_HIT.front, r]
-        : [p.x, p.y, p.x, p.y, r];
-    if (!touches(shape, hurtOf(v, j))) continue;
+    if (!touches(projShape(p), hurtOf(v, j))) continue;
     p.hit.push(v.slot);
     const owner = s.fighters[p.owner];
-    applyHit(s, null, v, p, p.dir, p.x, p.y, ev);
+    // Some projectiles hit harder right after leaving the hand.
+    const k = p.nearT > 0 && p.t < p.nearT ? 1 - p.t / p.nearT : 0;
+    const strike = k > 0 ? { ...p, bkb: p.bkb + (p.nearBkb - p.bkb) * k, kbg: p.kbg + (p.nearKbg - p.kbg) * k } : p;
+    applyHit(s, null, v, strike, p.dir, p.x, p.y, ev);
     // Credit the thrower (for who knocked whom out); projectiles cause no hitlag for the thrower.
     v.lastHitBy = owner.slot;
-    if (p.kind !== 'sword') {
+    if (!KEEPS.includes(p.kind)) {
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
       return true;
     }

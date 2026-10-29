@@ -164,6 +164,7 @@ export const sfx = {
     } else if (kind === 'sword') noise({ filter: 'bandpass', hz: 1200, toHz: 500, q: 2, dur: 0.3, gain: 0.2 });
     else if (kind === 'orb') tone(midiHz(69), { type: 'sine', dur: 0.35, to: midiHz(81), gain: 0.16 });
     else if (kind === 'boulder') tone(110, { type: 'square', dur: 0.15, to: 70, gain: 0.12 });
+    else if (kind === 'toss') noise({ filter: 'bandpass', hz: 700, toHz: 1600, q: 2, dur: 0.35, gain: 0.18 });
     else noise({ filter: 'lowpass', hz: 400, dur: 0.25, gain: 0.3 });
   },
   reflect() {
@@ -183,6 +184,17 @@ export const sfx = {
   },
   teleport() {
     tone(midiHz(84), { type: 'sine', dur: 0.2, to: midiHz(96), gain: 0.1 });
+  },
+  /** Two attacks meeting: a metallic clank. */
+  clash() {
+    tone(midiHz(86), { type: 'square', dur: 0.08, gain: 0.07 });
+    tone(midiHz(91), { type: 'square', dur: 0.1, gain: 0.05, at: 0.01 });
+    noise({ filter: 'highpass', hz: 4000, dur: 0.06, gain: 0.18 });
+  },
+  /** A command grab catching. */
+  grab() {
+    noise({ filter: 'lowpass', hz: 900, dur: 0.07, gain: 0.25 });
+    tone(140, { type: 'square', dur: 0.08, to: 90, gain: 0.1 });
   },
   count(n: number) {
     tone(midiHz(n > 0 ? 72 : 84), { type: 'square', dur: n > 0 ? 0.12 : 0.35, gain: 0.12 });

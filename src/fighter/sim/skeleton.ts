@@ -29,11 +29,13 @@ export interface Pose {
   dy: number;
   /** Weapon angle relative to the front forearm. */
   w: number;
+  /** Weapon shortening, 0 (full length) to 1 (none): a blade swung toward or away from the viewer. */
+  ws: number;
 }
 
 export type PoseInput = Partial<Pose>;
 
-const ZERO: Pose = { lean: 0, a1: 0, f1: 0, a2: 0, f2: 0, t1: 0, s1: 0, t2: 0, s2: 0, rot: 0, dx: 0, dy: 0, w: 0 };
+const ZERO: Pose = { lean: 0, a1: 0, f1: 0, a2: 0, f2: 0, t1: 0, s1: 0, t2: 0, s2: 0, rot: 0, dx: 0, dy: 0, w: 0, ws: 0 };
 const KEYS = Object.keys(ZERO) as (keyof Pose)[];
 
 /** A full pose from a base pose and the joints that differ. */
@@ -71,9 +73,10 @@ export interface Body {
   head: number;
   /** Weapon length from the front hand (0 = none). */
   weapon: number;
-  /** Hurtbox radii. */
+  /** Hurtbox radii (armR: the arms, if different from the other limbs). */
   torsoR: number;
   limbR: number;
+  armR?: number;
 }
 
 /** Joint positions in world space. */
@@ -127,7 +130,7 @@ export function solve(b: Body, p: Pose, x: number, y: number, facing: number, gr
   const foot1 = add(knee1, b.shin, p.s1);
   const knee2 = add(hip, b.thigh, p.t2);
   const foot2 = add(knee2, b.shin, p.s2);
-  const tip = b.weapon > 0 ? add(hand1, b.weapon, p.f1 + p.w) : hand1;
+  const tip = b.weapon > 0 ? add(hand1, b.weapon * (1 - p.ws), p.f1 + p.w) : hand1;
   const local = { hip, neck, head, elbow1, hand1, elbow2, hand2, knee1, foot1, knee2, foot2, tip };
 
   // Rotation turns the body around its belly, not its hip.
@@ -159,10 +162,10 @@ export function hurtboxes(b: Body, j: Joints): Capsule[] {
   return [
     seg(j.head, j.head, b.head + 2),
     seg(j.hip, j.neck, b.torsoR),
-    seg(j.neck, j.elbow1, b.limbR),
-    seg(j.elbow1, j.hand1, b.limbR),
-    seg(j.neck, j.elbow2, b.limbR),
-    seg(j.elbow2, j.hand2, b.limbR),
+    seg(j.neck, j.elbow1, b.armR ?? b.limbR),
+    seg(j.elbow1, j.hand1, b.armR ?? b.limbR),
+    seg(j.neck, j.elbow2, b.armR ?? b.limbR),
+    seg(j.elbow2, j.hand2, b.armR ?? b.limbR),
     seg(j.hip, j.knee1, b.limbR + 1),
     seg(j.knee1, j.foot1, b.limbR),
     seg(j.hip, j.knee2, b.limbR + 1),

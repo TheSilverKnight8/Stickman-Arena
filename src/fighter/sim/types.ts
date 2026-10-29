@@ -43,7 +43,15 @@ export interface Stats {
   squat: number;
 }
 
-export type ProjKind = 'arrow' | 'sword' | 'orb' | 'boulder' | 'shock';
+export type ProjKind = 'arrow' | 'sword' | 'orb' | 'boulder' | 'shock' | 'toss';
+
+/**
+ * Priority when two attacks touch: 1 light, 2 medium, 3 heavy. The higher one
+ * beats the lower (the lower move is stopped, a lower projectile is swatted
+ * away); even moves trade (both carry on), even projectiles destroy each other,
+ * and a projectile meeting an even move is destroyed while the move carries on.
+ */
+export type Prio = 1 | 2 | 3;
 
 export interface HitDef {
   /** Active frames, inclusive. */
@@ -69,6 +77,10 @@ export interface HitDef {
   pull?: boolean;
   /** Hitstun multiplier (default 1). */
   hitstun?: number;
+  /** Priority for this hitbox, if different from the move's. */
+  prio?: Prio;
+  /** A command grab: catching the opponent starts this move (the throw). Grabs never clash. */
+  grab?: string;
 }
 
 export interface ProjSpawn {
@@ -87,6 +99,10 @@ export interface ProjSpawn {
   kbg: number;
   /** Hitstun multiplier (default 1). */
   hitstun?: number;
+  /** Priority (default: the move's). */
+  prio?: Prio;
+  /** Stronger knockback when it hits soon after leaving the hand, fading to the normal values over `frames`. */
+  near?: { bkb: number; kbg: number; frames: number };
 }
 
 export interface VelDef {
@@ -137,6 +153,20 @@ export interface MoveDef {
   turn?: boolean;
   /** Hidden (and intangible) between these frames: a teleport. */
   hidden?: [number, number];
+  /** Priority of the move's hitboxes and projectiles (see Prio). */
+  prio?: Prio;
+  /** Holding up or down until the projectile leaves tilts the shot by this many degrees. */
+  aim?: number;
+  /** A throw (started by a grab): the opponent is held at `hold` until `release`, then hit. */
+  throw?: { hold: JointName | [number, number]; release: number; dmg: number; ang: number; bkb: number; kbg: number; backward?: boolean };
+  /** A tether thrown forward: catching an opponent starts `zip`, catching a ledge starts `reel`. */
+  tether?: { f: [number, number]; len: number; speed: number; airAng: number; zip: string; reel: string };
+  /** Flies toward the latched opponent (zip) or ledge (reel) at this speed, until frame `until`. */
+  pull?: { kind: 'zip' | 'reel'; speed: number; until: number };
+  /** On hitting, springs back off the opponent with this speed (forward is toward the opponent). */
+  bounce?: { vx: number; vy: number };
+  /** Ends in a glide instead of a normal fall. */
+  glide?: boolean;
 }
 
 export interface CharDef {
@@ -150,6 +180,8 @@ export interface CharDef {
   /** Line thickness for drawing. */
   line: number;
   stats: Stats;
+  /** Line thickness for the arms, if different (Buster's big arms). */
+  armLine?: number;
   /** Collision box: half width and height. */
   halfWidth: number;
   height: number;
@@ -173,6 +205,8 @@ export interface CharDef {
     djump: Anim;
     ledge: Anim;
     climb: Anim;
+    /** Gliding (Valkyrie). */
+    glide?: Anim;
   };
   moves: Record<MoveSlot, MoveDef> & Record<string, MoveDef>;
 }
@@ -196,7 +230,7 @@ export interface StageDef {
 
 // ---------------------------------------------------------------- match state (plain data, copyable)
 
-export type Act = 'idle' | 'run' | 'squat' | 'air' | 'land' | 'move' | 'hurt' | 'dodge' | 'airdodge' | 'ledge' | 'climb' | 'dead' | 'respawn' | 'out';
+export type Act = 'idle' | 'run' | 'squat' | 'air' | 'land' | 'move' | 'hurt' | 'dodge' | 'airdodge' | 'ledge' | 'climb' | 'dead' | 'respawn' | 'out' | 'held' | 'glide';
 
 export interface FighterState {
   slot: number;
@@ -272,6 +306,16 @@ export interface FighterState {
   landAt: number;
   /** Armor has already taken a hit during the current move (armor holds against one hit). */
   armorUsed: boolean;
+  /** Aim of an aimable shot, in degrees (up is positive). */
+  aim: number;
+  /** Grabs: the slot holding this fighter, and the slot this fighter holds (-1: none). */
+  heldBy: number;
+  holding: number;
+  /** Tether: current length and angle, and what it caught (a slot, or -1; ledge side -1/1, or 0). */
+  tLen: number;
+  tAng: number;
+  tSlot: number;
+  tLedge: number;
 }
 
 export interface ProjectileState {
@@ -300,6 +344,13 @@ export interface ProjectileState {
   back: boolean;
   /** For shockwaves: the surface it runs along. */
   surface: number;
+  prio: Prio;
+  /** Close-range knockback (see ProjSpawn.near); nearT 0 means none. */
+  nearBkb: number;
+  nearKbg: number;
+  nearT: number;
+  /** Projectiles (ids) this one has already clashed with. */
+  clashed: number[];
 }
 
 export type MatchPhase = 'countdown' | 'play' | 'sudden-intro' | 'over';
@@ -342,4 +393,6 @@ export type SimEvent =
   | { type: 'sudden' }
   | { type: 'shatter'; x: number; y: number; kind: ProjKind }
   | { type: 'teleport'; slot: number; x: number; y: number }
-  | { type: 'ledge'; slot: number };
+  | { type: 'ledge'; slot: number }
+  | { type: 'clash'; x: number; y: number }
+  | { type: 'grab'; slot: number };

@@ -91,6 +91,14 @@ function reachOf(char: CharId): Reach[] {
     if (air) Object.assign(f, { grounded: false, surface: -1, act: 'air', y: 200 });
     let r: Reach | null = null;
     const m = CHARS[char].moves[slot];
+    // A tether covers a strip straight out from the shoulder; what counts is the kick when it catches.
+    if (m.tether) {
+      const zip = CHARS[char].moves[m.tether.zip];
+      const kick = zip.hits?.[0];
+      const reach = m.tether.len;
+      out.push({ slot, startup: m.tether.f[0] + 6, x1: 20, x2: reach, y1: air ? -30 : 30, y2: air ? 120 : 110, dmg: kick?.dmg ?? 0, kbg: kick?.kbg ?? 0, air, special: true });
+      continue;
+    }
     for (let fr = 0; fr < m.total + 30; fr++) {
       if (air) f.y = Math.max(f.y, 200);
       step(s, [fr === 0 ? inputFor(slot, 1) : 0, 0]);
@@ -99,14 +107,18 @@ function reachOf(char: CharId): Reach[] {
       for (const h of hitsOf(f)) {
         const [ax, ay, bx, by, rad] = h.shape;
         const box = { x1: Math.min(ax, bx) - rad - f.x, x2: Math.max(ax, bx) + rad - f.x, y1: Math.min(ay, by) - rad - baseY, y2: Math.max(ay, by) + rad - baseY };
-        if (!r) r = { slot, startup: f.t, ...box, dmg: h.def.dmg, kbg: h.def.kbg, air, special: slot.endsWith('spec') };
+        // A command grab is worth its throw.
+        const th = h.def.grab ? CHARS[char].moves[h.def.grab].throw : undefined;
+        const dmg = th ? th.dmg : h.def.dmg;
+        const kbg = th ? th.kbg : h.def.kbg;
+        if (!r) r = { slot, startup: f.t, ...box, dmg, kbg, air, special: slot.endsWith('spec') };
         else {
           r.x1 = Math.min(r.x1, box.x1);
           r.x2 = Math.max(r.x2, box.x2);
           r.y1 = Math.min(r.y1, box.y1);
           r.y2 = Math.max(r.y2, box.y2);
-          r.dmg = Math.max(r.dmg, h.def.dmg);
-          r.kbg = Math.max(r.kbg, h.def.kbg);
+          r.dmg = Math.max(r.dmg, dmg);
+          r.kbg = Math.max(r.kbg, kbg);
         }
       }
       const p = s.projectiles.find((q) => q.owner === 0);
@@ -167,16 +179,20 @@ export function cpuInput(s: MatchState, slot: number, cpu: Cpu): number {
     cpu.jumpHold--;
     out |= BTN.jump;
   }
+  // The CPU does not aim Ranger's Charged Shot (measured: its aimed shots missed more than they hit),
+  // so up or down held for other reasons is let go while an aimable shot starts.
+  const aimable = me.act === 'move' && !!me.move && !!CHARS[me.char].moves[me.move].aim;
   if (cpu.retreat > 0) cpu.retreat--;
   if (me.grounded) {
     cpu.triedUp = false;
     cpu.triedSide = false;
   }
-  if (--cpu.wait > 0) return out;
+  if (--cpu.wait > 0) return aimable ? out & ~(BTN.up | BTN.down) : out;
   cpu.wait = L.think;
   cpu.hold = 0;
   decide(s, me, cpu);
-  return cpu.hold | (out & (BTN.attack | BTN.special | BTN.dodge | BTN.jump));
+  const bits = cpu.hold | (out & (BTN.attack | BTN.special | BTN.dodge | BTN.jump));
+  return aimable ? bits & ~(BTN.up | BTN.down) : bits;
 }
 
 function decide(s: MatchState, me: FighterState, cpu: Cpu) {
@@ -189,7 +205,17 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
     cpu.hold = toward(0);
     return;
   }
-  if (me.act === 'hurt' || me.hitlag > 0) return;
+  if (me.act === 'hurt' || me.act === 'held' || me.hitlag > 0) return;
+
+  // Gliding (Valkyrie): dive onto the stage once over it; facing away from it, end the glide.
+  if (me.act === 'glide') {
+    const over = me.x > st.main.x1 + 20 && me.x < st.main.x2 - 20;
+    const towardStage = -me.x * me.facing > 0;
+    if (over) cpu.hold = BTN.down;
+    else if (!towardStage) cpu.tap = me.airJumps > 0 ? BTN.jump : BTN.dodge;
+    cpu.wait = Math.min(cpu.wait, 2);
+    return;
+  }
 
   // On a ledge: wait a moment with the stick let go, then climb or jump up.
   if (me.act === 'ledge') {

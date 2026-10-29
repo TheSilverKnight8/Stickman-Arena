@@ -177,6 +177,12 @@ function playSounds(events: SimEvent[], mySlot: number) {
       case 'teleport':
         sfx.teleport();
         break;
+      case 'clash':
+        sfx.clash();
+        break;
+      case 'grab':
+        sfx.grab();
+        break;
       case 'ledge':
         sfx.ledge();
         break;

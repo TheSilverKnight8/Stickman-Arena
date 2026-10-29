@@ -2,7 +2,7 @@ import { CHARS } from './chars';
 import { CLIMB_FRAMES } from './chars/common';
 import { clamp } from './fmath';
 import { hurtboxes, sample, solve, type Capsule, type Joints, type Pose } from './skeleton';
-import type { CharId, FighterState, HitDef, MoveDef } from './types';
+import type { CharId, FighterState, HitDef, MoveDef, Prio } from './types';
 
 export { CLIMB_FRAMES };
 
@@ -39,12 +39,25 @@ export function poseOf(f: FighterState): Pose | null {
       return sample(a.climb, f.t);
     case 'hurt':
       return f.hitstun > 25 && f.kbSpeed > 6 ? sample(a.tumble, f.t, true) : sample(a.hurt, f.t, true);
+    case 'held':
+      return sample(a.hurt, f.t, true);
+    case 'glide':
+      return sample(a.glide ?? a.fall, f.t, true);
     case 'air':
       if (f.jumpAnim < 22) return sample(a.djump, f.jumpAnim);
       return f.vy > 0 ? sample(a.rise, 0) : sample(a.fall, clamp(-f.vy * 1.5, 0, 10));
     case 'move': {
       const m = moveOf(f);
-      return m ? sample(m.anim, f.t) : sample(a.idle, 0);
+      if (!m) return sample(a.idle, 0);
+      const p = sample(m.anim, f.t);
+      // An aimed shot turns both arms with the aim.
+      if (m.aim && f.aim) {
+        p.a1 += f.aim;
+        p.f1 += f.aim;
+        p.a2 += f.aim;
+        p.f2 += f.aim;
+      }
+      return p;
     }
   }
 }
@@ -59,7 +72,7 @@ export function jointsOf(f: FighterState): Joints | null {
 
 /** Whether the fighter can be hit this frame. */
 export function hittable(f: FighterState): boolean {
-  if (f.act === 'dead' || f.act === 'out' || f.act === 'respawn' || f.invincible > 0) return false;
+  if (f.act === 'dead' || f.act === 'out' || f.act === 'respawn' || f.act === 'held' || f.invincible > 0) return false;
   if (f.act === 'dodge') return !(f.t >= SPOT_DODGE.from && f.t <= SPOT_DODGE.to);
   if (f.act === 'airdodge') return !(f.t >= AIR_DODGE.from && f.t <= AIR_DODGE.to);
   // Climbing up from a ledge can't be hit until the fighter is nearly up.
@@ -128,6 +141,14 @@ export function hitsOf(f: FighterState, j: Joints | null = jointsOf(f)): ActiveH
     out.push({ def: h, shape: [a[0], a[1], b[0], b[1], h.r] });
   }
   return out;
+}
+
+/** A hitbox's priority: its own, else its move's, else from its damage (up to 6 light, up to 11 medium, more heavy). */
+export function prioOf(m: MoveDef, h?: HitDef): Prio {
+  if (h?.prio) return h.prio;
+  if (m.prio) return m.prio;
+  const dmg = h ? h.dmg : Math.max(0, ...(m.hits ?? []).map((x) => x.dmg), ...(m.proj ?? []).map((x) => x.dmg));
+  return dmg <= 6 ? 1 : dmg <= 11 ? 2 : 3;
 }
 
 const LIMB_BASE: Partial<Record<string, HitDef['at']>> = { hand1: 'elbow1', hand2: 'elbow2', foot1: 'knee1', foot2: 'knee2' };

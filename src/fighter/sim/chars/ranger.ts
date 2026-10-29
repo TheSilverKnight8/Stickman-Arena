@@ -5,7 +5,7 @@ import { aimPose, baseAnims, keys } from './common';
 // RANGER: zoner. Average mobility and survivability, plenty of ranged tools;
 // less effective close up, needs precision. An archer with many bow attacks,
 // plus an answer to close opponents (spec): Bow Bash, Back-off Kick and
-// Backflip Kick push them away.
+// Backflip Kick push them away. She wears a wide-brimmed hat and a quiver (drawn only).
 
 const S = pose({ lean: 4, a1: 70, f1: 80, a2: 20, f2: 60, t1: 14, s1: -2, t2: -14, s2: -16 });
 const A = pose(S, { t1: 40, s1: -20, t2: -10, s2: -40, a1: 95, f1: 100 });
@@ -59,17 +59,27 @@ export const ranger: CharDef = {
     jab: {
       name: 'Bow Bash',
       total: 18,
-      anim: keys([0, S], [3, S, { a1: 20, f1: 40, lean: -5 }], [5, S, { a1: 110, f1: 140, lean: 15 }], [9, S, { a1: 110, f1: 140, lean: 15 }], [18, S]),
+      prio: 1,
+      anim: keys(
+        [0, S],
+        [3, S, { a1: 20, f1: 40, lean: -8, t1: 8, t2: -20, dx: -2 }],
+        [5, S, { a1: 110, f1: 140, lean: 18, t1: 34, s1: 0, t2: -26, s2: -30, dx: 4 }],
+        [9, S, { a1: 110, f1: 140, lean: 18, t1: 34, s1: 0, t2: -26, s2: -30, dx: 4 }],
+        [18, S],
+      ),
       hits: [{ f: [4, 6], at: 'hand1', r: 13, dmg: 4, ang: 55, bkb: 40, kbg: 45 }],
     },
     ftilt: {
       name: 'Quick Shot',
       total: 34,
+      prio: 2,
       turn: true,
+      // Plants a wide stance to shoot, and rocks back with the release.
       anim: [
         [0, S],
-        [6, aimPose(S, 90)],
-        [18, aimPose(S, 90)],
+        [6, aimPose(S, 90, { t1: 30, s1: 0, t2: -30, s2: -30, dy: -3 })],
+        [11, aimPose(S, 90, { lean: -6, t1: 30, s1: 0, t2: -30, s2: -30, dy: -3, dx: -4 })],
+        [18, aimPose(S, 90, { t1: 26, s1: -2, t2: -26, s2: -28, dy: -2, dx: -3 })],
         [34, S],
       ],
       proj: [arrow(10, 34, 30, 0, 6, { hitAng: 38, bkb: 28, kbg: 45 })],
@@ -77,10 +87,13 @@ export const ranger: CharDef = {
     utilt: {
       name: 'Skyward Shot',
       total: 34,
+      prio: 2,
+      // Leans back with one knee bent to aim straight up.
       anim: [
         [0, S],
-        [6, aimPose(S, 175, { lean: -10 })],
-        [18, aimPose(S, 175, { lean: -10 })],
+        [6, aimPose(S, 175, { lean: -14, t1: 40, s1: -20, t2: -20, s2: -30, dy: -4 })],
+        [11, aimPose(S, 175, { lean: -18, t1: 40, s1: -20, t2: -20, s2: -30, dy: -5 })],
+        [18, aimPose(S, 175, { lean: -14, t1: 36, s1: -18, t2: -18, s2: -28, dy: -4 })],
         [34, S],
       ],
       proj: [arrow(9, 6, 72, 85, 6, { hitAng: 88, bkb: 30, kbg: 62 })],
@@ -88,7 +101,14 @@ export const ranger: CharDef = {
     dtilt: {
       name: 'Back-off Kick',
       total: 24,
-      anim: keys([0, S], [4, S, { lean: -20, t1: 70, s1: 85, t2: -10, s2: -20, a1: 120, f1: 140 }], [8, S, { lean: -20, t1: 70, s1: 85, t2: -10, s2: -20, a1: 120, f1: 140 }], [24, S]),
+      prio: 1,
+      anim: keys(
+        [0, S],
+        [2, S, { lean: 10, t1: 50, s1: -40, t2: -16, s2: -22, a1: 80, f1: 100, dy: -3 }],
+        [4, S, { lean: -24, t1: 70, s1: 85, t2: -10, s2: -20, a1: 120, f1: 140, a2: -40, f2: -20 }],
+        [8, S, { lean: -24, t1: 70, s1: 85, t2: -10, s2: -20, a1: 120, f1: 140, a2: -40, f2: -20 }],
+        [24, S],
+      ),
       hits: [{ f: [4, 7], at: 'foot1', r: 11, dmg: 6, ang: 28, bkb: 58, kbg: 45 }],
       vel: [{ f: 7, vx: -5, when: 'ground' }],
     },
@@ -96,7 +116,13 @@ export const ranger: CharDef = {
       name: 'Bow Spin',
       total: 28,
       landLag: 7,
-      anim: keys([0, A], [4, A, { a1: 90, f1: 90, a2: -90, f2: -90 }], [12, A, { a1: 90, f1: 90, a2: -90, f2: -90, rot: 360 }], [28, A, { rot: 360 }]),
+      prio: 1,
+      anim: keys(
+        [0, A],
+        [4, A, { a1: 90, f1: 90, a2: -90, f2: -90, t1: 70, s1: 20, t2: -60, s2: -80 }],
+        [12, A, { a1: 90, f1: 90, a2: -90, f2: -90, t1: 70, s1: 20, t2: -60, s2: -80, rot: 360 }],
+        [28, A, { rot: 360 }],
+      ),
       hits: [
         { f: [5, 12], at: 'hand1', r: 14, dmg: 6, ang: 45, bkb: 35, kbg: 55, away: true },
         { f: [5, 12], at: 'hand2', r: 10, dmg: 6, ang: 45, bkb: 35, kbg: 55, away: true },
@@ -106,11 +132,13 @@ export const ranger: CharDef = {
       name: 'Air Shot',
       total: 36,
       landLag: 8,
+      prio: 2,
       turn: true,
       anim: [
         [0, A],
-        [5, aimPose(A, 90)],
-        [18, aimPose(A, 90)],
+        [5, aimPose(A, 90, { t1: 60, s1: 10, t2: -30, s2: -60 })],
+        [10, aimPose(A, 90, { lean: -8, t1: 50, s1: 0, t2: -40, s2: -70 })],
+        [18, aimPose(A, 90, { lean: -4, t1: 50, s1: 0, t2: -40, s2: -70 })],
         [36, A],
       ],
       proj: [arrow(9, 34, 30, 0)],
@@ -120,10 +148,11 @@ export const ranger: CharDef = {
       name: 'Up Shot',
       total: 34,
       landLag: 7,
+      prio: 2,
       anim: [
         [0, A],
-        [5, aimPose(A, 175, { lean: -10 })],
-        [18, aimPose(A, 175, { lean: -10 })],
+        [5, aimPose(A, 175, { lean: -16, t1: 70, s1: 0, t2: 20, s2: -30 })],
+        [18, aimPose(A, 175, { lean: -16, t1: 70, s1: 0, t2: 20, s2: -30 })],
         [34, A],
       ],
       proj: [arrow(8, 6, 72, 88, 5, { hitAng: 88 })],
@@ -132,23 +161,28 @@ export const ranger: CharDef = {
       name: 'Dive Shot',
       total: 38,
       landLag: 9,
+      prio: 2,
       anim: [
         [0, A],
-        [5, aimPose(A, 45, { lean: 20 })],
-        [20, aimPose(A, 45, { lean: 20 })],
+        [5, aimPose(A, 45, { lean: 28, t1: 20, s1: -40, t2: -50, s2: -90 })],
+        [20, aimPose(A, 45, { lean: 28, t1: 20, s1: -40, t2: -50, s2: -90 })],
         [38, A],
       ],
       proj: [arrow(9, 30, 4, -45, 6, { hitAng: 45 })],
       vel: [{ f: 9, vy: 4, when: 'air' }],
     },
     nspec: {
+      // Hold up or down while drawing (until the arrow leaves) to aim 45 degrees up or down.
       name: 'Charged Shot',
       total: 46,
+      prio: 3,
+      aim: 45,
       charge: { at: 12, max: 50 },
       anim: [
         [0, S],
-        [12, aimPose(S, 90, { a2: -80, f2: 100, lean: -4 })],
-        [24, aimPose(S, 90)],
+        [12, aimPose(S, 90, { a2: -80, f2: 100, lean: -6, t1: 32, s1: 0, t2: -32, s2: -30, dy: -4 })],
+        [16, aimPose(S, 90, { lean: -10, t1: 32, s1: 0, t2: -32, s2: -30, dy: -4, dx: -5 })],
+        [24, aimPose(S, 90, { t1: 28, s1: -2, t2: -28, s2: -28, dy: -3, dx: -4 })],
         [46, S],
       ],
       proj: [arrow(13, 34, 30, 0, 7, { speed: 18, hitAng: 38, bkb: 30, kbg: 50 })],
@@ -156,11 +190,13 @@ export const ranger: CharDef = {
     sspec: {
       name: 'Triple Shot',
       total: 48,
+      prio: 1,
       turn: true,
       anim: [
         [0, S],
-        [10, aimPose(S, 90)],
-        [24, aimPose(S, 90)],
+        [10, aimPose(S, 90, { t1: 40, s1: -10, t2: -36, s2: -40, dy: -6 })],
+        [16, aimPose(S, 90, { lean: -8, t1: 40, s1: -10, t2: -36, s2: -40, dy: -6, dx: -5 })],
+        [24, aimPose(S, 90, { t1: 36, s1: -8, t2: -32, s2: -36, dy: -5, dx: -4 })],
         [48, S],
       ],
       proj: [arrow(14, 34, 30, 0, 4, { kbg: 35 }), arrow(14, 34, 30, 12, 4, { kbg: 35 }), arrow(14, 34, 30, -12, 4, { kbg: 35 })],
@@ -168,6 +204,7 @@ export const ranger: CharDef = {
     uspec: {
       name: 'Rocket Arrow',
       total: 34,
+      prio: 1,
       drift: 1.1,
       anim: [
         [0, S],
@@ -181,6 +218,7 @@ export const ranger: CharDef = {
     dspec: {
       name: 'Backflip Kick',
       total: 32,
+      prio: 2,
       anim: keys(
         [0, S],
         [3, S, { lean: -10, t1: 90, s1: 100, t2: -10, s2: -10, a1: 150, f1: 160 }],

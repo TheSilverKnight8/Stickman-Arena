@@ -26,6 +26,17 @@ export function dcos(deg: number): number {
   return dsin(deg + 90);
 }
 
+/** Square root from Newton's method (+ - * / only, so the same on every device). */
+export function dsqrt(v: number): number {
+  if (!(v > 0)) return 0;
+  // Start at a power of two at or above the root, then a few Newton steps.
+  let x = 1;
+  while (x * x < v) x *= 2;
+  while (x * x > v * 4) x /= 2;
+  for (let i = 0; i < 8; i++) x = 0.5 * (x + v / x);
+  return x;
+}
+
 export function clamp(v: number, lo: number, hi: number) {
   return v < lo ? lo : v > hi ? hi : v;
 }

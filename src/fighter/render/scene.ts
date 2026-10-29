@@ -2,7 +2,7 @@ import { CHARS } from '../sim/chars';
 import { hidden, hitsOf, jointsOf, moveOf } from '../sim/body';
 import type { Joints } from '../sim/skeleton';
 import { STAGES } from '../sim/stages';
-import { step } from '../sim/step';
+import { step, tetherLine } from '../sim/step';
 import type { Act, FighterState, MatchState, ProjectileState, SimEvent } from '../sim/types';
 import { CREAM, NAVY, RED, drawFigure, drawSword, shade } from './figure';
 
@@ -14,7 +14,7 @@ import { CREAM, NAVY, RED, drawFigure, drawSword, shade } from './figure';
 // afterimages on dodges and travelling moves, swing trails).
 
 interface Effect {
-  kind: 'spark' | 'ko' | 'dust' | 'shatter' | 'flash' | 'puff' | 'armor' | 'jumpdust' | 'ring' | 'dash' | 'streak';
+  kind: 'spark' | 'ko' | 'dust' | 'shatter' | 'flash' | 'puff' | 'armor' | 'jumpdust' | 'ring' | 'dash' | 'streak' | 'clash' | 'ember';
   x: number;
   y: number;
   t: number;
@@ -38,13 +38,14 @@ interface Track {
   trail: ([number, number, number] | null)[];
 }
 
-/** A hit that will KO: the background changes for a moment. */
+/** A hit that will KO: the background changes to the attacker's colour for a moment. */
 interface KillSpark {
   x: number;
   y: number;
   t: number;
   life: number;
   spin: number;
+  color: string;
 }
 
 /** Hits with less knockback than this are never checked for a KO. */
@@ -84,8 +85,11 @@ export class Scene {
         case 'hit': {
           const big = e.kb > 90;
           if (e.kb >= KILL_CHECK_KB && this.willKo(s, e.victim)) {
-            this.kill = { x: e.x, y: e.y, t: 0, life: 44, spin: (this.time * 0.7) % 6.28 };
-            this.add('spark', e.x, e.y, 26, 70, RED);
+            // Projectiles credit their thrower.
+            const by = e.attacker >= 0 ? e.attacker : s.fighters[e.victim].lastHitBy;
+            const color = by >= 0 ? this.colorOf(s.fighters[by]) : RED;
+            this.kill = { x: e.x, y: e.y, t: 0, life: 44, spin: (this.time * 0.7) % 6.28, color };
+            this.add('spark', e.x, e.y, 26, 70, color);
             this.add('flash', e.x, e.y, 22, 70, CREAM);
             this.shake = Math.max(this.shake, 20);
             break;
@@ -136,6 +140,15 @@ export class Scene {
         case 'teleport':
           this.add('puff', e.x, e.y + 45, 18, 30, CHARS.phantom.color);
           break;
+        case 'clash':
+          // Two attacks meeting: a cream flash with navy rays.
+          this.add('clash', e.x, e.y, 14, 30, NAVY);
+          break;
+        case 'grab': {
+          const f = s.fighters[e.slot];
+          this.add('flash', f.x + f.facing * 30, f.y + CHARS[f.char].height * 0.5, 10, 26, this.colorOf(f));
+          break;
+        }
       }
     }
     this.track(s);
@@ -232,7 +245,7 @@ export class Scene {
     for (const p of s.projectiles) this.drawProjectile(p, s);
     // The local player is drawn last, on top.
     const order = [...s.fighters].sort((a, b) => Number(this.labels[a.slot]?.you) - Number(this.labels[b.slot]?.you));
-    for (const f of order) this.drawFighter(f);
+    for (const f of order) this.drawFighter(f, s);
     this.drawEffects();
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -347,12 +360,13 @@ export class Scene {
 
   // ---------------------------------------------------------------- fighters
 
-  private drawFighter(f: FighterState) {
+  private drawFighter(f: FighterState, s: MatchState) {
     if (f.act === 'dead' || f.act === 'out') return;
     const c = CHARS[f.char];
     const j = jointsOf(f);
     if (!j) return;
     if (hidden(f)) return;
+    if (f.tLen > 0 || f.tSlot >= 0 || f.tLedge !== 0) this.drawTether(f, j, s);
     let alpha = 1;
     if (f.act === 'dodge' || f.act === 'airdodge') alpha = 0.45;
     const m = moveOf(f);
@@ -365,7 +379,7 @@ export class Scene {
         [g.length - 5, 0.17],
         [g.length - 7, 0.09],
       ].forEach(([i, a]) => {
-        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing, airborne: !f.grounded });
+        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing, airborne: !f.grounded, gliding: f.act === 'glide' });
       });
     }
     // Swing trail: a fading smear along the path of the attack's leading hitbox.
@@ -381,7 +395,11 @@ export class Scene {
       time: this.time,
       facing: f.facing,
       airborne: !f.grounded,
+      gliding: f.act === 'glide',
+      flare: c.id === 'valkyrie' && f.act === 'move' && (f.move === 'utilt' || f.move === 'nspec') && f.t >= 5 && f.t <= 14,
     });
+    // Fisticuffs' Haymaker: the fist catches fire as it winds up and blazes through the punch.
+    if (c.id === 'fisticuffs' && f.act === 'move' && f.move === 'nspec' && m) this.drawFlames(f, j, m.total);
     // Armor: a yellow glow while armored frames are on.
     if (m?.armor && f.t >= m.armor[0] && f.t <= m.armor[1]) {
       const ctx = this.ctx;
@@ -399,6 +417,86 @@ export class Scene {
       ctx.beginPath();
       ctx.arc(j.hand1[0], j.hand1[1], 6 + (f.charge / m.charge.max) * 18, 0, Math.PI * 2);
       ctx.stroke();
+    }
+  }
+
+  /** A ghostly chain from Phantom's hand to the tether's tip (or to what it caught). */
+  private drawTether(f: FighterState, j: Joints, s: MatchState) {
+    let tip: [number, number];
+    const m = moveOf(f);
+    if (m?.pull && f.tSlot >= 0) {
+      const v = s.fighters[f.tSlot];
+      tip = [v.x, v.y + CHARS[v.char].height * 0.55];
+    } else if (m?.pull && f.tLedge !== 0) {
+      const main = STAGES[s.stage].main;
+      tip = [f.tLedge > 0 ? main.x2 : main.x1, 0];
+    } else {
+      if (f.tLen <= 0) return;
+      const [, , x, y] = tetherLine(f, j);
+      tip = [x, y];
+    }
+    const from = j.hand1;
+    const ctx = this.ctx;
+    const color = this.colorOf(f);
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.85;
+    ctx.setLineDash([9, 6]);
+    ctx.lineDashOffset = -this.time * 2;
+    ctx.strokeStyle = NAVY;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(from[0], from[1]);
+    ctx.lineTo(tip[0], tip[1]);
+    ctx.stroke();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // The hook.
+    ctx.fillStyle = CREAM;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(tip[0], tip[1], 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Flames around Fisticuffs' fist during the Haymaker (embers drift off it too). */
+  private drawFlames(f: FighterState, j: Joints, total: number) {
+    const ctx = this.ctx;
+    const t = f.t;
+    // Builds up during the wind-up, blazes on the punch, dies down after.
+    const k = t < 18 ? 0.35 + (t / 18) * 0.45 : t <= 26 ? 1 : Math.max(0, 1 - (t - 26) / (total - 26));
+    if (k <= 0) return;
+    const [hx, hy] = j.hand1;
+    ctx.save();
+    const layers: [string, number][] = [
+      ['#e8352f', 1],
+      ['#ff9f1c', 0.72],
+      ['#ffe066', 0.45],
+    ];
+    for (const [col, sz] of layers) {
+      ctx.fillStyle = col;
+      ctx.strokeStyle = NAVY;
+      ctx.lineWidth = col === '#e8352f' ? 2.5 : 0;
+      ctx.beginPath();
+      const r = 15 * k * sz;
+      // A flickering teardrop pointing up and back.
+      const flick = Math.sin(this.time * 0.9 + sz * 5) * 4 * k;
+      ctx.moveTo(hx - r, hy);
+      ctx.quadraticCurveTo(hx - r, hy + r * 1.4, hx - f.facing * 6 + flick, hy + r * 2.6);
+      ctx.quadraticCurveTo(hx + r, hy + r * 1.4, hx + r, hy);
+      ctx.arc(hx, hy, r, 0, Math.PI, true);
+      ctx.closePath();
+      ctx.fill();
+      if (col === '#e8352f') ctx.stroke();
+    }
+    ctx.restore();
+    if (this.time % 2 === 0) {
+      this.effects.push({ kind: 'ember', x: hx + (Math.random() - 0.5) * 14, y: hy + (Math.random() - 0.5) * 10, t: 0, life: 16 + Math.floor(Math.random() * 10), size: 3 + Math.random() * 4 * k, angle: 0, color: Math.random() < 0.5 ? '#ff9f1c' : '#ffd43b', dir: -f.facing });
     }
   }
 
@@ -438,7 +536,7 @@ export class Scene {
     const [hx, hy] = this.toScreen(k.x, k.y, W, H);
     ctx.save();
     ctx.globalAlpha = a;
-    ctx.fillStyle = RED;
+    ctx.fillStyle = k.color;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(hx, hy);
     ctx.rotate(k.spin + k.t * 0.004);
@@ -494,6 +592,15 @@ export class Scene {
         // Point first along its aim the whole way, out and back: no spin.
         const half = 49;
         drawSword(ctx, [p.x - p.ux * half, p.y - p.uy * half], [p.x + p.ux * half, p.y + p.uy * half], half * 2);
+        break;
+      }
+      case 'toss': {
+        // Tossed up, spinning end over end.
+        const half = 47;
+        const a = p.t * 0.42 * p.dir;
+        const ux = Math.cos(a);
+        const uy = Math.sin(a);
+        drawSword(ctx, [p.x - ux * half, p.y - uy * half], [p.x + ux * half, p.y + uy * half], half * 2);
         break;
       }
       case 'orb': {
@@ -691,6 +798,34 @@ export class Scene {
             ctx.lineTo(s * 10, 2 + k * 14 + e.size * 0.5 * (1 - k));
             ctx.stroke();
           }
+          break;
+        case 'clash': {
+          // A cream star with navy rays shooting out both ways.
+          ctx.rotate((e.angle * Math.PI) / 180);
+          const r = e.size * (0.5 + k * 0.5);
+          ctx.globalAlpha = 1 - k;
+          ctx.fillStyle = CREAM;
+          ctx.strokeStyle = NAVY;
+          ctx.lineWidth = 3;
+          star(ctx, r, r * 0.35, 4);
+          ctx.fill();
+          ctx.stroke();
+          ctx.lineWidth = 4;
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(sgn * r * 0.9, 0);
+            ctx.lineTo(sgn * r * (1.6 + k * 1.4), 0);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'ember':
+          // A spark of fire that rises and drifts back.
+          ctx.globalAlpha = 1 - k;
+          ctx.fillStyle = e.color;
+          ctx.beginPath();
+          ctx.arc((e.dir ?? 1) * k * 16, k * 26, e.size * (1 - k * 0.6), 0, Math.PI * 2);
+          ctx.fill();
           break;
         case 'puff':
           ctx.globalAlpha = (1 - k) * 0.7;

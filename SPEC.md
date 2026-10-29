@@ -87,7 +87,7 @@ Six characters, one per archetype. Characters differ in moves, weight, move spee
 | Fisticuffs | Rushdown | Red | Good mobility, aggressive tools | Light, poor neutral (struggles to approach) |
 | Spartan | Swordfighter | Blue | Great range, coverage and disjoints | Not very mobile, relies on stray hits for damage |
 | Ranger | Zoner | Green | Average mobility and survivability, plenty of ranged tools | Less effective close up, needs precision to use well |
-| Buster | Heavyweight | Yellow | Great survivability and damage, decent neutral | Low speed, easily comboed |
+| Buster | Heavyweight | Orange | Great survivability and damage, decent neutral | Low speed, easily comboed |
 | Phantom | Hit and Run | Purple | Excellent mobility, safe moves | Inconsistent damage and kill power, poor survivability and defense |
 | Valkyrie | Aerial Ace | Teal (**Claude Code decides**) | 4 jumps, stronger aerials over ground moves, great air mobility | Poor ground mobility, poor move range |
 
@@ -95,7 +95,7 @@ Per-character constraints:
 - **Fisticuffs:** short range, punchy, has combos.
 - **Spartan:** a comically large sword. Has a projectile move, such as throwing the sword.
 - **Ranger:** an archer, with many attacks that shoot a bow. Ranger still needs some answer to opponents who get close (**Claude Code decides**).
-- **Buster:** large (sprite and hurtbox) with slow frame data, and armor on some moves.
+- **Buster:** comically large arms and a regular-sized head, so he has the profile of an ape or ape-like creature (rather than being comically large overall), with slow frame data, and armor on some moves.
 - **Phantom:** plenty of movement and poking moves. The sprite should have agile hurtbox shifting, which is a deliberate animation and collision detail and should not be left to default hitboxes.
 - **Valkyrie:** a small build with wings. Has 4 jumps. Uses a sword, with poor move range. An emphasis on vertical combos.
 

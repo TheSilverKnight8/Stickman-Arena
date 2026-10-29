@@ -3,8 +3,9 @@ import type { Joints } from '../sim/skeleton';
 import type { CharDef, CharId } from '../sim/types';
 
 // Draws one stick figure from its joints. Every figure has a navy outline under
-// its colour so it reads on the cream background (Buster's yellow especially),
-// plus one prop that says who it is: gloves, the sword, the bow, big fists, a scarf, wings.
+// its colour so it reads on the cream background, plus props that say who it
+// is: gloves, the sword and crest, the bow with a hat and quiver, big arms and
+// fists, a scarf, wings.
 
 export const NAVY = '#002657';
 export const CREAM = '#faeeda';
@@ -23,6 +24,10 @@ export interface FigureStyle {
   facing?: number;
   /** In the air: Valkyrie's wings spread and flap. */
   airborne?: boolean;
+  /** Gliding: the wings stay spread wide. */
+  gliding?: boolean;
+  /** A wing move (Wing Flare, Gale Burst): the wings beat open. */
+  flare?: boolean;
 }
 
 type Ctx = CanvasRenderingContext2D;
@@ -53,24 +58,26 @@ export function drawFigure(ctx: Ctx, c: CharDef, j: Joints, st: FigureStyle) {
   const frontLeg: P[] = [j.hip, j.knee1, j.foot1];
   const torso: P[] = [j.hip, j.neck];
 
-  // Phantom's scarf trails behind the neck, Valkyrie's wings spread from the back (decoration only).
+  // Phantom's scarf trails behind the neck, Valkyrie's wings spread from the back, Ranger's quiver sits on the back (decoration only).
   if (c.id === 'phantom') drawScarf(ctx, j, st);
   if (c.id === 'valkyrie') drawWings(ctx, j, st);
+  if (c.id === 'ranger') drawQuiver(ctx, j, st);
 
   // Back limbs are a little darker, so arms and legs read in front/behind.
-  const parts: [P[], string][] = [
-    [backArm, shade(color, -0.18)],
-    [backLeg, shade(color, -0.18)],
-    [torso, color],
-    [frontLeg, color],
-    [frontArm, color],
+  const aw = c.armLine ?? w;
+  const parts: [P[], string, number][] = [
+    [backArm, shade(color, -0.18), aw],
+    [backLeg, shade(color, -0.18), w],
+    [torso, color, w],
+    [frontLeg, color, w],
+    [frontArm, color, aw],
   ];
-  for (const [pts, col] of parts) {
+  for (const [pts, col, lw] of parts) {
     ctx.strokeStyle = NAVY;
-    ctx.lineWidth = w + 3.5;
+    ctx.lineWidth = lw + 3.5;
     line(ctx, pts);
     ctx.strokeStyle = col;
-    ctx.lineWidth = w;
+    ctx.lineWidth = lw;
     line(ctx, pts);
   }
 
@@ -105,7 +112,8 @@ function drawProp(ctx: Ctx, id: CharId, c: CharDef, j: Joints, st: FigureStyle, 
       ]);
       break;
     case 'buster':
-      for (const h of [j.hand2, j.hand1]) blob(ctx, h, 10, color);
+      // Big knuckled fists at the end of the long arms.
+      for (const h of [j.hand2, j.hand1]) blob(ctx, h, 13, color);
       break;
     case 'spartan':
       if (!st.noWeapon) drawSword(ctx, j.hand1, j.tip, c.body.weapon);
@@ -120,6 +128,7 @@ function drawProp(ctx: Ctx, id: CharId, c: CharDef, j: Joints, st: FigureStyle, 
       break;
     case 'ranger':
       drawBow(ctx, j.elbow1, j.hand1);
+      drawHat(ctx, j, c.body.head, color);
       break;
     case 'valkyrie':
       drawSword(ctx, j.hand1, j.tip, c.body.weapon);
@@ -140,9 +149,9 @@ function drawWings(ctx: Ctx, j: Joints, st: FigureStyle) {
   const back: P = [-facing * u[1], facing * u[0]];
   const base: P = [j.hip[0] + tx * 0.72, j.hip[1] + ty * 0.72];
   const t = st.time ?? 0;
-  const flap = st.airborne ? Math.sin(t * 0.32) * 22 : Math.sin(t * 0.05) * 3;
-  const spread = st.airborne ? 1 : 0;
-  const len = st.airborne ? 40 : 33;
+  const flap = st.flare ? 30 : st.gliding ? Math.sin(t * 0.08) * 4 : st.airborne ? Math.sin(t * 0.32) * 22 : Math.sin(t * 0.05) * 3;
+  const spread = st.flare ? 1.2 : st.gliding ? 1.25 : st.airborne ? 1 : 0;
+  const len = st.flare ? 46 : st.gliding ? 46 : st.airborne ? 40 : 33;
   const one = (deg: number, fill: string) => {
     const a = (deg * Math.PI) / 180;
     const d: P = [back[0] * Math.cos(a) + u[0] * Math.sin(a), back[1] * Math.cos(a) + u[1] * Math.sin(a)];
@@ -179,11 +188,30 @@ function blob(ctx: Ctx, p: P, r: number, color: string) {
   ctx.stroke();
 }
 
-/** The comically large sword: a broad blade from the hand to the tip, with a crossguard. */
+/**
+ * The comically large sword: a broad blade from the hand to the tip, with a
+ * crossguard. Drawn shorter than its length, it is being swung toward or away
+ * from the viewer; nearly end-on, only the guard and the blade's end show.
+ */
 export function drawSword(ctx: Ctx, hand: P, tip: P, length: number) {
   const dx = tip[0] - hand[0];
   const dy = tip[1] - hand[1];
   const len = Math.hypot(dx, dy) || length;
+  if (len < 26) {
+    ctx.fillStyle = '#e4ebf5';
+    ctx.strokeStyle = NAVY;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(hand[0], hand[1], 9, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.lineWidth = 6;
+    line(ctx, [
+      [hand[0] - 12, hand[1]],
+      [hand[0] + 12, hand[1]],
+    ]);
+    return;
+  }
   const ux = dx / len;
   const uy = dy / len;
   const nx = -uy;
@@ -246,6 +274,69 @@ function drawBow(ctx: Ctx, elbow: P, hand: P) {
   ctx.strokeStyle = 'rgba(0, 38, 87, 0.7)';
   ctx.lineWidth = 1.5;
   line(ctx, [a, b]);
+}
+
+/** Ranger's wide-brimmed hat, set on the head along the body's tilt. */
+function drawHat(ctx: Ctx, j: Joints, hr: number, color: string) {
+  const tx = j.head[0] - j.neck[0];
+  const ty = j.head[1] - j.neck[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const u: P = [tx / tl, ty / tl];
+  const n: P = [u[1], -u[0]];
+  const at = (up: number, side: number): P => [j.head[0] + u[0] * up + n[0] * side, j.head[1] + u[1] * up + n[1] * side];
+  // Crown.
+  const crown = [at(hr * 0.45, -hr * 0.85), at(hr * 1.55, -hr * 0.7), at(hr * 1.7, 0), at(hr * 1.55, hr * 0.7), at(hr * 0.45, hr * 0.85)];
+  ctx.fillStyle = '#c8a165';
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(crown[0][0], crown[0][1]);
+  for (const p of crown.slice(1)) ctx.lineTo(p[0], p[1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Band in the fighter's colour.
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  line(ctx, [at(hr * 0.75, -hr * 0.82), at(hr * 0.75, hr * 0.82)]);
+  // Wide brim.
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 6.5;
+  line(ctx, [at(hr * 0.4, -hr * 2), at(hr * 0.4, hr * 2)]);
+  ctx.strokeStyle = '#c8a165';
+  ctx.lineWidth = 3.5;
+  line(ctx, [at(hr * 0.4, -hr * 1.9), at(hr * 0.4, hr * 1.9)]);
+}
+
+/** Ranger's quiver on the back, with arrow feathers showing over the shoulder. */
+function drawQuiver(ctx: Ctx, j: Joints, st: FigureStyle) {
+  const facing = st.facing ?? 1;
+  const tx = j.neck[0] - j.hip[0];
+  const ty = j.neck[1] - j.hip[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const u: P = [tx / tl, ty / tl];
+  const back: P = [-facing * u[1], facing * u[0]];
+  // Slung at a slant across the back.
+  const d: P = [u[0] * 0.92 + back[0] * 0.4, u[1] * 0.92 + back[1] * 0.4];
+  const base: P = [j.hip[0] + tx * 0.25 + back[0] * 9, j.hip[1] + ty * 0.25 + back[1] * 9];
+  const top: P = [base[0] + d[0] * 36, base[1] + d[1] * 36];
+  // Feathers.
+  for (const k of [-4, 1, 6]) {
+    const f0: P = [top[0] + back[0] * k * 0.6, top[1] + back[1] * k * 0.6];
+    const f1: P = [f0[0] + d[0] * 11, f0[1] + d[1] * 11];
+    ctx.strokeStyle = NAVY;
+    ctx.lineWidth = 5;
+    line(ctx, [f0, f1]);
+    ctx.strokeStyle = CREAM;
+    ctx.lineWidth = 2.5;
+    line(ctx, [f0, f1]);
+  }
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 12;
+  line(ctx, [base, top]);
+  ctx.strokeStyle = '#8a5a2b';
+  ctx.lineWidth = 8;
+  line(ctx, [base, top]);
 }
 
 function drawScarf(ctx: Ctx, j: Joints, st: FigureStyle) {
