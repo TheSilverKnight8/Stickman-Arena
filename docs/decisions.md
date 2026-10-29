@@ -197,6 +197,16 @@ Before changing anything, the CPU matches were measured fighter by fighter (Hard
 
 CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Buster 88%, Spartan 53%, Ranger 47%, Fisticuffs 41%, Phantom 22% (was 0%). Phantom's KOs: orb 28, Reaper Kick 15, Air Lunge 5, Hover Stomp 2. Buster still wins most matches: his rolling boulder does the most damage of any move in the game (the CPU bowls it constantly), and Rocket Leap (his up special, 13 damage, KOs at about 130%) became his main KO move (42 of 88).
 
+### Balance pass 5 (Caleb's requests after Balance pass 4)
+
+| Item | Choice |
+| --- | --- |
+| Buster: Rocket Leap | Hits only at the launch (frames 9–11, as he comes out of the crouch) instead of the whole way up (frames 10–24), so it is no longer a raw anti-air. It still hits opponents beside Buster and up to about 160 above his feet (just over his raised fists); before, it reached 280 and more. Damage and knockback unchanged. |
+| CPU: jumping over rolling shots | All levels jump over a boulder or shockwave rolling toward them along the floor, counting their own movement toward it. Measured with a boulder bowled at a CPU 300 away: Hard now gets hit 8 times in 48 (was every time), Normal 24 in 48 (was 22 in 24), Easy 42 in 48 (about as before). |
+| CPU: more jumping in general | Walking up to an opponent from 80–260 away, the CPU now and then jumps in instead (Hard most often, Easy rarely). |
+
+CPU vs CPU after this pass (Hard against Hard, every pairing 8 times): Spartan 75%, Fisticuffs 50%, Buster 47% (was 88%), Phantom 47%, Ranger 31%. Rocket Leap went from 42 of Buster's KOs to 11, and his boulder's damage roughly halved. Spartan is on top again because his matchup against Buster turned around (Buster beat him 15–1 before); without the extra jumping in general, Spartan was also 75%, Buster 59% and Phantom 31%.
+
 Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
 
 | Fighter | Weight | Run speed | Jump height |
@@ -239,7 +249,7 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close. Phantom (since Balance pass 4, Caleb's request) fights in the air: it jumps in toward the opponent (a short hop when close, a full jump when further), uses its aerials and specials up close, throws orbs only when the opponent is more than 200 units away, and backs off briefly after a hit. Measured over 30 matches each (after Balance pass 4): Hard beats Easy 30–0 and Normal 27–3; Normal beats Easy 29–1.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close. Phantom (since Balance pass 4, Caleb's request) fights in the air: it jumps in toward the opponent (a short hop when close, a full jump when further), uses its aerials and specials up close, throws orbs only when the opponent is more than 200 units away, and backs off briefly after a hit. Every CPU jumps over a boulder or shockwave rolling toward it (Hard nearly always, Normal about half the time, Easy rarely), and now and then jumps in toward the opponent instead of walking. Measured over 30 matches each (after Balance pass 5): Hard beats Easy 30–0 and Normal 29–1; Normal beats Easy 30–0.
 
 ### Online (Stage 3)
 

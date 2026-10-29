@@ -18,10 +18,13 @@ export const DIFFICULTIES: Record<Difficulty, { name: string; about: string }> =
   hard: { name: 'Hard', about: 'Reacts fast, aims ahead of you, dodges often, goes for KOs at high damage.' },
 };
 
-const LEVEL: Record<Difficulty, { think: number; aggression: number; dodge: number; recover: number; predict: boolean; wander: number; reach: number; ledgeWait: number; ledgeJump: number }> = {
-  easy: { think: 16, aggression: 0.35, dodge: 0, recover: 0.55, predict: false, wander: 0.3, reach: 0.75, ledgeWait: 50, ledgeJump: 0.2 },
-  normal: { think: 8, aggression: 0.72, dodge: 0.12, recover: 0.95, predict: false, wander: 0.08, reach: 1, ledgeWait: 22, ledgeJump: 0.35 },
-  hard: { think: 3, aggression: 0.95, dodge: 0.38, recover: 1, predict: true, wander: 0, reach: 1, ledgeWait: 8, ledgeJump: 0.45 },
+const LEVEL: Record<
+  Difficulty,
+  { think: number; aggression: number; dodge: number; recover: number; predict: boolean; wander: number; reach: number; ledgeWait: number; ledgeJump: number; jumpOver: number; hop: number }
+> = {
+  easy: { think: 16, aggression: 0.35, dodge: 0, recover: 0.55, predict: false, wander: 0.3, reach: 0.75, ledgeWait: 50, ledgeJump: 0.2, jumpOver: 0.3, hop: 0.03 },
+  normal: { think: 8, aggression: 0.72, dodge: 0.12, recover: 0.95, predict: false, wander: 0.08, reach: 1, ledgeWait: 22, ledgeJump: 0.35, jumpOver: 0.6, hop: 0.08 },
+  hard: { think: 3, aggression: 0.95, dodge: 0.38, recover: 1, predict: true, wander: 0, reach: 1, ledgeWait: 8, ledgeJump: 0.45, jumpOver: 0.6, hop: 0.12 },
 };
 
 /** Characters whose side special carries them sideways (useful for getting back to the stage). */
@@ -241,6 +244,14 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
     }
   }
 
+  // Jump over a boulder or shockwave rolling this way along the floor.
+  if (me.grounded && incomingFloorShot(s, me) && r() < L.jumpOver) {
+    cpu.hold = 0;
+    cpu.tap = BTN.jump;
+    cpu.jumpHold = 6;
+    return;
+  }
+
   // Easy wanders now and then.
   if (r() < L.wander) {
     cpu.hold = r() < 0.5 ? BTN.left : BTN.right;
@@ -280,14 +291,32 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
   // Never walk off the stage on purpose.
   if (me.grounded && move !== 0 && Math.abs(me.x + move * 40) > edge) move = 0;
   if (move !== 0) cpu.hold |= move > 0 ? BTN.right : BTN.left;
+  // Now and then jump in instead of walking up.
+  if (me.grounded && move === face && dist > 80 && dist < 260 && r() < L.hop) {
+    cpu.tap = BTN.jump;
+    cpu.jumpHold = r() < 0.5 ? 6 : 0;
+  }
 
-  // Jump toward targets above, or over projectiles.
+  // Jump toward targets above.
   if (me.grounded && dy > 90 && dist < 260 && r() < 0.5) {
     cpu.tap = BTN.jump;
     cpu.jumpHold = 6;
   }
   // Come back down to fight.
   if (!me.grounded && dy < -60 && me.vy < 0 && !me.fastFall && cpu.level === 'hard') cpu.hold |= BTN.down;
+}
+
+/** A boulder or shockwave rolling along the floor toward this fighter, arriving in the next few frames. */
+function incomingFloorShot(s: MatchState, me: FighterState) {
+  return s.projectiles.some((p) => {
+    if (p.owner === me.slot || (p.kind !== 'boulder' && p.kind !== 'shock') || p.vx === 0) return false;
+    if (Math.abs(p.y - me.y) > 60) return false;
+    // Frames until it reaches this fighter, counting this fighter's own movement toward it.
+    const closing = p.vx - me.vx;
+    if (closing === 0) return false;
+    const frames = (me.x - p.x) / closing;
+    return frames > 2 && frames < 22;
+  });
 }
 
 function nearestTarget(s: MatchState, me: FighterState) {

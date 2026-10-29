@@ -213,7 +213,8 @@ export const buster: CharDef = {
         [30, S, { lean: -5, a1: 175, f1: 178, a2: 165, f2: 170, t1: 10, s1: -10, t2: -20, s2: -40 }],
         [50, A],
       ),
-      hits: [{ f: [10, 24], at: 'hand1', r: 20, dmg: 13, ang: 80, bkb: 52, kbg: 76 }],
+      // Hits only as the jump starts (not the whole way up), so it is not a raw anti-air.
+      hits: [{ f: [9, 11], at: 'hand1', r: 20, dmg: 13, ang: 80, bkb: 52, kbg: 76 }],
       vel: [{ f: 10, vx: 3, vy: 16.2 }],
     },
     dspec: {
