@@ -92,7 +92,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Knockback | The Smash formula: knockback grows with the victim's damage after the hit, the move's damage, and its knockback growth, and shrinks with weight. Launch speed falls off steadily. Hitstun is 0.4 frames per point of knockback. |
 | Hitlag | Both fighters freeze briefly on a hit (4 to 18 frames, by damage). Multi-hit moves freeze for 2 frames per hit. |
 | Hitboxes and hurtboxes | Hurtboxes come from the stick figure's own limbs, head and torso, so they follow every animation (this is how Phantom's hurtbox shifts). Spartan's sword is not a hurtbox (a disjoint). A hitbox on a fist or foot covers the forearm or shin too, so point-blank hits connect. |
-| Rough KO percents | Against a mid-weight fighter in the middle of the stage: Spartan's Grand Slash about 80%, Buster's Hammer Fist about 100%, Fisticuffs' Haymaker about 100%, Ranger's fully charged shot about 110%, Phantom's best moves about 190%. Edge KOs come earlier. |
+| Rough KO percents | Against a mid-weight fighter in the middle of the stage: Spartan's Grand Slash about 80%, Buster's Hammer Fist about 100%, Fisticuffs' Haymaker about 100%, Ranger's fully charged shot about 110%, Phantom's Reaper Kick about 120% (heel only; Phantom's other finishers about 190%). Edge KOs come earlier. |
 | Respawn | After a KO: 1 second off screen, then a platform above the stage for up to 2.5 seconds (any button drops), then 2 seconds where the fighter cannot be hit (blinking). |
 | End of match | Last fighter with stocks wins. At 3:00, most stocks wins. A tie goes to sudden death: 1 stock each at 300%, with a new countdown; after 1 minute it is a draw. If both fighters lose their last stock on the same frame, that is also a sudden death (or a draw, if it happens in sudden death). |
 | Leaving a CPU match | Ends it (Leave button, or Escape), back to character select. |
@@ -128,11 +128,23 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 | Ranger | Up to 5 arrows at once; a shot past the limit does not fire. Arrows fall slightly, stop at the stage, and keep flying if Ranger is hit. Charged Shot: speed up to +60%, damage up to +8, more knockback. |
 | Ranger's ending lag (Caleb's change before merging Stage 3) | More frames before Ranger can act again after shooting: Quick Shot, Skyward Shot and Up Shot 26 → 34; Air Shot 28 → 36; Dive Shot 30 → 38; Charged Shot 36 → 46; Triple Shot 38 → 48. Landing lag is unchanged. Rocket Arrow (the up special) is left out (Caleb). |
 | Spartan | One sword, thrown as a stab (Caleb's change before merging Stage 3): it flies straight out point first, slows down, and comes straight back along the same line without turning; it can hit on the way out and again on the way back. It hits along the front of the blade, from just behind the middle to the tip. Spartan catches it when it reaches the hand; if Spartan has moved off its line (for example, is in the air), it flies on and is back in hand once it leaves the screen, about a second later than a catch. While it is out, moves that need the sword do not start. If Spartan is KO'd, the sword is back in hand on respawn. |
-| Phantom's kill power (Caleb's change before merging Stage 3) | More knockback growth on the three finishers: Air Lunge 82 → 92, Recoil Kick 76 → 86, Arc Kick 78 → 88. Against a mid-weight fighter in the middle of the stage they now KO at about 190%, 190% and 260% (were 210%, 220% and 300%). Phantom stays the weakest finisher, as the spec's weakness says. |
+| Phantom's kill power (Caleb's change before merging Stage 3) | More knockback growth on the three finishers: Air Lunge 82 → 92, Recoil Kick 76 → 86, Arc Kick 78 → 88. Against a mid-weight fighter in the middle of the stage they now KO at about 190%, 190% and 260% (were 210%, 220% and 300%). Phantom stays the weakest finisher, as the spec's weakness says. (Recoil Kick was later replaced by Reaper Kick: see Balance pass 1.) |
 | Buster | One boulder at a time (Boulder Lob waits until the last one is gone). Ground Pound's shockwaves are separate and not limited. |
 | Phantom | One orb at a time. The orb fades if Phantom is hit. |
 
 ### Weight, speed and jump
+
+### Balance pass 1 (Caleb's changes after Stage 3)
+
+Caleb named the five changes; the amounts and the details are Claude Code's.
+
+| Item | Choice |
+| --- | --- |
+| Ranger's arrows | Every arrow (all bow moves, including Charged Shot and Rocket Arrow's arrow) leaves 40% of the usual hitstun. Quick Shot at 0% / 50% / 100%: 15 / 20 / 25 frames → 6 / 8 / 10. The short freeze on impact is unchanged, so overall the opponent can act 6–10 frames sooner after an arrow. Knockback (how far it pushes) is unchanged. |
+| Spartan's sword | About 10% shorter (105 → 94), in hand and when thrown (the thrown blade's hit area shrank to match), and every sword hitbox is 1 unit thinner. |
+| Buster | Every attack's hitbox is 3 units larger in radius (the Ground Pound shockwaves are unchanged). Run speed 4.4 → 4.8 and air speed 3.3 → 3.6 (about +9%), with slightly quicker acceleration on the ground and in the air. Buster is still the slowest fighter. |
+| Phantom's down special | Recoil Kick (kick, then hop back) is replaced by **Reaper Kick**, a kill move: the knee comes up, then the heel drives out while Phantom leans far back. Only the heel is the strong hit (13 damage, KOs a mid-weight in the middle of the stage at about 120%); the shin does a weak 7. Starts on frame 13, can act again at 46, so a miss is easy to punish. A first version KO'd at 90%, stronger than Buster's and Fisticuffs' best, so it was toned down to keep Phantom behind the heavy hitters. |
+| Fisticuffs' combo moves | Taken to be the moves made for combos: One-Two (both punches), Uppercut, Low Sweep, Double Jab (both punches) and Flip Kick. Damage up: 3 → 4, 4 → 6, 6 → 8, 5 → 7, 4 → 5 and 6 → 8, 7 → 9. Knockback down 16–20% at every percent, so opponents stay closer for follow-ups. The finishers (Straight Punch, Spin Kick, Stomp, Haymaker) are unchanged. Double Jab and Flip Kick no longer KO before 300% (they did at about 290% and 230%). |
 
 Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out from the numbers):
 
@@ -141,7 +153,7 @@ Ratings from the archetypes (1 = lowest of the five, 5 = highest, worked out fro
 | Fisticuffs | 85 (light) | 7.2 (fast) | good |
 | Spartan | 108 (heavy-ish) | 5.0 (slow) | low |
 | Ranger | 98 (average) | 6.0 (average) | average |
-| Buster | 130 (heaviest) | 4.4 (slowest) | lowest, falls fastest |
+| Buster | 130 (heaviest) | 4.8 (slowest) | lowest, falls fastest |
 | Phantom | 78 (lightest) | 8.0 (fastest) | highest |
 
 Recovery distance, measured by script, follows the same order: Phantom, then Ranger, Fisticuffs, then Spartan and Buster (about even after the recovery boost).
@@ -176,7 +188,7 @@ The CPU presses the same buttons a player does.
 | Normal | Decides about 8 times a second, attacks most of the time in range, recovers, dodges an incoming attack about 1 time in 8. |
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
-Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after the changes before merging Stage 3, including the floatier fighters): Hard beats Easy 28–2 and Normal 25–4 (1 draw); Normal beats Easy 27–3.
+Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close, Phantom hits and backs off. Measured over 30 matches each (after Balance pass 1): Hard beats Easy 28–1 (1 draw) and Normal 25–4 (1 draw); Normal beats Easy 28–2.
 
 ### Online (Stage 3)
 

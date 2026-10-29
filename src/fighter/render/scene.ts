@@ -306,7 +306,7 @@ export class Scene {
       }
       case 'sword': {
         // Point first the whole way, out and back: no spin.
-        const half = 55;
+        const half = 49;
         drawSword(ctx, [p.x - p.dir * half, p.y], [p.x + p.dir * half, p.y], half * 2);
         break;
       }

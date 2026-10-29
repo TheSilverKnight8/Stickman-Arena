@@ -27,11 +27,11 @@ export const buster: CharDef = {
   armorKb: 100,
   stats: {
     weight: 130,
-    run: 4.4,
-    groundAccel: 0.6,
+    run: 4.8,
+    groundAccel: 0.65,
     friction: 0.7,
-    air: 3.3,
-    airAccel: 0.3,
+    air: 3.6,
+    airAccel: 0.33,
     airFriction: 0.05,
     gravity: 0.59,
     maxFall: 10.3,
@@ -64,8 +64,8 @@ export const buster: CharDef = {
         [30, S],
       ),
       hits: [
-        { f: [9, 11], at: 'hand1', r: 16, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
-        { f: [9, 11], at: 'hand2', r: 16, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
+        { f: [9, 11], at: 'hand1', r: 19, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
+        { f: [9, 11], at: 'hand2', r: 19, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
       ],
     },
     ftilt: {
@@ -80,7 +80,7 @@ export const buster: CharDef = {
         [24, S, { lean: 30, a1: 100, f1: 80, a2: 100, f2: 80, t1: 45, s1: 5, t2: -35, s2: -40 }],
         [44, S],
       ),
-      hits: [{ f: [14, 17], at: 'hand1', r: 18, dmg: 15, ang: 42, bkb: 42, kbg: 90 }],
+      hits: [{ f: [14, 17], at: 'hand1', r: 21, dmg: 15, ang: 42, bkb: 42, kbg: 90 }],
     },
     utilt: {
       name: 'Overhead Clap',
@@ -93,8 +93,8 @@ export const buster: CharDef = {
         [40, S],
       ),
       hits: [
-        { f: [12, 16], at: [0, 100], r: 24, dmg: 13, ang: 88, bkb: 42, kbg: 85 },
-        { f: [12, 16], at: 'hand1', r: 15, dmg: 13, ang: 88, bkb: 42, kbg: 85 },
+        { f: [12, 16], at: [0, 100], r: 27, dmg: 13, ang: 88, bkb: 42, kbg: 85 },
+        { f: [12, 16], at: 'hand1', r: 18, dmg: 13, ang: 88, bkb: 42, kbg: 85 },
       ],
     },
     dtilt: {
@@ -108,8 +108,8 @@ export const buster: CharDef = {
         [38, S],
       ),
       hits: [
-        { f: [12, 15], at: 'hand1', r: 20, dmg: 12, ang: 75, bkb: 48, kbg: 68 },
-        { f: [12, 15], at: [60, 6], r: 18, dmg: 12, ang: 75, bkb: 48, kbg: 68 },
+        { f: [12, 15], at: 'hand1', r: 23, dmg: 12, ang: 75, bkb: 48, kbg: 68 },
+        { f: [12, 15], at: [60, 6], r: 21, dmg: 12, ang: 75, bkb: 48, kbg: 68 },
       ],
     },
     nair: {
@@ -118,9 +118,9 @@ export const buster: CharDef = {
       landLag: 14,
       anim: keys([0, A], [8, A, { a1: 90, f1: 90, a2: -90, f2: -90 }], [20, A, { a1: 90, f1: 90, a2: -90, f2: -90, rot: -360 }], [40, A, { rot: -360 }]),
       hits: [
-        { f: [10, 20], at: 'hand1', r: 16, dmg: 11, ang: 45, bkb: 35, kbg: 80, away: true },
-        { f: [10, 20], at: 'hand2', r: 16, dmg: 11, ang: 45, bkb: 35, kbg: 80, away: true },
-        { f: [10, 20], at: [0, 30], r: 22, dmg: 11, ang: 45, bkb: 35, kbg: 80, away: true },
+        { f: [10, 20], at: 'hand1', r: 19, dmg: 11, ang: 45, bkb: 35, kbg: 80, away: true },
+        { f: [10, 20], at: 'hand2', r: 19, dmg: 11, ang: 45, bkb: 35, kbg: 80, away: true },
+        { f: [10, 20], at: [0, 30], r: 25, dmg: 11, ang: 45, bkb: 35, kbg: 80, away: true },
       ],
     },
     fair: {
@@ -136,8 +136,8 @@ export const buster: CharDef = {
         [46, A],
       ),
       hits: [
-        { f: [16, 18], at: 'hand1', r: 17, dmg: 17, ang: -75, bkb: 30, kbg: 75 },
-        { f: [16, 20], at: 'elbow1', to: 'hand1', r: 14, dmg: 13, ang: 45, bkb: 35, kbg: 80 },
+        { f: [16, 18], at: 'hand1', r: 20, dmg: 17, ang: -75, bkb: 30, kbg: 75 },
+        { f: [16, 20], at: 'elbow1', to: 'hand1', r: 17, dmg: 13, ang: 45, bkb: 35, kbg: 80 },
       ],
     },
     uair: {
@@ -151,7 +151,7 @@ export const buster: CharDef = {
         [18, A, { lean: 5, a1: -20, f1: 0, a2: -30, f2: -10 }],
         [38, A],
       ),
-      hits: [{ f: [11, 15], at: 'head', r: 18, dmg: 14, ang: 85, bkb: 40, kbg: 85 }],
+      hits: [{ f: [11, 15], at: 'head', r: 21, dmg: 14, ang: 85, bkb: 40, kbg: 85 }],
     },
     dair: {
       name: 'Drill Stomp',
@@ -165,8 +165,8 @@ export const buster: CharDef = {
         [44, A],
       ),
       hits: [
-        { f: [14, 18], at: 'foot1', r: 15, dmg: 15, ang: -85, bkb: 30, kbg: 75 },
-        { f: [14, 18], at: 'foot2', r: 15, dmg: 15, ang: -85, bkb: 30, kbg: 75 },
+        { f: [14, 18], at: 'foot1', r: 18, dmg: 15, ang: -85, bkb: 30, kbg: 75 },
+        { f: [14, 18], at: 'foot2', r: 18, dmg: 15, ang: -85, bkb: 30, kbg: 75 },
       ],
     },
     nspec: {
@@ -195,7 +195,7 @@ export const buster: CharDef = {
         [30, S, { lean: 45, a1: -20, f1: 10, a2: -30, f2: 0, t1: -30, s1: -60, t2: 50, s2: 10 }],
         [52, S],
       ),
-      hits: [{ f: [8, 30], at: 'neck', r: 22, dmg: 12, ang: 40, bkb: 55, kbg: 70 }],
+      hits: [{ f: [8, 30], at: 'neck', r: 25, dmg: 12, ang: 40, bkb: 55, kbg: 70 }],
       vel: [
         { f: 7, vx: 10 },
         { f: 7, vy: 2, when: 'air' },
@@ -215,7 +215,7 @@ export const buster: CharDef = {
         [30, S, { lean: -5, a1: 175, f1: 178, a2: 165, f2: 170, t1: 10, s1: -10, t2: -20, s2: -40 }],
         [50, A],
       ),
-      hits: [{ f: [10, 24], at: 'hand1', r: 18, dmg: 13, ang: 80, bkb: 52, kbg: 76 }],
+      hits: [{ f: [10, 24], at: 'hand1', r: 21, dmg: 13, ang: 80, bkb: 52, kbg: 76 }],
       vel: [{ f: 10, vx: 3, vy: 16.2 }],
     },
     dspec: {
@@ -230,7 +230,7 @@ export const buster: CharDef = {
         [12, A, { lean: 0, t1: 10, s1: 0, t2: -10, s2: 0, a1: 160, f1: 175, a2: 150, f2: 170 }],
         [14, A],
       ),
-      hits: [{ f: [12, 12], at: 'hip', r: 26, dmg: 14, ang: -60, bkb: 35, kbg: 65 }],
+      hits: [{ f: [12, 12], at: 'hip', r: 29, dmg: 14, ang: -60, bkb: 35, kbg: 65 }],
       vel: [
         { f: 4, vy: 10, when: 'ground' },
         { f: 12, vx: 0, vy: -20 },
@@ -240,7 +240,7 @@ export const buster: CharDef = {
       name: 'Ground Pound (landing)',
       total: 26,
       anim: keys([0, crouch, { a1: 60, f1: 20, a2: 50, f2: 10, lean: 40 }], [26, S]),
-      hits: [{ f: [0, 3], at: [0, 12], r: 42, dmg: 10, ang: 70, bkb: 50, kbg: 55, away: true }],
+      hits: [{ f: [0, 3], at: [0, 12], r: 45, dmg: 10, ang: 70, bkb: 50, kbg: 55, away: true }],
       proj: [
         { f: 1, kind: 'shock', x: 34, y: 0, speed: 9, ang: 0, dmg: 7, hitAng: 70, bkb: 50, kbg: 40 },
         { f: 1, kind: 'shock', x: -34, y: 0, speed: 9, ang: 180, dmg: 7, hitAng: 70, bkb: 50, kbg: 40 },

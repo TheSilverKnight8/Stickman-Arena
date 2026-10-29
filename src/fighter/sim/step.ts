@@ -60,7 +60,7 @@ const REGRAB_FRAMES = 30;
 const UNTIL_LAND_MAX = 45;
 const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 22, shock: 14 };
 /** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
-const SWORD_HIT = { back: 10, front: 50 };
+const SWORD_HIT = { back: 9, front: 45 };
 const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30 };
 const REFLECTABLE: ProjKind[] = ['arrow', 'orb', 'boulder'];
 
@@ -804,6 +804,7 @@ interface Strike {
   kbg: number;
   /** Multi-hit: short hitlag. */
   rehit?: number;
+  hitstun?: number;
 }
 
 function touches(shape: Capsule, hurt: Capsule[]) {
@@ -872,7 +873,7 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   enter(v, 'hurt');
   v.ledgeSide = 0;
   v.ledgeFresh = true;
-  v.hitstun = Math.max(1, Math.floor(kb * HITSTUN));
+  v.hitstun = Math.max(1, Math.floor(kb * HITSTUN * (h.hitstun ?? 1)));
   v.kbSpeed = kb * LAUNCH;
   v.vx = 0;
   v.vy = 0;
@@ -936,6 +937,7 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
     ang: def.hitAng,
     bkb,
     kbg,
+    hitstun: def.hitstun ?? 1,
     hit: [],
     back: false,
     surface: f.surface,

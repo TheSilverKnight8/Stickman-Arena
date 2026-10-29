@@ -184,21 +184,24 @@ export const phantom: CharDef = {
       vel: [{ f: 3, vx: 0, vy: 0 }],
       gravity: { f: [3, 16], mul: 0 },
     },
+    // The kill move: the knee comes up, then the heel drives out while the body
+    // leans far back. Only the heel is the strong hit; the shin is a weak one.
+    // Slow to start and slow to finish, so a miss is easy to punish.
     dspec: {
-      name: 'Recoil Kick',
-      total: 28,
+      name: 'Reaper Kick',
+      total: 46,
       anim: keys(
         [0, S],
-        [3, S, { lean: 0, t1: 92, s1: 92, t2: -10, s2: -20, a1: -30, f1: -10, a2: -60, f2: -40 }],
-        [8, S, { lean: 0, t1: 92, s1: 92, t2: -10, s2: -20, a1: -30, f1: -10, a2: -60, f2: -40 }],
-        [12, A, { lean: 30 }],
-        [28, S],
+        [9, S, { lean: -5, t1: 125, s1: 20, t2: -10, s2: -25, a1: 40, f1: 110, a2: -30, f2: 10 }],
+        [13, S, { lean: -35, t1: 98, s1: 98, t2: -15, s2: -25, a1: -50, f1: -30, a2: -80, f2: -60 }],
+        [20, S, { lean: -35, t1: 98, s1: 98, t2: -15, s2: -25, a1: -50, f1: -30, a2: -80, f2: -60 }],
+        [46, S],
       ),
-      hits: [{ f: [4, 7], at: 'foot1', r: 11, dmg: 8, ang: 40, bkb: 40, kbg: 86 }],
-      vel: [
-        { f: 9, vx: -10 },
-        { f: 9, vy: 6 },
+      hits: [
+        { f: [13, 15], at: 'foot1', to: 'foot1', r: 12, dmg: 13, ang: 40, bkb: 40, kbg: 88 },
+        { f: [13, 17], at: 'knee1', to: 'foot1', r: 8, dmg: 7, ang: 50, bkb: 35, kbg: 55 },
       ],
+      vel: [{ f: 11, vx: 4, when: 'ground' }],
     },
   },
 };

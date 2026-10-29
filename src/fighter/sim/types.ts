@@ -63,6 +63,8 @@ export interface HitDef {
   rehit?: number;
   /** Launch away from the attacker's centre instead of in the facing direction. */
   away?: boolean;
+  /** Hitstun multiplier (default 1). */
+  hitstun?: number;
 }
 
 export interface ProjSpawn {
@@ -79,6 +81,8 @@ export interface ProjSpawn {
   hitAng: number;
   bkb: number;
   kbg: number;
+  /** Hitstun multiplier (default 1). */
+  hitstun?: number;
 }
 
 export interface VelDef {
@@ -276,6 +280,8 @@ export interface ProjectileState {
   ang: number;
   bkb: number;
   kbg: number;
+  /** Hitstun multiplier. */
+  hitstun: number;
   /** Fighters already hit. */
   hit: number[];
   /** The sword is on its way back. */

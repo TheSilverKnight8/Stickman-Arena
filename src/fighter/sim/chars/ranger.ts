@@ -10,9 +10,12 @@ import { aimPose, baseAnims, keys } from './common';
 const S = pose({ lean: 4, a1: 70, f1: 80, a2: 20, f2: 60, t1: 14, s1: -2, t2: -14, s2: -16 });
 const A = pose(S, { t1: 40, s1: -20, t2: -10, s2: -40, a1: 95, f1: 100 });
 
+/** Arrows push but stun only briefly: the hit leaves 40% of the usual hitstun. */
+const ARROW_HITSTUN = 0.4;
+
 /** One arrow. `ang` is the aim: 0 forward, 90 up, -90 down. */
 function arrow(f: number, x: number, y: number, ang: number, dmg = 5, extra: Partial<ProjSpawn> = {}): ProjSpawn {
-  return { f, kind: 'arrow', x, y, speed: 17, ang, dmg, hitAng: ang > 60 ? 88 : 40, bkb: 26, kbg: 42, ...extra };
+  return { f, kind: 'arrow', x, y, speed: 17, ang, dmg, hitAng: ang > 60 ? 88 : 40, bkb: 26, kbg: 42, hitstun: ARROW_HITSTUN, ...extra };
 }
 
 export const ranger: CharDef = {

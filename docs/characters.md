@@ -14,13 +14,13 @@ Weight 85 · run speed 7.2 · air speed 4.8 · jump 13.6 / double jump 12.5 · g
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Neutral (ground) | **One-Two** — A quick left, and pressing attack again throws a right (two hits). Keeps the opponent close. | 3 | 16 | 3 | press again for the second punch |
+| Neutral (ground) | **One-Two** — A quick left, and pressing attack again throws a right (two hits). Keeps the opponent close. | 3 | 16 | 4 | press again for the second punch |
 | Side (ground) | **Straight Punch** — Steps in with a straight punch. | 8 | 28 | 8 |  |
-| Up (ground) | **Uppercut** — Uppercut that pops the opponent up for air follow-ups. | 6 | 24 | 6 |  |
-| Down (ground) | **Low Sweep** — Low sweeping kick that pops the opponent up. | 5 | 20 | 5 |  |
+| Up (ground) | **Uppercut** — Uppercut that pops the opponent up for air follow-ups. | 6 | 24 | 8 |  |
+| Down (ground) | **Low Sweep** — Low sweeping kick that pops the opponent up. | 5 | 20 | 7 |  |
 | Neutral (air) | **Spin Kick** — Legs split, spinning. Strong at the start, weaker as it lingers. | 4 | 30 | 8 | landing lag 7 |
-| Side (air) | **Double Jab** — Two punches in the air, the second one launches. | 4 | 30 | 6 | landing lag 9 |
-| Up (air) | **Flip Kick** — Backflip kick for juggling. | 6 | 28 | 7 | landing lag 8 |
+| Side (air) | **Double Jab** — Two punches in the air, the second one launches. | 4 | 30 | 8 | landing lag 9 |
+| Up (air) | **Flip Kick** — Backflip kick for juggling. | 6 | 28 | 9 | landing lag 8 |
 | Down (air) | **Stomp** — Stomp. The first frames spike the opponent downward. | 11 | 36 | 10 | landing lag 14; spikes |
 | Neutral special | **Haymaker** — Winds up, steps in and throws a heavy punch. The best KO move Fisticuffs has. | 18 | 48 | 16 |  |
 | Side special | **Dash Punch** — Lunges forward fist-first (also useful for getting back to the stage). Stops when it hits. | 8 | 36 | 9 |  |
@@ -50,7 +50,7 @@ Weight 108 · run speed 5 · air speed 3.6 · jump 12.5 / double jump 11.5 · gr
 
 ## Ranger — Zoner
 
-Zoner. Most attacks fire the bow. Up close, Ranger pushes opponents away with the Bow Bash and two kicks.
+Zoner. Most attacks fire the bow. Arrows push opponents back but stun them only briefly (40% of the usual hitstun). Up close, Ranger pushes opponents away with the Bow Bash and two kicks.
 
 Weight 98 · run speed 6 · air speed 4.2 · jump 13 / double jump 12 · gravity 0.47 · fall speed 8.6 (fast fall 14) · projectile limit 5
 
@@ -73,7 +73,7 @@ Weight 98 · run speed 6 · air speed 4.2 · jump 13 / double jump 12 · gravity
 
 Heavyweight. Big, slow, hits very hard and survives long. Falls fast, so Buster is easy to combo. Armor on four moves.
 
-Weight 130 · run speed 4.4 · air speed 3.3 · jump 12.7 / double jump 11.5 · gravity 0.59 · fall speed 10.3 (fast fall 16) · projectile limit 1 · armor holds against knockback under 100
+Weight 130 · run speed 4.8 · air speed 3.6 · jump 12.7 / double jump 11.5 · gravity 0.59 · fall speed 10.3 (fast fall 16) · projectile limit 1 · armor holds against knockback under 100
 
 | Input | Move | Starts | Ends | Damage | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -109,5 +109,5 @@ Weight 78 · run speed 8 · air speed 5.2 · jump 13.9 / double jump 13.4 · gra
 | Neutral special | **Phantom Orb** — The projectile. A slow orb drifts forward. One at a time; it fades if Phantom is hit. | 10 | 28 | 6 | projectile (orb) |
 | Side special | **Blink Strike** — A fast dash; cannot be hit for the first few frames. | 6 | 30 | 7 | can't be hit frames 2–7 |
 | Up special | **Phase Rise** — Vanishes and reappears up to about two and a half body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 32 | 5 | can't be hit frames 3–14 |
-| Down special | **Recoil Kick** — Kicks forward and bounces back away (hit and run). | 4 | 28 | 8 |  |
+| Down special | **Reaper Kick** — The kill move. The knee comes up, then the heel drives straight out while Phantom leans far back. Only the heel is the strong hit; the shin does a weak one. Slow to start and slow to finish, so a miss is easy to punish. | 13 | 46 | 13 |  |
 
