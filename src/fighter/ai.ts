@@ -99,6 +99,8 @@ function reachOf(char: CharId): Reach[] {
       out.push({ slot, startup: m.tether.f[0] + 6, x1: 20, x2: reach, y1: air ? -30 : 30, y2: air ? 120 : 110, dmg: kick?.dmg ?? 0, kbg: kick?.kbg ?? 0, air, special: true });
       continue;
     }
+    // Hitboxes are measured from where the move started (x = 0), so a move that carries the fighter
+    // forward counts the ground it covers.
     for (let fr = 0; fr < m.total + 30; fr++) {
       if (air) f.y = Math.max(f.y, 200);
       step(s, [fr === 0 ? inputFor(slot, 1) : 0, 0]);
@@ -106,7 +108,7 @@ function reachOf(char: CharId): Reach[] {
       const baseY = air ? 200 : 0;
       for (const h of hitsOf(f)) {
         const [ax, ay, bx, by, rad] = h.shape;
-        const box = { x1: Math.min(ax, bx) - rad - f.x, x2: Math.max(ax, bx) + rad - f.x, y1: Math.min(ay, by) - rad - baseY, y2: Math.max(ay, by) + rad - baseY };
+        const box = { x1: Math.min(ax, bx) - rad, x2: Math.max(ax, bx) + rad, y1: Math.min(ay, by) - rad - baseY, y2: Math.max(ay, by) + rad - baseY };
         // A command grab is worth its throw.
         const th = h.def.grab ? CHARS[char].moves[h.def.grab].throw : undefined;
         const dmg = th ? th.dmg : h.def.dmg;
@@ -123,7 +125,8 @@ function reachOf(char: CharId): Reach[] {
       }
       const p = s.projectiles.find((q) => q.owner === 0);
       if (!r && p) {
-        // A projectile: covers a long strip along its path.
+        // A projectile: covers a long strip along its path. (Measured along the real path instead, the CPU
+        // threw Spartan's sword only at targets already in its way, and it made a fifth of the KOs.)
         const len = 520;
         const ux = p.vx / (Math.abs(p.vx) + Math.abs(p.vy) || 1);
         const uy = p.vy / (Math.abs(p.vx) + Math.abs(p.vy) || 1);
@@ -138,6 +141,35 @@ function reachOf(char: CharId): Reach[] {
   }
   reachCache.set(char, out);
   return out;
+}
+
+// ---------------------------------------------------------------- getting back to the stage
+
+/**
+ * Whether using the side special now gets this fighter back, followed by its double jump and up special
+ * the way the CPU uses them: tried out on an empty stage from where it is now. (Buster's Lunge Grab, for
+ * one, drops him almost 200, too low for Rocket Leap to reach the ledge unless he starts high enough.)
+ */
+function sideSpecialGetsBack(me: FighterState): boolean {
+  const s = createMatch({ stage: 'flatline', chars: [me.char, me.char], seed: 1 });
+  s.phase = 'play';
+  const f = s.fighters[0];
+  s.fighters[1].act = 'dead';
+  s.fighters[1].respawnIn = 1e9;
+  const side = me.x >= 0 ? 1 : -1;
+  Object.assign(f, { x: me.x, y: me.y, vx: me.vx, vy: me.vy, grounded: false, surface: -1, act: 'air', facing: -side, airJumps: me.airJumps, upSpecial: true });
+  const toward = side > 0 ? BTN.left : BTN.right;
+  for (let fr = 0; fr < 240; fr++) {
+    let press = fr === 0 ? BTN.special : 0;
+    if (fr > 0 && f.act === 'air' && f.vy < 0) {
+      if (f.airJumps > 0 && f.y < 20) press = BTN.jump;
+      else if (f.upSpecial && (f.y < -10 || (f.airJumps === 0 && f.y < 40))) press = BTN.special | BTN.up;
+    }
+    step(s, [press | toward, 0]);
+    if (f.act === 'ledge' || f.grounded) return true;
+    if (f.act === 'dead' || f.act === 'respawn' || f.y < -700) return false;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------- the CPU
@@ -201,7 +233,8 @@ export function cpuInput(s: MatchState, slot: number, cpu: Cpu, recoverOnly = fa
   // so up or down held for other reasons is let go while an aimable shot starts.
   const aimable = me.act === 'move' && !!me.move && !!CHARS[me.char].moves[me.move].aim;
   if (cpu.retreat > 0) cpu.retreat--;
-  if (me.grounded) {
+  // A new trip gets new tries: on landing, and when hit or on a ledge (both give the up special back).
+  if (me.grounded || me.act === 'hurt' || me.act === 'held' || me.act === 'ledge') {
     cpu.triedUp = false;
     cpu.triedSide = false;
   }
@@ -225,11 +258,13 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean)
   }
   if (me.act === 'hurt' || me.act === 'held' || me.hitlag > 0) return;
 
-  // Gliding (Valkyrie): dive onto the stage once over it; facing away from it, end the glide.
+  // Gliding (Valkyrie): dive onto the stage once over it; facing away from it, end the glide, while still
+  // over the stage if a dive (about 5.5 forward for every 7 down) would carry her past the edge.
   if (me.act === 'glide') {
-    const over = me.x > st.main.x1 + 20 && me.x < st.main.x2 - 20;
+    const onStage = (x: number) => x > st.main.x1 + 20 && x < st.main.x2 - 20;
     const towardStage = -me.x * me.facing > 0;
-    if (over) cpu.hold = BTN.down;
+    const diveLands = onStage(me.x + me.facing * Math.max(0, me.y) * (5.5 / 7));
+    if (onStage(me.x) && (towardStage || diveLands)) cpu.hold = BTN.down;
     else if (!towardStage) cpu.tap = me.airJumps > 0 ? BTN.jump : BTN.dodge;
     cpu.wait = Math.min(cpu.wait, 2);
     return;
@@ -256,8 +291,10 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean)
     const center = me.y < -10 ? (side > 0 ? st.main.x2 : st.main.x1) + side * (CHARS[me.char].halfWidth + 8) : 0;
     const gap = Math.abs(me.x) - st.main.x2;
     cpu.hold = Math.abs(me.x - center) > 6 ? toward(center) : 0;
-    if (me.vy < 0) {
-      if (gap > 140 && SIDE_RECOVERY.has(me.char) && !cpu.triedSide && me.y > -120 && r() < L.recover) {
+    // Presses only once free to act: one made during a move (a side special covering distance) would do
+    // nothing and still use up the try.
+    if (me.vy < 0 && me.act === 'air') {
+      if (gap > 140 && SIDE_RECOVERY.has(me.char) && !cpu.triedSide && r() < L.recover && sideSpecialGetsBack(me)) {
         cpu.triedSide = true;
         cpu.tap = BTN.special;
       } else if (me.airJumps > 0 && me.y < 20) {
@@ -267,7 +304,10 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean)
         // Easy sometimes forgets.
         if (r() < L.recover) {
           cpu.tap = BTN.special;
-          cpu.hold = BTN.up | (gap > 60 ? toward(center) : 0);
+          // An up special that turns to the held direction (Shuttle Loop) always faces the stage, or it
+          // would loop and glide away from it after a side special out past the edge.
+          const turns = CHARS[me.char].moves.uspec.turn;
+          cpu.hold = BTN.up | (turns ? toward(0) : gap > 60 ? toward(center) : 0);
         }
       }
     }
