@@ -43,9 +43,9 @@ export const spartan: CharDef = {
     gravity: 0.49,
     maxFall: 9,
     fastFall: 14.5,
-    jump: 12.5,
-    shortHop: 8.4,
-    doubleJump: 11.5,
+    jump: 13.4,
+    shortHop: 9.0,
+    doubleJump: 12.3,
     squat: 5,
   },
   anims: baseAnims({
@@ -250,11 +250,14 @@ export const spartan: CharDef = {
         [40, A, { lean: 0, a1: 5, f1: 0, w: 0, a2: 15, f2: 5, t1: 20, s1: 0, t2: 10, s2: -10, rot: -360 }],
         [44, A, { rot: -360 }],
       ),
-      proj: [{ f: 6, kind: 'toss', x: 8, y: 80, speed: 13.5, ang: 90, dmg: 4, hitAng: 88, bkb: 55, kbg: 20 }],
+      // Multi-hit tuning (Caleb's rule: each hit launches into the next): the toss knocks a set amount up
+      // and a little forward, the way Spartan leaps, so the plunge finds the opponent; the plunge drags a set
+      // amount down, so the landing hit follows.
+      proj: [{ f: 6, kind: 'toss', x: 8, y: 80, speed: 13.5, ang: 90, dmg: 4, hitAng: 75, bkb: 55, kbg: 0, hitstun: 1.5 }],
       hits: [
         // Plunging: drags opponents down.
-        { f: [37, 40], at: 'tip', r: 15, dmg: 6, ang: -70, bkb: 35, kbg: 20, group: 0 },
-        { f: [37, 40], at: 'hand1', to: 'tip', r: 11, dmg: 6, ang: -70, bkb: 35, kbg: 20, group: 0 },
+        { f: [37, 40], at: 'tip', r: 15, dmg: 6, ang: -70, bkb: 35, kbg: 0, hitstun: 1.5, group: 0 },
+        { f: [37, 40], at: 'hand1', to: 'tip', r: 11, dmg: 6, ang: -70, bkb: 35, kbg: 0, hitstun: 1.5, group: 0 },
       ],
       vel: [
         { f: 13, vx: 2.5, vy: 15 },

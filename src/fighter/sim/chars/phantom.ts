@@ -39,9 +39,9 @@ export const phantom: CharDef = {
     gravity: 0.42,
     maxFall: 8.1,
     fastFall: 13,
-    jump: 13.9,
-    shortHop: 9.2,
-    doubleJump: 13.4,
+    jump: 14.9,
+    shortHop: 9.9,
+    doubleJump: 14.4,
     squat: 3,
   },
   anims: baseAnims({
@@ -200,14 +200,16 @@ export const phantom: CharDef = {
       // A pressure poke, not a kill move (Caleb's change after the CPU study): little damage and
       // knockback, but a long stun, so Phantom can follow it up.
       name: 'Phantom Orb',
-      total: 32,
+      // Ends on frame 48 (was 32): with the long stun it was too easy to throw again and again.
+      total: 48,
       prio: 2,
       anim: keys(
         [0, S],
         [6, S, { lean: 10, a1: 160, f1: 170, a2: 150, f2: 160, dx: -3 }],
         [10, S, { lean: 34, a1: 92, f1: 90, a2: 85, f2: 88, dx: 4 }],
         [18, S, { lean: 34, a1: 92, f1: 90, a2: 85, f2: 88, dx: 4 }],
-        [32, S],
+        [30, S, { lean: 34, a1: 92, f1: 90, a2: 85, f2: 88, dx: 4 }],
+        [48, S],
       ),
       proj: [{ f: 10, kind: 'orb', x: 40, y: 35, speed: 9, ang: 0, dmg: 4, hitAng: 45, bkb: 24, kbg: 18, hitstun: 2.2 }],
     },

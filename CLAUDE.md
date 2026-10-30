@@ -10,4 +10,5 @@
 - Each fighter's 12 moves are documented in `docs/characters.md`, which is generated from `src/fighter/sim/chars/`. When moves change, update it too.
 - Platfighter netcode is rollback (`src/net/rollback.ts`, rooms in `src/fighter/online.ts`): the match state must be a plain, copyable object, the simulation runs on a fixed timestep, and it must give identical results on every device. No `Math.random`, `Math.sin`/`cos`/`atan2`/`pow` or other engine-dependent math inside the simulation; use `src/lib/rng.ts` and precomputed values.
 - A player leaving or losing connection mid-match ends it in a draw, in both games.
+- Multi-hit moves (Caleb's rule): every hit must launch the opponent into the next one, with enough knockback in the right direction. Check every new or changed multi-hit move against all six fighters at several damages and spots, as described in `docs/decisions.md` (Balance pass 8).
 - `npm run typecheck` and `npm run build` must pass.

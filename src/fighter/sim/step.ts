@@ -63,10 +63,12 @@ const LEDGE_REACH_UNDER = 10;
 const LIP_SLIDE = 12;
 const LIP_ZONE = 48;
 const UNTIL_LAND_MAX = 45;
-const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14, toss: 16, bomb: 11, blast: 64 };
+const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14, toss: 16, bomb: 11, blast: 64, boomerang: 14 };
 /** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
 const SWORD_HIT = { back: 9, front: 45 };
-const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30, toss: 150, bomb: 400, blast: 5 };
+const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30, toss: 150, bomb: 400, blast: 5, boomerang: 150 };
+/** Ranger's boomerang: slows this much a frame on the way out, then turns and flies back to her, speeding up to `speed`. */
+const BOOMERANG = { decel: 0.5, turn: 0.9, speed: 14, catch: 34 };
 /** Ranger's bomb goes off this long after it is thrown (it does not go off on contact). */
 export const BOMB_FUSE = 90;
 /** A charged arrow grows up to this much bigger (as a share of its size) at full charge. */
@@ -304,7 +306,8 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
     f.buf = press & ACTIONS;
     f.bufT = BUFFER;
     f.bufDir = input & DIRS;
-  } else if (f.bufT > 0 && --f.bufT === 0) f.buf = 0;
+    // The buffer waits out a hit's freeze, so a press made during it still comes out (a quick second punch).
+  } else if (f.bufT > 0 && f.hitlag === 0 && --f.bufT === 0) f.buf = 0;
 
   if (f.act === 'out') return;
   if (f.act === 'dead') {
@@ -649,8 +652,9 @@ function canStart(s: MatchState, f: FighterState, slot: MoveSlot): boolean {
   if (m.needsWeapon && f.weaponOut) return false;
   // Moves that exist to throw something wait until the last one is gone.
   if (m.proj?.some((p) => p.kind === 'orb' || p.kind === 'boulder') && countProjectiles(s, f.slot) >= c.projLimit) return false;
-  // One bomb at a time (its blast included).
+  // One bomb at a time (its blast included), and one boomerang.
   if (m.proj?.some((p) => p.kind === 'bomb') && s.projectiles.some((q) => q.owner === f.slot && (q.kind === 'bomb' || q.kind === 'blast'))) return false;
+  if (m.proj?.some((p) => p.kind === 'boomerang') && s.projectiles.some((q) => q.owner === f.slot && q.kind === 'boomerang')) return false;
   return true;
 }
 
@@ -1129,7 +1133,7 @@ function resolveHits(s: MatchState, ev: SimEvent[]) {
     }
     a.hitLog.push(h.group ?? 0, v.slot, a.t);
     const dir = h.away ? (v.x >= a.x ? 1 : -1) : h.pull ? (v.x >= a.x ? -1 : 1) : a.facing;
-    applyHit(s, a, v, h, dir, x, y, ev);
+    applyHit(s, a, v, v.grounded && h.onGround ? { ...h, ...h.onGround } : h, dir, x, y, ev);
   }
 }
 
@@ -1234,9 +1238,9 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
     id: s.nextId++,
     owner: f.slot,
     kind: def.kind,
-    x: aim ? j.hand1[0] : j.hip[0] + f.facing * def.x,
+    x: aim ? j[def.from ?? 'hand1'][0] : j.hip[0] + f.facing * def.x,
     // Shockwaves run along the floor; a boulder thrown on the ground starts resting on it.
-    y: aim ? j.hand1[1] : def.kind === 'shock' ? f.y : def.kind === 'boulder' && f.grounded ? f.y + PROJ_R.boulder : j.hip[1] + def.y,
+    y: aim ? j[def.from ?? 'hand1'][1] : def.kind === 'shock' ? f.y : def.kind === 'boulder' && f.grounded ? f.y + PROJ_R.boulder : j.hip[1] + def.y,
     vx,
     vy: def.kind === 'shock' ? 0 : vy,
     dir: vx < -0.001 ? -1 : vx > 0.001 ? 1 : f.facing,
@@ -1303,6 +1307,28 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         if (!surf || p.x < surf.x1 || p.x > surf.x2) gone = true;
         break;
       }
+      case 'boomerang': {
+        // Out along its aim, slowing; then it turns and flies back to Ranger wherever she is, and is caught
+        // when it reaches her. It can hit each fighter once on the way out and once on the way back.
+        if (!p.back) {
+          p.vx -= p.ux * BOOMERANG.decel;
+          p.vy -= p.uy * BOOMERANG.decel;
+          if (p.vx * p.ux + p.vy * p.uy <= 0) {
+            p.back = true;
+            p.hit = [];
+          }
+        } else {
+          const dx = owner.x - p.x;
+          const dy = owner.y + CHARS[owner.char].height * 0.55 - p.y;
+          const d = dsqrt(dx * dx + dy * dy) || 1;
+          if (d < BOOMERANG.catch) gone = true;
+          p.vx = approach(p.vx, (dx / d) * BOOMERANG.speed, BOOMERANG.turn);
+          p.vy = approach(p.vy, (dy / d) * BOOMERANG.speed, BOOMERANG.turn);
+          if (p.vx !== 0) p.dir = p.vx < 0 ? -1 : 1;
+        }
+        if (owner.act === 'dead' || owner.act === 'out') gone = true;
+        break;
+      }
       case 'bomb':
         // Lobbed: it falls, comes to rest on whatever it lands on, and goes off when the fuse runs out.
         if (p.vy === 0) p.vx *= 0.8;
@@ -1337,7 +1363,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
     }
     // Arrows, orbs and boulders stop at the stage, and a bomb thrown into its side goes off; the sword flies through it.
-    if (!gone && !KEEPS.includes(p.kind) && p.kind !== 'shock' && p.kind !== 'blast' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
+    if (!gone && !KEEPS.includes(p.kind) && p.kind !== 'shock' && p.kind !== 'blast' && p.kind !== 'boomerang' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
       gone = true;
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: Math.max(p.y, 0), kind: p.kind });
       if (p.kind === 'bomb') explode(p, keep, ev);
@@ -1481,7 +1507,7 @@ function projectileHits(s: MatchState, p: ProjectileState, joints: ReturnType<ty
     applyHit(s, null, v, strike, p.kind === 'blast' ? (v.x >= p.x ? 1 : -1) : p.dir, p.x, p.y, ev);
     // Credit the thrower (for who knocked whom out); projectiles cause no hitlag for the thrower.
     v.lastHitBy = owner.slot;
-    if (!KEEPS.includes(p.kind) && p.kind !== 'blast') {
+    if (!KEEPS.includes(p.kind) && p.kind !== 'blast' && p.kind !== 'boomerang') {
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
       return true;
     }

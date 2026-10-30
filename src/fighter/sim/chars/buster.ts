@@ -31,7 +31,7 @@ export const buster: CharDef = {
   groundKb: 0.85,
   stats: {
     weight: 130,
-    run: 4.8,
+    run: 5.2,
     groundAccel: 0.65,
     friction: 0.7,
     air: 4.2,
@@ -40,9 +40,9 @@ export const buster: CharDef = {
     gravity: 0.59,
     maxFall: 10.3,
     fastFall: 16,
-    jump: 13.2,
-    shortHop: 9.1,
-    doubleJump: 12,
+    jump: 14.2,
+    shortHop: 9.8,
+    doubleJump: 12.9,
     squat: 4,
   },
   anims: baseAnims({
@@ -59,19 +59,21 @@ export const buster: CharDef = {
   }),
   moves: {
     jab: {
+      // Quicker since the CPU study (Caleb: Buster has a hard time getting things started): hits from frame
+      // 5 (was 9), 24 frames in all (was 30).
       name: 'Palm Shove',
-      total: 30,
+      total: 24,
       prio: 2,
       anim: keys(
         [0, S],
-        [5, S, { lean: 20, a1: 40, f1: 50, a2: 30, f2: 40, t1: 20, t2: -30, dx: -4 }],
-        [9, S, { lean: 30, a1: 88, f1: 90, a2: 80, f2: 85, t1: 50, s1: 5, t2: -35, s2: -35, dx: 2 }],
-        [15, S, { lean: 30, a1: 88, f1: 90, a2: 80, f2: 85, t1: 50, s1: 5, t2: -35, s2: -35, dx: 2 }],
-        [30, S],
+        [3, S, { lean: 20, a1: 40, f1: 50, a2: 30, f2: 40, t1: 20, t2: -30, dx: -4 }],
+        [5, S, { lean: 30, a1: 88, f1: 90, a2: 80, f2: 85, t1: 50, s1: 5, t2: -35, s2: -35, dx: 2 }],
+        [11, S, { lean: 30, a1: 88, f1: 90, a2: 80, f2: 85, t1: 50, s1: 5, t2: -35, s2: -35, dx: 2 }],
+        [24, S],
       ),
       hits: [
-        { f: [9, 11], at: 'hand1', r: 15, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
-        { f: [9, 11], at: 'hand2', r: 15, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
+        { f: [5, 7], at: 'hand1', r: 15, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
+        { f: [5, 7], at: 'hand2', r: 15, dmg: 9, ang: 40, bkb: 45, kbg: 55 },
       ],
     },
     ftilt: {
@@ -215,10 +217,12 @@ export const buster: CharDef = {
       proj: [{ f: 20, kind: 'boulder', x: 55, y: -25, speed: 3.2, ang: 0, dmg: 12, hitAng: 50, bkb: 42, kbg: 64 }],
     },
     sspec: {
-      // A dashing command grab: lunges forward with both arms out; catching starts the throw.
+      // A dashing command grab: lunges forward with both arms out; catching starts the throw. Super armor
+      // from the start to the end of the lunge (Caleb's change after the CPU study).
       name: 'Lunge Grab',
       total: 46,
       turn: true,
+      superArmor: [1, 22],
       anim: keys(
         [0, S],
         [6, S, { lean: 50, a1: -20, f1: 10, a2: -30, f2: 0, t1: 50, s1: 10, t2: -40, s2: -50, dy: -4 }],
@@ -283,7 +287,8 @@ export const buster: CharDef = {
         [12, A, { lean: 0, t1: 10, s1: 0, t2: -10, s2: 0, a1: 160, f1: 175, a2: 150, f2: 170 }],
         [14, A],
       ),
-      hits: [{ f: [12, 12], at: 'hip', r: 28, dmg: 14, ang: -60, bkb: 35, kbg: 65 }],
+      // Spikes in the air; an opponent standing on the ground is held for the landing hit instead (multi-hit tuning).
+      hits: [{ f: [12, 12], at: 'hip', r: 28, dmg: 14, ang: -60, bkb: 35, kbg: 65, onGround: { ang: 90, bkb: 25, kbg: 0 } }],
       vel: [
         { f: 4, vy: 10, when: 'ground' },
         { f: 12, vx: 0, vy: -20 },
@@ -294,7 +299,7 @@ export const buster: CharDef = {
       total: 26,
       prio: 2,
       anim: keys([0, crouch, { a1: 60, f1: 20, a2: 50, f2: 10, lean: 50 }], [26, S]),
-      hits: [{ f: [0, 3], at: [0, 12], r: 44, dmg: 10, ang: 70, bkb: 50, kbg: 55, away: true }],
+      hits: [{ f: [0, 3], at: [0, 12], r: 44, dmg: 10, ang: 70, bkb: 50, kbg: 66, away: true }],
       proj: [
         { f: 1, kind: 'shock', x: 34, y: 0, speed: 9, ang: 0, dmg: 7, hitAng: 70, bkb: 50, kbg: 40, prio: 2 },
         { f: 1, kind: 'shock', x: -34, y: 0, speed: 9, ang: 180, dmg: 7, hitAng: 70, bkb: 50, kbg: 40, prio: 2 },

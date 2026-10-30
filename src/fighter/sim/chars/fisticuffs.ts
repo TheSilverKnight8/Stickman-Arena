@@ -32,9 +32,9 @@ export const fisticuffs: CharDef = {
     gravity: 0.53,
     maxFall: 9.5,
     fastFall: 15,
-    jump: 13.6,
-    shortHop: 9.2,
-    doubleJump: 12.5,
+    jump: 14.6,
+    shortHop: 9.9,
+    doubleJump: 13.4,
     squat: 4,
   },
   anims: baseAnims({ stand: S, air: A, runLean: 22, idleShift: { t1: 26, s1: -16, t2: -12, s2: -32, dy: -2 }, idleFrames: 30 }),
@@ -154,9 +154,11 @@ export const fisticuffs: CharDef = {
         [32, A],
       ),
       hits: [
-        { f: [5, 14], at: 'foot1', r: 15, dmg: 2, ang: 65, bkb: 22, kbg: 5, rehit: 3, group: 0 },
-        { f: [5, 14], at: 'foot2', r: 15, dmg: 2, ang: 65, bkb: 22, kbg: 5, rehit: 3, group: 0 },
-        { f: [17, 19], at: 'foot1', r: 17, dmg: 6, ang: 72, bkb: 40, kbg: 70, group: 1, prio: 2 },
+        // Multi-hit tuning: the small kicks knock a set, light amount forward and draw the opponent back in,
+        // holding them in front for the last kick.
+        { f: [5, 14], at: 'foot1', r: 15, dmg: 2, ang: 45, bkb: 10, kbg: 0, rehit: 3, pull: true, group: 0 },
+        { f: [5, 14], at: 'foot2', r: 15, dmg: 2, ang: 45, bkb: 10, kbg: 0, rehit: 3, pull: true, group: 0 },
+        { f: [17, 19], at: 'foot1', r: 20, dmg: 6, ang: 72, bkb: 40, kbg: 70, group: 1, prio: 2 },
       ],
     },
     uair: {
@@ -261,7 +263,8 @@ export const fisticuffs: CharDef = {
       untilLand: 10,
       onLand: 'dspecLand',
       anim: keys([0, S], [6, A, { t1: 95, s1: 60, t2: 80, s2: 50, a1: 150, f1: 170, a2: 140, f2: 160 }], [10, A, { lean: 0, t1: 0, s1: 0, t2: 5, s2: 0, a1: 160, f1: 175, a2: 150, f2: 170 }], [12, A]),
-      hits: [{ f: [10, 10], at: 'foot1', r: 17, dmg: 9, ang: -80, bkb: 30, kbg: 60 }],
+      // Spikes in the air; an opponent standing on the ground is held for the landing hit instead (multi-hit tuning).
+      hits: [{ f: [10, 10], at: 'foot1', r: 17, dmg: 9, ang: -80, bkb: 30, kbg: 60, onGround: { ang: 90, bkb: 25, kbg: 0 } }],
       vel: [
         { f: 4, vy: 9, when: 'ground' },
         { f: 10, vx: 0, vy: -17 },

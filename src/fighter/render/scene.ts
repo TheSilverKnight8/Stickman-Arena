@@ -767,6 +767,30 @@ export class Scene {
         ctx.stroke();
         break;
       }
+      case 'boomerang': {
+        // A wooden boomerang spinning, with a band in Ranger's colour.
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.t * 0.55 * p.dir);
+        const arm = (sx: number) => {
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(sx * 8, 10, sx * 18, 4);
+          ctx.stroke();
+        };
+        ctx.strokeStyle = NAVY;
+        ctx.lineWidth = 9;
+        arm(1);
+        arm(-1);
+        ctx.strokeStyle = '#c8a165';
+        ctx.lineWidth = 5;
+        arm(1);
+        arm(-1);
+        ctx.fillStyle = this.colorOf(s.fighters[p.owner]);
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
       case 'bomb': {
         // It blinks faster as the fuse runs out.
         const left = BOMB_FUSE - p.t;

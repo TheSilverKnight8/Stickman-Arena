@@ -165,6 +165,7 @@ export const sfx = {
     else if (kind === 'orb') tone(midiHz(69), { type: 'sine', dur: 0.35, to: midiHz(81), gain: 0.16 });
     else if (kind === 'boulder') tone(110, { type: 'square', dur: 0.15, to: 70, gain: 0.12 });
     else if (kind === 'toss') noise({ filter: 'bandpass', hz: 700, toHz: 1600, q: 2, dur: 0.35, gain: 0.18 });
+    else if (kind === 'boomerang') noise({ filter: 'bandpass', hz: 600, toHz: 1400, q: 3, dur: 0.3, gain: 0.16 });
     else if (kind === 'bomb') {
       noise({ filter: 'bandpass', hz: 900, toHz: 400, q: 1.5, dur: 0.18, gain: 0.16 });
       noise({ filter: 'highpass', hz: 5000, dur: 0.25, gain: 0.05, at: 0.05 });

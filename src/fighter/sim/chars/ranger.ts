@@ -4,7 +4,7 @@ import { aimPose, baseAnims, keys } from './common';
 
 // RANGER: zoner. Average mobility and survivability, plenty of ranged tools;
 // less effective close up, needs precision. An archer whose specials shoot
-// (Charged Shot, Triple Shot, Rocket Arrow) or throw a bomb, while her tilts and
+// (Charged Shot, Rocket Arrow) or throw (a boomerang, a bomb), while her tilts and
 // aerials (Caleb's change after the CPU study) are melee: the bow, kicks, and a
 // dagger drawn in the back hand. She wears a wide-brimmed hat and a quiver (drawn only).
 
@@ -42,9 +42,9 @@ export const ranger: CharDef = {
     gravity: 0.47,
     maxFall: 8.6,
     fastFall: 14,
-    jump: 13,
-    shortHop: 8.7,
-    doubleJump: 12,
+    jump: 13.9,
+    shortHop: 9.3,
+    doubleJump: 12.9,
     squat: 4,
   },
   anims: baseAnims({
@@ -120,20 +120,20 @@ export const ranger: CharDef = {
       prio: 1,
       anim: keys(
         [0, A],
-        [4, A, { a1: 90, f1: 90, a2: -90, f2: -90, t1: 70, s1: 20, t2: -60, s2: -80 }],
-        [12, A, { a1: 90, f1: 90, a2: -90, f2: -90, t1: 70, s1: 20, t2: -60, s2: -80, rot: 360 }],
+        [3, A, { a1: 90, f1: 90, a2: -90, f2: -90, t1: 70, s1: 20, t2: -60, s2: -80 }],
+        [11, A, { a1: 90, f1: 90, a2: -90, f2: -90, t1: 70, s1: 20, t2: -60, s2: -80, rot: 360 }],
         [28, A, { rot: 360 }],
       ),
       hits: [
-        { f: [5, 12], at: 'hand1', r: 14, dmg: 6, ang: 45, bkb: 35, kbg: 55, away: true },
-        { f: [5, 12], at: 'hand2', r: 10, dmg: 6, ang: 45, bkb: 35, kbg: 55, away: true },
+        { f: [4, 11], at: 'hand1', r: 14, dmg: 7, ang: 45, bkb: 38, kbg: 60, away: true },
+        { f: [4, 11], at: 'hand2', r: 10, dmg: 7, ang: 45, bkb: 38, kbg: 60, away: true },
       ],
     },
     fair: {
       // Draws the dagger back and stabs straight ahead, front knee up.
       name: 'Dagger Stab',
       total: 28,
-      landLag: 7,
+      landLag: 6,
       prio: 2,
       turn: true,
       anim: keys(
@@ -143,10 +143,10 @@ export const ranger: CharDef = {
         [12, A, { lean: 15, a1: -20, f1: -40, a2: 90, f2: 90, t1: 70, s1: 30, t2: -30, s2: -50 }],
         [28, A],
       ),
-      hits: [{ f: [6, 9], at: 'hand2', to: 'tip2', r: 11, dmg: 8, ang: 40, bkb: 30, kbg: 68 }],
+      hits: [{ f: [6, 9], at: 'hand2', to: 'tip2', r: 12, dmg: 10, ang: 40, bkb: 32, kbg: 74 }],
     },
     uair: {
-      // Swings the bow overhead from in front to behind, leaning back into it.
+      // Swings the bow overhead from in front to behind, leaning back into it. Her KO move in the air.
       name: 'Bow Arc',
       total: 28,
       landLag: 6,
@@ -158,7 +158,7 @@ export const ranger: CharDef = {
         [10, A, { lean: -20, a1: 230, f1: 240, t1: 50, s1: 0, t2: 0, s2: -30 }],
         [28, A],
       ),
-      hits: [{ f: [5, 10], at: 'hand1', r: 22, dmg: 7, ang: 85, bkb: 34, kbg: 70 }],
+      hits: [{ f: [5, 10], at: 'hand1', r: 22, dmg: 11, ang: 85, bkb: 38, kbg: 92 }],
     },
     dair: {
       // Raises the dagger overhead and drives it straight down: the point spikes as it lands its blow.
@@ -174,7 +174,7 @@ export const ranger: CharDef = {
         [34, A],
       ),
       hits: [
-        { f: [8, 10], at: 'hand2', to: 'tip2', r: 11, dmg: 9, ang: -70, bkb: 28, kbg: 52 },
+        { f: [8, 10], at: 'hand2', to: 'tip2', r: 11, dmg: 10, ang: -70, bkb: 28, kbg: 62 },
         { f: [11, 15], at: 'hand2', to: 'tip2', r: 10, dmg: 6, ang: 45, bkb: 25, kbg: 40, prio: 1 },
       ],
     },
@@ -196,18 +196,23 @@ export const ranger: CharDef = {
       proj: [arrow(13, 34, 30, 0, 7, { speed: 18, hitAng: 38, bkb: 30, kbg: 50 })],
     },
     sspec: {
-      name: 'Triple Shot',
-      total: 48,
-      prio: 1,
+      // Throws a boomerang with the back hand: it flies out, slows, and curves back to Ranger wherever she
+      // is, hitting once on the way out and once on the way back (which pulls toward her). Hold up or down
+      // while throwing to aim it 40 degrees up or down. One at a time. (Replaced Triple Shot after the CPU
+      // study: more coverage, for the Valkyrie matchup.)
+      name: 'Boomerang',
+      total: 34,
+      prio: 2,
       turn: true,
+      aim: 40,
       anim: [
         [0, S],
-        [10, aimPose(S, 90, { t1: 40, s1: -10, t2: -36, s2: -40, dy: -6 })],
-        [16, aimPose(S, 90, { lean: -8, t1: 40, s1: -10, t2: -36, s2: -40, dy: -6, dx: -5 })],
-        [24, aimPose(S, 90, { t1: 36, s1: -8, t2: -32, s2: -36, dy: -5, dx: -4 })],
-        [48, S],
+        [6, pose(S, { lean: -8, a2: -100, f2: -70, t1: 25, s1: -5, t2: -25, s2: -30, dx: -3 })],
+        [10, pose(S, { lean: 14, a2: 92, f2: 90, t1: 35, s1: -5, t2: -30, s2: -35, dx: 4 })],
+        [16, pose(S, { lean: 12, a2: 100, f2: 105, t1: 35, s1: -5, t2: -30, s2: -35, dx: 4 })],
+        [34, S],
       ],
-      proj: [arrow(14, 34, 30, 0, 4, { kbg: 35 }), arrow(14, 34, 30, 12, 4, { kbg: 35 }), arrow(14, 34, 30, -12, 4, { kbg: 35 })],
+      proj: [{ f: 10, kind: 'boomerang', x: 32, y: 30, speed: 14, ang: 0, dmg: 6, hitAng: 40, bkb: 30, kbg: 45, from: 'hand2' }],
     },
     uspec: {
       name: 'Rocket Arrow',

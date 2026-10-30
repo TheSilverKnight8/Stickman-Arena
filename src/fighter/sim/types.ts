@@ -44,7 +44,7 @@ export interface Stats {
 }
 
 /** A bomb sits until its fuse runs out, then becomes a blast (the explosion's hit area for a few frames). */
-export type ProjKind = 'arrow' | 'sword' | 'orb' | 'boulder' | 'shock' | 'toss' | 'bomb' | 'blast';
+export type ProjKind = 'arrow' | 'sword' | 'orb' | 'boulder' | 'shock' | 'toss' | 'bomb' | 'blast' | 'boomerang';
 
 /**
  * Priority when two attacks touch: 1 light, 2 medium, 3 heavy. The higher one
@@ -82,6 +82,11 @@ export interface HitDef {
   prio?: Prio;
   /** A command grab: catching the opponent starts this move (the throw). Grabs never clash. */
   grab?: string;
+  /**
+   * Different launch for an opponent standing on the ground: a falling spike that should pop a grounded
+   * opponent into the move's landing hit instead of bouncing them out of reach.
+   */
+  onGround?: { ang: number; bkb: number; kbg: number; hitstun?: number };
 }
 
 export interface ProjSpawn {
@@ -104,6 +109,8 @@ export interface ProjSpawn {
   prio?: Prio;
   /** Stronger knockback when it hits soon after leaving the hand, fading to the normal values over `frames`. */
   near?: { bkb: number; kbg: number; frames: number };
+  /** An aimed throw leaves from this joint (default the front hand). */
+  from?: JointName;
 }
 
 export interface VelDef {

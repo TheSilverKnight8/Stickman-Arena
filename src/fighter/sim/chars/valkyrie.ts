@@ -17,16 +17,15 @@ const A = pose(S, { t1: 45, s1: -15, t2: -10, s2: -40 });
 const crouch = pose(S, { lean: 18, t1: 58, s1: -10, t2: 22, s2: -55 });
 
 /**
- * Shuttle Loop's path: a speed for each frame of a loop that starts moving
- * straight up and turns back over the top, down and round to level flight
- * forward (270 degrees), drifting upward by `rise` per frame so the loop
- * climbs. Worked out with the simulation's exact sine.
+ * Shuttle Loop's path: a speed for each frame of a full loop that starts moving
+ * straight up, turns back over the top, down, and round to straight up again.
+ * Worked out with the simulation's exact sine.
  */
-function loopVel(from: number, frames: number, speed: number, rise: number): VelDef[] {
+function loopVel(from: number, frames: number, speed: number): VelDef[] {
   const out: VelDef[] = [];
   for (let i = 0; i <= frames; i++) {
-    const a = 90 + (270 * i) / frames;
-    out.push({ f: from + i, vx: dcos(a) * speed, vy: dsin(a) * speed + rise });
+    const a = 90 + (360 * i) / frames;
+    out.push({ f: from + i, vx: dcos(a) * speed, vy: dsin(a) * speed });
   }
   return out;
 }
@@ -62,9 +61,9 @@ export const valkyrie: CharDef = {
     gravity: 0.4,
     maxFall: 7.6,
     fastFall: 12,
-    jump: 12,
-    shortHop: 8.2,
-    doubleJump: 10.5,
+    jump: 12.9,
+    shortHop: 8.8,
+    doubleJump: 11.3,
     airJumps: 3,
     squat: 4,
   },
@@ -253,11 +252,14 @@ export const valkyrie: CharDef = {
       gravity: { f: [3, 14], mul: 0 },
     },
     uspec: {
-      // Like Meta Knight's Shuttle Loop: flies up slashing, loops back over the top and round,
-      // and comes out of it gliding forward. While gliding, any attack, jump or dodge ends the
-      // glide and comes out at once (jumps left are kept).
+      // Like Meta Knight's Shuttle Loop: flies up slashing, loops backward all the way round, flies
+      // straight up again through the opponent with the launcher, and comes out of it gliding forward
+      // (Caleb's change after the CPU study). The rising slashes knock a set amount straight up and a
+      // little in toward her (whatever the damage or weight), so the opponent is still above her when
+      // she comes out of the loop: tuned so the launcher follows them from every spot tried. While
+      // gliding, any attack, jump or dodge ends the glide and comes out at once (jumps left are kept).
       name: 'Shuttle Loop',
-      total: 34,
+      total: 38,
       prio: 2,
       drift: 0,
       turn: true,
@@ -267,17 +269,18 @@ export const valkyrie: CharDef = {
         [4, crouch, { a1: 40, f1: 60, w: 0 }],
         [6, A, { lean: -5, a1: 175, f1: 178, w: 0, t1: 15, s1: -10, t2: -20, s2: -40 }],
         [13, A, { lean: -5, a1: 175, f1: 178, w: 0, t1: 15, s1: -10, t2: -20, s2: -40 }],
-        [29, A, { lean: -5, a1: 175, f1: 178, w: 0, t1: 15, s1: -10, t2: -20, s2: -40, rot: 270 }],
-        [34, A, { lean: 70, a1: 95, f1: 100, w: -10, t1: -20, s1: -30, t2: -35, s2: -45, rot: 360 }],
+        [25, A, { lean: -5, a1: 175, f1: 178, w: 0, t1: 15, s1: -10, t2: -20, s2: -40, rot: 360 }],
+        [34, A, { lean: -5, a1: 175, f1: 178, w: 0, t1: 15, s1: -10, t2: -20, s2: -40, rot: 360 }],
+        [38, A, { lean: 70, a1: 95, f1: 100, w: -10, t1: -20, s1: -30, t2: -35, s2: -45, rot: 360 }],
       ),
       hits: [
-        { f: [6, 18], at: 'tip', r: 13, dmg: 2, ang: 85, bkb: 30, kbg: 8, rehit: 5, group: 0 },
-        { f: [6, 18], at: 'hand1', to: 'tip', r: 9, dmg: 2, ang: 85, bkb: 30, kbg: 8, rehit: 5, group: 0 },
-        { f: [20, 24], at: 'tip', r: 15, dmg: 6, ang: 88, bkb: 52, kbg: 76, group: 1 },
-        { f: [20, 24], at: 'hand1', to: 'tip', r: 11, dmg: 5, ang: 88, bkb: 50, kbg: 70, group: 1 },
+        { f: [6, 12], at: 'tip', r: 14, dmg: 2, ang: 85, bkb: 62, kbg: 0, rehit: 3, pull: true, group: 0 },
+        { f: [6, 12], at: 'hand1', to: 'tip', r: 10, dmg: 2, ang: 85, bkb: 62, kbg: 0, rehit: 3, pull: true, group: 0 },
+        { f: [26, 30], at: 'tip', r: 16, dmg: 6, ang: 88, bkb: 52, kbg: 76, group: 1 },
+        { f: [26, 30], at: 'hand1', to: 'tip', r: 12, dmg: 5, ang: 88, bkb: 50, kbg: 70, group: 1 },
       ],
-      vel: [{ f: 5, vx: 0, vy: 13 }, ...loopVel(13, 16, 10, 5), { f: 30, vx: 6, vy: 0 }],
-      gravity: { f: [13, 34], mul: 0 },
+      vel: [{ f: 5, vx: 0, vy: 13 }, ...loopVel(13, 12, 14), { f: 26, vx: 1, vy: 12 }, { f: 34, vx: 6, vy: 0 }],
+      gravity: { f: [13, 38], mul: 0 },
     },
     dspec: {
       name: 'Spear Dive',
@@ -292,7 +295,13 @@ export const valkyrie: CharDef = {
         [12, A],
       ),
       // Sword first, straight down: the tip spikes in the air.
-      hits: blade([10, 10], { dmg: 8, ang: -85, bkb: 30, kbg: 60 }, { dmg: 6, ang: 70, bkb: 28, kbg: 45 }, 12),
+      // Spikes in the air; an opponent standing on the ground is held for the landing hit instead (multi-hit tuning).
+      hits: blade(
+        [10, 10],
+        { dmg: 8, ang: -85, bkb: 30, kbg: 60, onGround: { ang: 90, bkb: 25, kbg: 0 } },
+        { dmg: 6, ang: 70, bkb: 28, kbg: 45, onGround: { ang: 90, bkb: 25, kbg: 0 } },
+        12,
+      ),
       vel: [
         { f: 4, vy: 8, when: 'ground' },
         { f: 10, vx: 0, vy: -16 },

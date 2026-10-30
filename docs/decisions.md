@@ -306,6 +306,30 @@ SPEC.md describes Ranger as "an archer, with many attacks that shoot a bow" and 
 
 CPU vs CPU after this pass (the same 1,200 one-on-ones and 600 free-for-alls), wins one-on-one (free-for-all): Buster 61% (34%), Phantom 57% (31%), Fisticuffs 56% (21%), Valkyrie 55% (19%), Ranger 40.5% (26.5%), Spartan 30% (18%); before it Phantom 76% (45%), Fisticuffs 67% (22%), Ranger 60% (47%), Buster 42% (18%), Valkyrie 42% (8%), Spartan 15% (10%). One-on-ones that went to time: 15% → 11%. Reaper Kick makes most of Phantom's KOs (426, then Drill Kick 254, the orb 109; the orb made 297 before), and the bomb most of Ranger's (390). The new lopsided matchup is Valkyrie against Ranger (Valkyrie wins 97.5%): without the arrows that shot her out of the air, Ranger has only melee anti-airs. Dash Punch is still thrown about as often by the CPU (15.8 a minute, landing 26%, was 30%).
 
+### Balance pass 8 (Caleb's changes after Balance pass 7)
+
+**Rule for multi-hit moves (Caleb's, for every current and future one):** each hit must launch the opponent into the next, with enough knockback in the right direction. How it is done here: the small hits get a set knockback (no growth, so it is the same at any damage and weight), aimed and, where needed, drawing the opponent back in (`pull`) so they stay where the next hit comes out; a falling spike that ends in a landing hit holds an opponent standing on the ground for it instead of bouncing them out of reach (`onGround`: a different launch when the opponent hit is on the ground; in the air it is still a spike). Each one is checked with a lab that tries every fighter as the opponent at 0, 60 and 120%, over a grid of spots, and counts how often the next hit lands once the one before has.
+
+| Multi-hit move | Before → after (next hit lands, once the one before has) | What changed |
+| --- | --- | --- |
+| Valkyrie: Shuttle Loop | launcher 3 of 34 spots → 474 of 474 | Caleb: after the loop she flies up, then glides. The loop now goes all the way round (12 frames) and she flies straight up through the opponent with the launcher; the rising slashes knock a set 62 up and a little in toward her. The whole move KOs a mid-weight from about 230% in the middle of the stage (it never did before 300%); it rises 215 from standing. |
+| Fisticuffs: Kick Flurry | 43% → 99% | Small kicks: set knockback 10 forward at 45 degrees, drawing the opponent back in; the last kick a little bigger (radius 17 → 20). |
+| Fisticuffs: One-Two | 0% → 100% (second press during the first punch's hit) | Not a tuning problem: a press made during a hit's freeze ran out of buffer before the fighter could act. The buffer now waits out the freeze, for every move. |
+| Spartan: Sky Toss | toss → plunge 43% → 100%; plunge → landing 96% → 100% | The toss knocks a set 55 up and a little forward (75 degrees, the way he leaps) with 1.5 times the stun; the plunge drags a set 35 down. |
+| Fisticuffs: Stomp Drop | 85% → 100% | `onGround`: a set 25 straight up. |
+| Buster: Ground Pound | 58% → 100% | `onGround` as above; the landing hit's knockback growth 55 → 66, so the whole move still KOs a standing mid-weight from about 215%. |
+| Valkyrie: Spear Dive | 80% → 100% | `onGround` as above. |
+
+| Other change | What |
+| --- | --- |
+| Buster | Palm Shove hits from frame 5 (was 9), 24 frames in all (was 30); Lunge Grab has super armor from frame 1 to the end of the lunge (22); run speed 4.8 → 5.2. |
+| Everyone: jumps | 15% higher (jump, short hop and air jumps: each speed times 1.072). Measured heights now: Phantom 257, Valkyrie 202, Ranger 199, Fisticuffs 194, Spartan 177, Buster 164. |
+| Phantom: orb | Ends on frame 48 (was 32; Caleb's friend found it too easy to throw again and again). Thrown as fast as possible at close range, an opponent it hits now has about 35 frames between getting free and the next orb arriving (was about 19). |
+| Ranger: aerials | Her KO move in the air is Bow Arc (up air): 11 damage, knockback growth 70 → 92, KOs a mid-weight from about 150% (it did not before 300%). Dagger Stab 8 → 10 damage, a little more knockback (KO about 190%, was 260%), landing lag 7 → 6; Bow Spin starts a frame sooner and hits a little harder; Dagger Drop's spike a little stronger. |
+| Ranger: Boomerang (side special, replaces Triple Shot) | Caleb: an aimable boomerang, for coverage. Thrown with the back hand, out about 230 along the aim (straight, or 40 degrees up or down), it slows, turns and curves back to her wherever she is, and is caught when it reaches her (about a second after the throw). It hits each opponent once going out (pushing away) and once coming back (pulling toward her): 6 damage. One at a time; it flies through the stage; attacks of its priority or higher knock it away; it is not reflected. The CPU aims it up at targets above, and down from the air at targets below (it still does not aim Charged Shot). |
+
+CPU vs CPU after this pass (the same 1,200 one-on-ones and 600 free-for-alls), wins one-on-one (free-for-all): Buster 69% (37.5%), Ranger 66% (48%), Valkyrie 44% (10%), Fisticuffs 44% (13.5%), Phantom 43% (23.5%), Spartan 34% (17.5%); before it Buster 61% (34%), Phantom 57% (31%), Fisticuffs 56% (21%), Valkyrie 55% (19%), Ranger 40.5% (26.5%), Spartan 30% (18%). Ranger now beats Valkyrie 67.5% (was 2.5%), mostly with Bow Arc (152 of her 196 KOs in that matchup). The CPU throws the boomerang 28 times a minute (46% land, 54% of her damage), much as it threw Quick Shot. Shuttle Loop made 33 of Valkyrie's KOs (2 before). The CPU still rarely uses Buster's jab (1.2 a minute). One-on-ones that went to time: 11% → 6%.
+
 ### Weight, speed and jump
 
 Ratings from the archetypes (1 = lowest of the six, 5 = highest, worked out from the numbers):

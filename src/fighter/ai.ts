@@ -58,6 +58,8 @@ interface Reach {
   kbg: number;
   air: boolean;
   special: boolean;
+  /** Up or down held to aim the throw (the boomerang), or nothing. */
+  aim?: number;
 }
 
 const SLOTS: MoveSlot[] = ['jab', 'ftilt', 'utilt', 'dtilt', 'nair', 'fair', 'uair', 'dair', 'nspec', 'sspec', 'uspec', 'dspec'];
@@ -150,6 +152,14 @@ function reachOf(char: CharId): Reach[] {
       }
     }
     if (r) out.push(r);
+    // A boomerang can be aimed: thrown 40 degrees up at targets above (or down, from the air, at targets
+    // below), it covers them on the way out and again on the way back.
+    if (r && m.aim && m.proj?.[0]?.kind === 'boomerang') {
+      const sx = r.x1 + 20;
+      const sy = r.y1 + 30;
+      out.push({ ...r, x1: sx - 20, x2: sx + 300, y1: sy + 45, y2: sy + 300, aim: BTN.up });
+      out.push({ ...r, x1: sx - 20, x2: sx + 300, y1: sy - 300, y2: sy - 45, aim: BTN.down });
+    }
   }
   reachCache.set(char, out);
   return out;
@@ -205,12 +215,14 @@ export interface Cpu extends HasRng {
   tapGround: boolean | null;
   /** The opponent being gone after (a slot, or -1). */
   target: number;
+  /** Up or down to hold while an aimable throw leaves (the boomerang), or 0. */
+  aimBits: number;
   /** For each fighter, how far it has kept from its nearest other fighter lately (campers keep far). */
   camp: number[];
 }
 
 export function createCpu(level: Difficulty, seed: number): Cpu {
-  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0, tapGround: null, target: -1, camp: [] };
+  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0, tapGround: null, target: -1, camp: [], aimBits: 0 };
 }
 
 /**
@@ -247,7 +259,8 @@ export function cpuInput(s: MatchState, slot: number, cpu: Cpu, recoverOnly = fa
     out |= BTN.jump;
   }
   // The CPU does not aim Ranger's Charged Shot (measured: its aimed shots missed more than they hit),
-  // so up or down held for other reasons is let go while an aimable shot starts.
+  // so up or down held for other reasons is let go while an aimable shot starts; it does aim the
+  // boomerang (up at targets above, down from the air at targets below), held in `aimBits`.
   const aimable = me.act === 'move' && !!me.move && !!CHARS[me.char].moves[me.move].aim;
   if (cpu.retreat > 0) cpu.retreat--;
   // A new trip gets new tries: on landing, and when hit or on a ledge (both give the up special back).
@@ -255,12 +268,12 @@ export function cpuInput(s: MatchState, slot: number, cpu: Cpu, recoverOnly = fa
     cpu.triedUp = false;
     cpu.triedSide = false;
   }
-  if (--cpu.wait > 0) return aimable ? out & ~(BTN.up | BTN.down) : out;
+  if (--cpu.wait > 0) return aimable ? (out & ~(BTN.up | BTN.down)) | cpu.aimBits : out;
   cpu.wait = L.think;
   cpu.hold = 0;
   decide(s, me, cpu, recoverOnly);
   const bits = cpu.hold | (out & (BTN.attack | BTN.special | BTN.dodge | BTN.jump));
-  return aimable ? bits & ~(BTN.up | BTN.down) : bits;
+  return aimable ? (bits & ~(BTN.up | BTN.down)) | cpu.aimBits : bits;
 }
 
 function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean) {
@@ -373,6 +386,7 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean)
       const bits = inputFor(pick.slot, face);
       cpu.tap = bits & (BTN.attack | BTN.special);
       cpu.tapGround = me.grounded;
+      cpu.aimBits = pick.aim ?? 0;
       cpu.hold = bits & (BTN.left | BTN.right | BTN.up | BTN.down);
       // Phantom hits and runs.
       if (me.char === 'phantom') cpu.retreat = 24;
@@ -495,6 +509,7 @@ function chooseMove(me: FighterState, target: FighterState, face: number, cpu: C
   for (const rch of reachOf(me.char)) {
     if (rch.air !== !me.grounded && !rch.special) continue;
     if (rch.slot === 'uspec' && !me.upSpecial) continue;
+    if (rch.aim === BTN.down && me.grounded) continue;
     // The up special is for getting back, or for finishing a combo (the target still stunned from this
     // fighter's hit), never thrown out raw (Caleb's rule after the CPU study).
     if (rch.slot === 'uspec' && !(target.act === 'hurt' && target.lastHitBy === me.slot)) continue;
