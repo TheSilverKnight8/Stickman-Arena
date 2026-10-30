@@ -4,8 +4,8 @@ import type { CharDef, CharId } from '../sim/types';
 
 // Draws one stick figure from its joints. Every figure has a navy outline under
 // its colour so it reads on the cream background, plus props that say who it
-// is: gloves, the sword and crest, the bow with a hat and quiver, big arms and
-// fists, a scarf, wings.
+// is: gloves and a bandana, the sword and a knight's helmet, the bow with a hat
+// and quiver, big arms and fists, a cape, wings.
 
 export const NAVY = '#002657';
 export const CREAM = '#faeeda';
@@ -60,8 +60,8 @@ export function drawFigure(ctx: Ctx, c: CharDef, j: Joints, st: FigureStyle) {
   const frontLeg: P[] = [j.hip, j.knee1, j.foot1];
   const torso: P[] = [j.hip, j.neck];
 
-  // Phantom's scarf trails behind the neck, Valkyrie's wings spread from the back, Ranger's quiver sits on the back (decoration only).
-  if (c.id === 'phantom') drawScarf(ctx, j, st);
+  // Phantom's cape hangs from the shoulders, Valkyrie's wings spread from the back, Ranger's quiver sits on the back (decoration only).
+  if (c.id === 'phantom') drawCape(ctx, j, st);
   if (c.id === 'valkyrie') drawWings(ctx, j, st);
   if (c.id === 'ranger') drawQuiver(ctx, j, st);
 
@@ -103,15 +103,9 @@ export function drawFigure(ctx: Ctx, c: CharDef, j: Joints, st: FigureStyle) {
 function drawProp(ctx: Ctx, id: CharId, c: CharDef, j: Joints, st: FigureStyle, color: string) {
   switch (id) {
     case 'fisticuffs':
-      // Boxing gloves.
+      // Boxing gloves and a bandana.
       for (const h of [j.hand2, j.hand1]) blob(ctx, h, 6.5, color);
-      // Headband tails.
-      ctx.strokeStyle = NAVY;
-      ctx.lineWidth = 3;
-      line(ctx, [
-        [j.head[0] - (st.facing ?? 1) * 9, j.head[1] + 2],
-        [j.head[0] - (st.facing ?? 1) * 18, j.head[1] - 3],
-      ]);
+      drawBandana(ctx, j, c.body.head, st, color);
       break;
     case 'buster':
       // Big knuckled fists at the end of the long arms.
@@ -119,14 +113,7 @@ function drawProp(ctx: Ctx, id: CharId, c: CharDef, j: Joints, st: FigureStyle, 
       break;
     case 'spartan':
       if (!st.noWeapon) drawSword(ctx, j.hand1, j.tip, c.body.weapon);
-      // Helmet crest.
-      ctx.fillStyle = RED;
-      ctx.strokeStyle = NAVY;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.ellipse(j.head[0] - (st.facing ?? 1) * 3, j.head[1] + c.body.head + 2, 9, 4.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      drawHelmet(ctx, j, c.body.head, st);
       break;
     case 'ranger':
       if (st.dagger) drawDagger(ctx, j.hand2, j.tip2);
@@ -395,18 +382,163 @@ function drawQuiver(ctx: Ctx, j: Joints, st: FigureStyle) {
   line(ctx, [base, top]);
 }
 
-function drawScarf(ctx: Ctx, j: Joints, st: FigureStyle) {
+/** Directions for drawing on the head: `u` up the head (from the neck), `front` the way the fighter faces. */
+function headFrame(j: Joints, st: FigureStyle) {
+  const tx = j.head[0] - j.neck[0];
+  const ty = j.head[1] - j.neck[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const u: P = [tx / tl, ty / tl];
   const f = st.facing ?? 1;
+  const front: P = [u[1] * f, -u[0] * f];
+  return { u, front, at: (up: number, fwd: number): P => [j.head[0] + u[0] * up + front[0] * fwd, j.head[1] + u[1] * up + front[1] * fwd] };
+}
+
+/** Fisticuffs' bandana: a band across the brow in a deep shade of his colour with cream dots, knotted at the back, the tails flying. */
+function drawBandana(ctx: Ctx, j: Joints, hr: number, st: FigureStyle, color: string) {
+  const { at } = headFrame(j, st);
+  const cloth = st.flash ? '#ffffff' : shade(color, -0.3);
   const t = st.time ?? 0;
-  const n = j.neck;
-  const pts: P[] = [[n[0], n[1] + 2]];
-  for (let i = 1; i <= 3; i++) pts.push([n[0] - f * i * 13, n[1] + 2 + dsin(t * 9 + i * 70) * 4 - i * 2]);
+  // The band.
+  const band: P[] = [at(hr * 0.15, hr * 1.08), at(hr * 0.55, hr * 0.95), at(hr * 0.75, 0), at(hr * 0.55, -hr * 1.02), at(hr * 0.12, -hr * 1.1)];
+  ctx.fillStyle = cloth;
   ctx.strokeStyle = NAVY;
-  ctx.lineWidth = 8;
-  line(ctx, pts);
-  ctx.strokeStyle = RED;
-  ctx.lineWidth = 5;
-  line(ctx, pts);
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(band[0][0], band[0][1]);
+  ctx.quadraticCurveTo(band[1][0], band[1][1], band[2][0], band[2][1]);
+  ctx.quadraticCurveTo(band[3][0], band[3][1], band[4][0], band[4][1]);
+  const low: P[] = [at(-hr * 0.2, -hr * 1.05), at(hr * 0.2, 0), at(-hr * 0.15, hr * 1.04)];
+  ctx.lineTo(low[0][0], low[0][1]);
+  ctx.quadraticCurveTo(low[1][0], low[1][1], low[2][0], low[2][1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = CREAM;
+  for (const [up, fwd] of [[0.3, 0.55], [0.38, -0.1], [0.25, -0.65]]) {
+    const p = at(hr * up, hr * fwd);
+    ctx.beginPath();
+    ctx.arc(p[0], p[1], 1.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // The knot at the back and two tails streaming behind.
+  const knot = at(hr * 0.05, -hr * 1.15);
+  for (const [k, droop] of [[0, 0], [1, 7]]) {
+    const pts: P[] = [knot];
+    for (let i = 1; i <= 3; i++) {
+      const wave = dsin(t * 11 + i * 80 + k * 40) * 3;
+      pts.push(at(-hr * 0.1 - droop * i * 0.35 + wave, -hr * 1.15 - i * 6.5));
+    }
+    ctx.strokeStyle = NAVY;
+    ctx.lineWidth = 6.5;
+    line(ctx, pts);
+    ctx.strokeStyle = cloth;
+    ctx.lineWidth = 3.5;
+    line(ctx, pts);
+  }
+  ctx.fillStyle = cloth;
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(knot[0], knot[1], 3.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+/** Spartan's knight's helmet: a steel helm over the whole head, a visor slit at the front, a red plume. */
+function drawHelmet(ctx: Ctx, j: Joints, hr: number, st: FigureStyle) {
+  const { at } = headFrame(j, st);
+  const r = hr + 2.5;
+  const steel = st.flash ? '#ffffff' : '#cfd8e6';
+  // The plume, sweeping back from the crown (drawn first, behind the helm).
+  const base = at(r * 0.85, -r * 0.1);
+  const tip = at(r * 0.55, -r * 2.3);
+  const ctl = at(r * 2.1, -r * 1.2);
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.moveTo(base[0], base[1]);
+  ctx.quadraticCurveTo(ctl[0], ctl[1], tip[0], tip[1]);
+  ctx.stroke();
+  ctx.strokeStyle = st.flash ? '#ffffff' : RED;
+  ctx.lineWidth = 5.5;
+  ctx.stroke();
+  // The helm: a dome on top, a straight face guard, flat at the neck.
+  const pts: P[] = [at(-r * 0.95, -r * 0.85), at(r * 0.35, -r * 1.02), at(r * 0.98, -r * 0.4), at(r * 0.98, r * 0.4), at(r * 0.45, r * 1.02), at(-r * 0.95, r * 1.02)];
+  ctx.fillStyle = steel;
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  ctx.lineTo(pts[1][0], pts[1][1]);
+  ctx.quadraticCurveTo(at(r * 1.05, -r * 1.05)[0], at(r * 1.05, -r * 1.05)[1], pts[2][0], pts[2][1]);
+  ctx.lineTo(pts[3][0], pts[3][1]);
+  ctx.quadraticCurveTo(at(r * 1.05, r * 1.05)[0], at(r * 1.05, r * 1.05)[1], pts[4][0], pts[4][1]);
+  ctx.lineTo(pts[5][0], pts[5][1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Visor slit and a ridge down the front.
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 2.5;
+  line(ctx, [at(r * 0.12, r * 0.15), at(r * 0.12, r * 1.0)]);
+  ctx.lineWidth = 1.5;
+  line(ctx, [at(r * 0.9, r * 0.55), at(-r * 0.85, r * 0.55)]);
+  // Breaths under the slit.
+  ctx.fillStyle = NAVY;
+  for (const k of [0.45, 0.75]) {
+    const p = at(-r * 0.3, r * k);
+    ctx.beginPath();
+    ctx.arc(p[0], p[1], 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** Phantom's cape: from the shoulders down the back to the knees, rippling, and streaming out behind in the air. */
+function drawCape(ctx: Ctx, j: Joints, st: FigureStyle) {
+  const facing = st.facing ?? 1;
+  const tx = j.neck[0] - j.hip[0];
+  const ty = j.neck[1] - j.hip[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const u: P = [tx / tl, ty / tl];
+  const back: P = [-facing * u[1], facing * u[0]];
+  const t = st.time ?? 0;
+  const len = tl * 1.75;
+  const spread = st.airborne ? 26 : 14;
+  const wave = (k: number) => dsin(t * 7 + k * 90) * (st.airborne ? 5 : 3);
+  const at = (down: number, out: number): P => [j.neck[0] - u[0] * down + back[0] * out, j.neck[1] - u[1] * down + back[1] * out];
+  const red = st.flash ? '#ffffff' : RED;
+  const pts: P[] = [
+    at(-2, 1),
+    at(2, 9),
+    at(len * 0.5, spread * 0.7 + 6 + wave(1)),
+    at(len, spread + 8 + wave(2)),
+    at(len * 1.02, spread * 0.55 + 4 + wave(3)),
+    at(len * 0.96, spread * 0.15 + 2 + wave(4)),
+    at(len * 0.5, 3),
+  ];
+  ctx.fillStyle = red;
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  ctx.lineTo(pts[1][0], pts[1][1]);
+  ctx.quadraticCurveTo(pts[2][0], pts[2][1], pts[3][0], pts[3][1]);
+  ctx.quadraticCurveTo(pts[4][0], pts[4][1], pts[5][0], pts[5][1]);
+  ctx.quadraticCurveTo(pts[6][0], pts[6][1], pts[0][0], pts[0][1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // A fold down the middle, and the collar.
+  ctx.strokeStyle = shade(RED, -0.3);
+  ctx.lineWidth = 2;
+  line(ctx, [at(6, 5), at(len * 0.85, spread * 0.6 + 5 + wave(2) * 0.6)]);
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 7;
+  line(ctx, [at(-1, -3), at(-1, 6)]);
+  ctx.strokeStyle = red;
+  ctx.lineWidth = 4;
+  line(ctx, [at(-1, -3), at(-1, 6)]);
 }
 
 /**

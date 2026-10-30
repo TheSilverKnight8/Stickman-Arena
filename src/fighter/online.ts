@@ -2,6 +2,7 @@ import { newSeed, randomInt, type HasRng } from '../lib/rng';
 import { createStore } from '../lib/store';
 import { Room, RoomError, type RoomMessage } from '../net/room';
 import { Rollback, hashState, type RollbackMessage } from '../net/rollback';
+import { DEFAULT_RULES, matchSettings, scoreGame, type MatchRules, type SetScore } from './matchRules';
 import { CHAR_IDS } from './sim/chars';
 import { STAGE_IDS } from './sim/stages';
 import { createMatch, endInDraw, step } from './sim/step';
@@ -15,6 +16,9 @@ import type { FightDriver } from './ui/FightView';
 //
 // Room flow (spec): character select → stage select → match → back to
 // character select (the rematch). Character select has the leave button.
+// The room creator sets the match rules (time, stocks, best of); in a best of
+// 3 or 5 the room goes straight from one game into the next with the same
+// fighters and stage, and back to character select once the set is won.
 
 export type Pick = CharId | 'random';
 export type Vote = StageId | 'random';
@@ -34,9 +38,15 @@ export interface Lobby {
   /** What each vote became, and the stage chosen (shown during "reveal"). */
   votedStages: (StageId | null)[];
   stage: StageId | null;
-  /** Counts matches in this room. */
+  /** Counts matches (games) in this room. */
   match: number;
   seed: number;
+  /** Set by the room creator. */
+  rules: MatchRules;
+  /** The set in progress: games won by each seat, and the game being played. */
+  set: SetScore;
+  /** How the last game left the set, for its result screen (null before any). */
+  last: { match: number; wins: number[]; setWinner: number; done: boolean } | null;
 }
 
 export interface FighterRoomState {
@@ -56,13 +66,37 @@ export interface FighterRoomState {
 const PLAYERS = 2;
 const REVEAL_MS = 2600;
 const BACK_TO_SELECT_MS = 5000;
+/** Between games of a set: the score shows this long, then the next game starts. */
+export const NEXT_GAME_MS = 4000;
 /** Waiting this long for the other device's buttons counts as a lost connection. */
 const STALL_LIMIT_FRAMES = 8 * 60;
 export const INPUT_DELAY = 2;
 export const MAX_PREDICT = 10;
 
 const emptySeat = (here = false): Seat => ({ here, pick: null, ready: false, vote: null, char: null });
-const freshLobby = (): Lobby => ({ phase: 'chars', seats: [emptySeat(true), emptySeat()], votedStages: [null, null], stage: null, match: 0, seed: 0 });
+const freshSet = (): SetScore => ({ wins: [0, 0], game: 1 });
+const freshLobby = (): Lobby => ({
+  phase: 'chars',
+  seats: [emptySeat(true), emptySeat()],
+  votedStages: [null, null],
+  stage: null,
+  match: 0,
+  seed: 0,
+  rules: DEFAULT_RULES,
+  set: freshSet(),
+  last: null,
+});
+
+/** Back to character select: nobody ready, no votes, a new set. */
+function toCharacterSelect(l: Lobby) {
+  l.phase = 'chars';
+  for (const seat of l.seats) {
+    seat.ready = false;
+    seat.vote = null;
+  }
+  l.set = freshSet();
+  l.last = null;
+}
 
 const blank: FighterRoomState = {
   status: 'closed',
@@ -95,15 +129,23 @@ function clearTimers() {
 
 // ---------------------------------------------------------------- the match driver
 
+export interface OnlineMatchConfig {
+  stage: StageId;
+  chars: CharId[];
+  seed: number;
+  match: number;
+  rules: MatchRules;
+}
+
 /** Runs one online match: rollback over the room connection. */
 export class OnlineDriver implements FightDriver {
   readonly rollback: Rollback<MatchState, SimEvent>;
-  readonly config: { stage: StageId; chars: CharId[]; seed: number; match: number };
+  readonly config: OnlineMatchConfig;
   private ended = false;
 
-  constructor(config: { stage: StageId; chars: CharId[]; seed: number; match: number }, mySeat: number, send: (m: RollbackMessage) => void) {
+  constructor(config: OnlineMatchConfig, mySeat: number, send: (m: RollbackMessage) => void) {
     this.config = config;
-    const initial = createMatch({ stage: config.stage, chars: config.chars, seed: config.seed });
+    const initial = createMatch({ stage: config.stage, chars: config.chars, seed: config.seed, ...matchSettings(config.rules) });
     this.rollback = new Rollback<MatchState, SimEvent>({ step, clone: (s) => structuredClone(s) }, initial, {
       players: PLAYERS,
       local: mySeat,
@@ -146,9 +188,7 @@ export async function createFighterRoom() {
         hostUpdate((l) => {
           l.seats[1] = emptySeat(true);
           // A newcomer always starts at character select.
-          l.phase = 'chars';
-          l.seats[0].ready = false;
-          l.seats[0].vote = null;
+          toCharacterSelect(l);
         });
         patch({ notice: null });
       },
@@ -213,9 +253,7 @@ function opponentGone(reason: 'left' | 'lost') {
     clearTimers();
     hostUpdate((l) => {
       l.seats[1] = emptySeat(false);
-      l.phase = 'chars';
-      l.seats[0].ready = false;
-      l.seats[0].vote = null;
+      toCharacterSelect(l);
     });
     patch({ driver: null, disconnected: false, notice: reason === 'left' ? 'Your opponent left the room.' : 'Your opponent lost connection.' });
   } else {
@@ -229,11 +267,8 @@ function opponentGone(reason: 'left' | 'lost') {
 export function afterDisconnect() {
   const s = fighterRoom.get();
   if (s.role === 'host') {
-    hostUpdate((l) => {
-      l.phase = 'chars';
-      l.seats[0].ready = false;
-      l.seats[0].vote = null;
-    });
+    clearTimers();
+    hostUpdate((l) => toCharacterSelect(l));
     patch({ driver: null, disconnected: false });
   } else leaveFighterRoom();
 }
@@ -248,6 +283,15 @@ export function setFighterReady(ready: boolean) {
 }
 export function voteStage(vote: Vote) {
   send({ t: 'vote', vote });
+}
+/** The room creator sets the rules at character select; the other player has to press Ready again. */
+export function setRules(rules: MatchRules) {
+  const s = fighterRoom.get();
+  if (s.role !== 'host' || s.lobby.phase !== 'chars') return;
+  hostUpdate((l) => {
+    l.rules = rules;
+    l.seats[1].ready = false;
+  });
 }
 
 /** The creator applies its own actions directly; the joiner sends them to the creator. */
@@ -310,6 +354,8 @@ function maybeStageSelect() {
     for (const s of x.seats) s.vote = null;
     x.votedStages = [null, null];
     x.stage = null;
+    x.set = freshSet();
+    x.last = null;
     x.phase = 'stages';
   });
 }
@@ -336,19 +382,29 @@ function maybeReveal() {
   );
 }
 
-/** The creator's match finished: after the result, everyone goes back to character select. */
-export function matchFinished() {
+/**
+ * The creator's game finished. One game, or the set won: after the result,
+ * everyone goes back to character select. A set still going: after the score,
+ * the next game starts with the same fighters and stage.
+ */
+export function matchFinished(winner: number | null) {
   const s = fighterRoom.get();
   if (s.role !== 'host') return;
-  later(BACK_TO_SELECT_MS, () => {
-    hostUpdate((l) => {
-      l.phase = 'chars';
-      for (const seat of l.seats) {
-        seat.ready = false;
-        seat.vote = null;
-      }
-    });
+  const l = s.lobby;
+  const scored = scoreGame(l.rules, l.set, winner);
+  const done = l.rules.bestOf === 1 || scored.setWinner >= 0;
+  hostUpdate((x) => {
+    x.set = scored.set;
+    x.last = { match: x.match, wins: scored.set.wins, setWinner: scored.setWinner, done };
   });
+  if (done) later(BACK_TO_SELECT_MS, () => hostUpdate((x) => toCharacterSelect(x)));
+  else
+    later(NEXT_GAME_MS, () =>
+      hostUpdate((x) => {
+        x.match++;
+        x.seed = newSeed();
+      }),
+    );
 }
 
 // ---------------------------------------------------------------- both devices
@@ -363,7 +419,7 @@ function setLobby(l: Lobby) {
   const s = fighterRoom.get();
   let driver = s.driver;
   if (l.phase === 'match' && (!driver || driver.config.match !== l.match)) {
-    const config = { stage: l.stage!, chars: l.seats.map((x) => x.char!), seed: l.seed, match: l.match };
+    const config: OnlineMatchConfig = { stage: l.stage!, chars: l.seats.map((x) => x.char!), seed: l.seed, match: l.match, rules: l.rules };
     driver = new OnlineDriver(config, s.mySeat, (m) => sendRollback(m));
     const mine = early.filter((m) => m.m === l.match);
     early = early.filter((m) => m.m > l.match);

@@ -95,6 +95,10 @@ export interface MatchConfig {
   stage: StageId;
   chars: CharId[];
   seed: number;
+  /** Stocks each (default 3). */
+  stocks?: number;
+  /** Time limit in frames; null for none (default 3 minutes). */
+  time?: number | null;
 }
 
 export function createMatch(cfg: MatchConfig): MatchState {
@@ -103,7 +107,9 @@ export function createMatch(cfg: MatchConfig): MatchState {
     // A second copy of the same character gets the alternate colours.
     const palette = cfg.chars.slice(0, slot).filter((c) => c === char).length;
     const [x, y] = st.spawns[slot];
-    return newFighter(slot, char, palette, x, y);
+    const f = newFighter(slot, char, palette, x, y);
+    f.stocks = cfg.stocks ?? STOCKS;
+    return f;
   });
   return {
     frame: 0,
@@ -111,7 +117,8 @@ export function createMatch(cfg: MatchConfig): MatchState {
     stage: cfg.stage,
     phase: 'countdown',
     phaseT: 0,
-    clock: MATCH_FRAMES,
+    clock: cfg.time ?? MATCH_FRAMES,
+    timed: cfg.time !== null,
     suddenDeath: false,
     fighters,
     projectiles: [],
@@ -220,8 +227,10 @@ export function step(s: MatchState, inputs: number[]): SimEvent[] {
   updateProjectiles(s, ev);
   for (const f of s.fighters) checkBlast(s, f, ev);
 
-  s.clock--;
-  if (s.clock > 0 && s.clock <= 600 && s.clock % 60 === 0) ev.push({ type: 'tick', seconds: s.clock / 60 });
+  if (s.timed) {
+    s.clock--;
+    if (s.clock > 0 && s.clock <= 600 && s.clock % 60 === 0) ev.push({ type: 'tick', seconds: s.clock / 60 });
+  }
 
   const alive = s.fighters.filter((f) => f.act !== 'out');
   if (s.fighters.length >= 2 && alive.length <= 1) {
@@ -229,7 +238,7 @@ export function step(s: MatchState, inputs: number[]): SimEvent[] {
     // Everyone left lost their last stock on the same frame.
     else if (s.suddenDeath) finish(s, -1, 'stocks', ev);
     else beginSuddenDeath(s, aliveBefore, ev);
-  } else if (s.clock <= 0) {
+  } else if (s.timed && s.clock <= 0) {
     if (s.suddenDeath) finish(s, -1, 'sudden-time', ev);
     else {
       const most = Math.max(...alive.map((f) => f.stocks));
@@ -278,6 +287,7 @@ function startSuddenDeath(s: MatchState) {
   }
   s.suddenDeath = true;
   s.clock = SUDDEN_FRAMES;
+  s.timed = true;
   s.phase = 'countdown';
   s.phaseT = 0;
 }

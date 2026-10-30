@@ -3,7 +3,10 @@ import { getAudio, whenAudioStarts } from './engine';
 // Background music: short looping tunes played by a small step sequencer.
 // Notes are MIDI numbers, one per eighth note; 0 is a rest.
 
-export type TrackId = 'menu' | 'pazaak' | 'fighter';
+export type TrackId = 'menu' | 'pazaak' | 'fighter' | 'clash' | 'showdown' | 'training';
+
+/** The Platfighter's fight songs: one is picked at random for each match. */
+export const FIGHT_TRACKS: TrackId[] = ['fighter', 'clash', 'showdown'];
 
 interface Track {
   bpm: number;
@@ -96,7 +99,82 @@ const fighter: Track = {
   drums: rep(['khskkhsh'], 8).join(''),
 };
 
-const TRACKS: Record<TrackId, Track> = { menu, pazaak, fighter };
+// "Clash": a second fight song, E minor at a gallop (Em, C, D, B), with chord stabs on the off-beats.
+const clashBass = [40, 36, 38, 35].flatMap((r) => bar(r, r + 12, r, r + 12, r, r + 12, r, r + 7));
+const clashChords = [
+  [59, 64, 67],
+  [60, 64, 67],
+  [62, 66, 69],
+  [59, 63, 66],
+];
+const clash: Track = {
+  bpm: 156,
+  swing: 0,
+  leadType: 'square',
+  lead: [
+    ...bar(76, 0, 76, 79, 0, 78, 76, 74),
+    ...bar(72, 0, 72, 76, 0, 74, 72, 71),
+    ...bar(74, 0, 74, 78, 0, 76, 74, 72),
+    ...bar(71, 0, 75, 0, 78, 0, 81, 0),
+    ...bar(79, 78, 76, 0, 79, 0, 83, 0),
+    ...bar(84, 0, 83, 0, 79, 0, 76, 0),
+    ...bar(78, 0, 81, 0, 79, 78, 76, 74),
+    ...bar(75, 0, 78, 0, 71, 0, 0, 0),
+  ],
+  bass: [...clashBass, ...clashBass],
+  chords: [...clashChords, ...clashChords].flatMap((c) => [null, null, c, null, null, null, c, null]),
+  drums: rep(['khshkksh'], 8).join(''),
+};
+
+// "Showdown": a third fight song, G minor and heavy (Gm, Eb, F, D), a sawtooth lead over a stomping beat.
+const showdownBass = [43, 39, 41, 38].flatMap((r) => bar(r, 0, r, r + 12, 0, r, r + 7, 0));
+const showdown: Track = {
+  bpm: 140,
+  swing: 0,
+  leadType: 'sawtooth',
+  lead: [
+    ...bar(79, 0, 74, 0, 70, 74, 79, 0),
+    ...bar(75, 0, 79, 0, 82, 0, 79, 75),
+    ...bar(77, 0, 72, 0, 69, 72, 77, 0),
+    ...bar(78, 0, 74, 0, 72, 0, 69, 0),
+    ...bar(79, 82, 86, 0, 84, 82, 79, 0),
+    ...bar(82, 0, 79, 0, 75, 0, 79, 82),
+    ...bar(81, 0, 77, 0, 84, 0, 81, 77),
+    ...bar(78, 0, 81, 0, 86, 0, 0, 0),
+  ],
+  bass: [...showdownBass, ...showdownBass],
+  chords: rep([null, null, null, null, null, null, null, null], 8),
+  drums: rep(['k.skk.sh'], 8).join(''),
+};
+
+// "Training": easygoing and a little swung, F major (F, Dm, Bb, C), for practice.
+const trainingBass = [41, 38, 34, 36].flatMap((r) => bar(r, 0, r + 12, 0, r, 0, r + 7, r + 12));
+const trainingChords = [
+  [57, 60, 65],
+  [57, 62, 65],
+  [58, 62, 65],
+  [55, 60, 64],
+];
+const training: Track = {
+  bpm: 108,
+  swing: 0.18,
+  leadType: 'triangle',
+  lead: [
+    ...bar(72, 0, 69, 72, 74, 0, 72, 0),
+    ...bar(69, 0, 65, 69, 74, 72, 69, 0),
+    ...bar(70, 0, 74, 77, 74, 0, 70, 0),
+    ...bar(72, 0, 0, 67, 72, 74, 76, 0),
+    ...bar(77, 0, 76, 72, 74, 0, 72, 69),
+    ...bar(74, 0, 72, 69, 65, 0, 69, 0),
+    ...bar(70, 72, 74, 0, 77, 0, 74, 70),
+    ...bar(72, 0, 67, 0, 64, 0, 0, 0),
+  ],
+  bass: [...trainingBass, ...trainingBass],
+  chords: [...trainingChords, ...trainingChords].flatMap((c) => [null, c, null, null, null, c, null, null]),
+  drums: rep(['k.hsk.hs'], 8).join(''),
+};
+
+const TRACKS: Record<TrackId, Track> = { menu, pazaak, fighter, clash, showdown, training };
 
 const midiHz = (m: number) => 440 * 2 ** ((m - 69) / 12);
 const LOOKAHEAD = 0.2;

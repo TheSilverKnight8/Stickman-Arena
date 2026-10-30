@@ -3,6 +3,7 @@ import { LogOut, RotateCw } from 'lucide-react';
 import { confirmDialog } from '../../components/dialogs';
 import { Button } from '../../components/ui';
 import { sfx } from '../../lib/audio/sfx';
+import { FIGHT_TRACKS, type TrackId } from '../../lib/audio/music';
 import { useMusic } from '../../lib/audio/useMusic';
 import { useLandscape } from '../../lib/useOrientation';
 import { settings } from '../../lib/settings';
@@ -41,6 +42,7 @@ export function FightView({
   leaveText = 'The match ends here.',
   hold = false,
   sceneOptions,
+  music,
 }: {
   driver: FightDriver;
   labels: PlayerLabel[];
@@ -56,8 +58,11 @@ export function FightView({
   hold?: boolean;
   /** How the match is shown (training). */
   sceneOptions?: SceneOptions;
+  /** The song; by default one of the fight songs, picked at random for this match. */
+  music?: TrackId;
 }) {
-  useMusic('fighter');
+  const [song] = useState<TrackId>(() => music ?? FIGHT_TRACKS[Math.floor(Math.random() * FIGHT_TRACKS.length)]);
+  useMusic(song);
   const canvas = useRef<HTMLCanvasElement>(null);
   const landscape = useLandscape();
   const upright = isTouch && !landscape;

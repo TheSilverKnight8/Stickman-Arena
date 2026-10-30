@@ -377,6 +377,8 @@ export interface MatchState {
   phaseT: number;
   /** Frames left on the clock. */
   clock: number;
+  /** The clock runs (false: a match with no time limit, until sudden death if it comes to that). */
+  timed: boolean;
   suddenDeath: boolean;
   fighters: FighterState[];
   projectiles: ProjectileState[];

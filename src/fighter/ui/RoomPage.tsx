@@ -9,7 +9,8 @@ import { GAMES } from '../../config';
 import { sfx } from '../../lib/audio/sfx';
 import { useMusic } from '../../lib/audio/useMusic';
 import { useStore } from '../../lib/store';
-import { MatchIntro, ResultCard } from '../FighterPages';
+import { MatchIntro, ResultCard, RulesCard } from '../FighterPages';
+import { rulesText } from '../matchRules';
 import {
   afterDisconnect,
   clearFighterNotice,
@@ -18,7 +19,9 @@ import {
   matchFinished,
   pickFighter,
   setFighterReady,
+  setRules,
   voteStage,
+  NEXT_GAME_MS,
   type FighterRoomState,
   type OnlineDriver,
   type Vote,
@@ -126,6 +129,11 @@ function CharacterSelect({ room, onLeave }: { room: FighterRoomState; onLeave: (
         </div>
         <div className="space-y-4">
           <RoomCodeCard code={room.code} host={room.role === 'host'} />
+          {room.role === 'host' ? (
+            <RulesCard value={room.lobby.rules} onChange={(r) => setRules(r)} note="Your opponent sees these. Changing them asks them to press Ready again." />
+          ) : (
+            <RulesCard value={room.lobby.rules} note="The room creator sets the rules." />
+          )}
           <Card className="p-5">
             <p className="label-caps text-muted">Players</p>
             <ul className="mt-3 space-y-2">
@@ -229,6 +237,7 @@ function StageSelect({ room }: { room: FighterRoomState }) {
             </ul>
           </Card>
           <p className="text-sm text-muted">You can change your vote until your opponent has voted too.</p>
+          <p className="text-sm text-muted">Rules: {rulesText(l.rules)}.</p>
         </div>
       </div>
       {l.phase === 'reveal' && <Reveal room={room} />}
@@ -283,8 +292,13 @@ function Reveal({ room }: { room: FighterRoomState }) {
 function OnlineMatch({ room, driver }: { room: FighterRoomState; driver: OnlineDriver }) {
   const navigate = useNavigate();
   const [result, setResult] = useState<MatchState | null>(null);
+  // The set as this game began (the intro shows it).
+  const [startSet] = useState(() => room.lobby.set);
   const labels = useMemo<PlayerLabel[]>(() => [0, 1].map((seat) => ({ name: seat === room.mySeat ? 'You' : 'Opponent', you: seat === room.mySeat })), [room.mySeat]);
   const host = room.role === 'host';
+  const series = room.lobby.rules.bestOf > 1;
+  // The creator's account of this game (the set score after it), once it has arrived.
+  const last = room.lobby.last?.match === driver.config.match ? room.lobby.last : null;
 
   const overlay = room.disconnected ? (
     <ResultCard
@@ -297,7 +311,16 @@ function OnlineMatch({ room, driver }: { room: FighterRoomState; driver: OnlineD
       backLabel={host ? 'Back to the room' : 'Back to Platfighter'}
     />
   ) : result ? (
-    <ResultCard state={result} labels={labels} footer={<p className="text-sm text-muted">Back to character select in {BACK_SECONDS} seconds…</p>} />
+    <ResultCard
+      state={result}
+      labels={labels}
+      set={series && last ? { wins: last.wins, game: room.lobby.set.game - 1, setWinner: last.setWinner, bestOf: room.lobby.rules.bestOf } : undefined}
+      footer={
+        <p className="text-sm text-muted">
+          {!last ? '…' : last.done ? `Back to character select in ${BACK_SECONDS} seconds…` : `Next game in ${NEXT_GAME_MS / 1000} seconds…`}
+        </p>
+      }
+    />
   ) : (
     <WaitingNotice driver={driver} />
   );
@@ -318,11 +341,11 @@ function OnlineMatch({ room, driver }: { room: FighterRoomState; driver: OnlineD
         }}
         onOver={(s) => {
           setResult(s);
-          if (host) matchFinished();
+          if (host) matchFinished(s.winner);
         }}
         overlay={overlay}
       />
-      <MatchIntro chars={driver.config.chars} stage={driver.config.stage} />
+      <MatchIntro chars={driver.config.chars} stage={driver.config.stage} game={series ? { n: startSet.game, wins: startSet.wins } : undefined} />
     </PlayLayout>
   );
 }

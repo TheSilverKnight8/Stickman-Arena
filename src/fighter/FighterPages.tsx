@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Dumbbell, Eye, Shuffle, Swords } from 'lucide-react';
 import { PageLayout, PageTitle, PlayLayout } from '../components/Layout';
 import { Button, ButtonLink, Card, Segmented, cx } from '../components/ui';
@@ -9,6 +9,7 @@ import { newSeed, randomInt, type HasRng } from '../lib/rng';
 import { createStore, useStore } from '../lib/store';
 import { GameHome } from '../pages/GameHome';
 import { DIFFICULTIES, cpuInput, createCpu, type Cpu, type Difficulty } from './ai';
+import { BEST_OF_OPTIONS, DEFAULT_RULES, STOCK_OPTIONS, TIME_OPTIONS, matchSettings, rulesText, scoreGame, type MatchRules, type SetScore } from './matchRules';
 import { fighterColor } from './render/figure';
 import type { PlayerLabel } from './render/scene';
 import { CHAR_IDS, CHARS } from './sim/chars';
@@ -29,7 +30,7 @@ export function FighterHome() {
   return (
     <GameHome
       game="fighter"
-      about={<>Hits build up damage, and damage makes the next hit knock harder. Knock your opponent off the stage. Three stocks each, three minutes.</>}
+      about={<>Hits build up damage, and damage makes the next hit knock harder. Knock your opponent off the stage. Three stocks each and three minutes, unless you change the rules (time, stocks, and best of one, three or five).</>}
       onCreate={() => void createFighterRoom()}
       onJoin={(code) => void joinFighterRoom(code)}
       practice={
@@ -57,8 +58,8 @@ export interface Foe {
 }
 
 /** A match on this device. `cpus[slot]` plays that slot; slots without one take this device's buttons. */
-export function localDriver(chars: CharId[], stage: StageId, cpus: (Cpu | null)[]): FightDriver {
-  const state = createMatch({ stage, chars, seed: newSeed() });
+export function localDriver(chars: CharId[], stage: StageId, cpus: (Cpu | null)[], rules: MatchRules = DEFAULT_RULES): FightDriver {
+  const state = createMatch({ stage, chars, seed: newSeed(), ...matchSettings(rules) });
   return {
     state,
     tick(local) {
@@ -83,56 +84,86 @@ export function settle(picks: Pick[], stage: StagePick): { chars: CharId[]; stag
 }
 
 interface LocalMatch {
-  driver: FightDriver;
+  /** A new game with the same fighters, stage and CPUs (each game of a set starts fresh). */
+  newDriver: () => FightDriver;
   labels: PlayerLabel[];
   chars: CharId[];
   stage: StageId;
   mySlot: number;
+  rules: MatchRules;
 }
 
 /** Kept while the app is open (not saved). */
-const cpuSetup = createStore<{ pick: Pick | null; foes: Foe[]; stage: StagePick }>({
+const cpuSetup = createStore<{ pick: Pick | null; foes: Foe[]; stage: StagePick; rules: MatchRules }>({
   pick: null,
   foes: [{ pick: 'random', level: 'normal' }],
   stage: 'random',
+  rules: DEFAULT_RULES,
 });
-const watchSetup = createStore<{ foes: Foe[]; stage: StagePick }>({
+const watchSetup = createStore<{ foes: Foe[]; stage: StagePick; rules: MatchRules }>({
   foes: [
     { pick: 'random', level: 'hard' },
     { pick: 'random', level: 'hard' },
   ],
   stage: 'random',
+  rules: DEFAULT_RULES,
 });
 
-/** Plays a set-up local match, with the result card at the end. */
+/** Between games of a set: the score shows this long, then the next game starts. */
+export const NEXT_GAME_SECONDS = 4;
+
+/**
+ * Plays a set-up local match: one game, or a best of 3 or 5 that goes straight
+ * from one game into the next (same fighters and stage) until someone has won
+ * enough. The result card comes at the end of each game.
+ */
 function LocalMatchScreen({ match, onBack, backLabel }: { match: LocalMatch; onBack: () => void; backLabel: string }) {
-  const [result, setResult] = useState<MatchState | null>(null);
+  // Each game: its driver, its number, and the score as it began.
+  const [game, setGame] = useState(() => ({ driver: match.newDriver(), n: 1, wins: match.chars.map(() => 0) }));
+  const [set, setSet] = useState<SetScore>(() => ({ wins: match.chars.map(() => 0), game: 1 }));
+  const [result, setResult] = useState<{ state: MatchState; setWinner: number; done: boolean } | null>(null);
+  const timer = useRef(0);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const series = match.rules.bestOf > 1;
   return (
     <PlayLayout>
       <FightView
-        driver={match.driver}
+        key={`game-${game.n}`}
+        driver={game.driver}
         labels={match.labels}
         mySlot={match.mySlot}
         onLeave={() => {
-          endInDraw(match.driver.state);
+          endInDraw(game.driver.state);
           onBack();
         }}
-        onOver={(s) => setResult(s)}
+        onOver={(s) => {
+          const scored = scoreGame(match.rules, set, s.winner);
+          const done = !series || scored.setWinner >= 0;
+          setSet(scored.set);
+          setResult({ state: s, setWinner: scored.setWinner, done });
+          if (!done)
+            timer.current = window.setTimeout(() => {
+              setResult(null);
+              setGame((g) => ({ driver: match.newDriver(), n: g.n + 1, wins: scored.set.wins }));
+            }, NEXT_GAME_SECONDS * 1000);
+        }}
         overlay={
           result && (
             <ResultCard
-              state={result}
+              state={result.state}
               labels={match.labels}
+              set={series ? { wins: set.wins, game: game.n, setWinner: result.setWinner, bestOf: match.rules.bestOf } : undefined}
               backLabel={backLabel}
               onBack={() => {
                 sfx.click();
                 onBack();
               }}
+              footer={result.done ? undefined : <p className="text-sm text-muted">Next game in {NEXT_GAME_SECONDS} seconds…</p>}
             />
           )
         }
       />
-      <MatchIntro chars={match.chars} stage={match.stage} />
+      <MatchIntro key={`intro-${game.n}`} chars={match.chars} stage={match.stage} game={series ? { n: game.n, wins: game.wins } : undefined} />
     </PlayLayout>
   );
 }
@@ -144,10 +175,12 @@ export function FighterCpu() {
   const start = () => {
     if (!setup.pick) return;
     const { chars, stage } = settle([setup.pick, ...setup.foes.map((f) => f.pick)], setup.stage);
-    const cpus = [null, ...setup.foes.map((f) => createCpu(f.level, newSeed()))];
     const many = setup.foes.length > 1;
     const labels: PlayerLabel[] = [{ name: 'You', you: true }, ...setup.foes.map((_, i) => ({ name: many ? `CPU ${i + 1}` : 'CPU', you: false }))];
-    setMatch({ driver: localDriver(chars, stage, cpus), labels, chars, stage, mySlot: 0 });
+    const levels = setup.foes.map((f) => f.level);
+    const rules = setup.rules;
+    const newDriver = () => localDriver(chars, stage, [null, ...levels.map((l) => createCpu(l, newSeed()))], rules);
+    setMatch({ newDriver, labels, chars, stage, mySlot: 0, rules });
   };
 
   if (match) return <LocalMatchScreen match={match} onBack={() => setMatch(null)} backLabel="Back to character select" />;
@@ -165,6 +198,7 @@ export function FighterCpu() {
       <div className="space-y-4">
         <FoesCard foes={setup.foes} counts={[1, 2, 3]} onChange={(foes) => cpuSetup.set((s) => ({ ...s, foes }))} />
         <StageCard value={setup.stage} onChange={(stage) => cpuSetup.set((s) => ({ ...s, stage }))} />
+        <RulesCard value={setup.rules} onChange={(rules) => cpuSetup.set((s) => ({ ...s, rules }))} />
         <Button variant="primary" size="xl" press className="w-full" disabled={!setup.pick} onClick={start}>
           <Swords className="size-6" />
           Fight!
@@ -191,9 +225,11 @@ export function FighterWatch() {
       setup.foes.map((f) => f.pick),
       setup.stage,
     );
-    const cpus = setup.foes.map((f) => createCpu(f.level, newSeed()));
+    const levels = setup.foes.map((f) => f.level);
     const labels: PlayerLabel[] = setup.foes.map((_, i) => ({ name: `CPU ${i + 1}`, you: false }));
-    setMatch({ driver: localDriver(chars, stage, cpus), labels, chars, stage, mySlot: -1 });
+    const rules = setup.rules;
+    const newDriver = () => localDriver(chars, stage, levels.map((l) => createCpu(l, newSeed())), rules);
+    setMatch({ newDriver, labels, chars, stage, mySlot: -1, rules });
   };
 
   if (match) return <LocalMatchScreen match={match} onBack={() => setMatch(null)} backLabel="Back to the setup" />;
@@ -205,6 +241,7 @@ export function FighterWatch() {
       </div>
       <div className="space-y-4">
         <StageCard value={setup.stage} onChange={(stage) => watchSetup.set((s) => ({ ...s, stage }))} />
+        <RulesCard value={setup.rules} onChange={(rules) => watchSetup.set((s) => ({ ...s, rules }))} />
         <Button variant="primary" size="xl" press className="w-full" onClick={start}>
           <Eye className="size-6" />
           Watch
@@ -241,7 +278,7 @@ function FoesCard({ foes, counts, onChange }: { foes: Foe[]; counts: number[]; o
     <Card className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="label-caps text-muted">CPUs</p>
-        <Segmented size="sm" value={String(foes.length)} onChange={(v) => setCount(Number(v))} options={counts.map((n) => ({ value: String(n), label: String(n) }))} />
+        <Segmented size="sm" label="Number of CPUs" value={String(foes.length)} onChange={(v) => setCount(Number(v))} options={counts.map((n) => ({ value: String(n), label: String(n) }))} />
       </div>
       <div className="mt-3 space-y-4">
         {foes.map((f, i) => (
@@ -290,6 +327,51 @@ export function FighterChips({ value, onChange }: { value: Pick; onChange: (p: P
   );
 }
 
+/**
+ * The match rules: minutes on the clock (or none), stocks, and best of. Without
+ * `onChange` it only shows them (the joiner of an online room).
+ */
+export function RulesCard({ value, onChange, note }: { value: MatchRules; onChange?: (r: MatchRules) => void; note?: ReactNode }) {
+  const set = (change: Partial<MatchRules>) => {
+    sfx.click();
+    onChange?.({ ...value, ...change });
+  };
+  const row = (label: string, control: ReactNode) => (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span className="font-display text-sm uppercase">{label}</span>
+      {control}
+    </div>
+  );
+  return (
+    <Card className="p-5">
+      <p className="label-caps text-muted">Rules · {rulesText(value)}</p>
+      {onChange ? (
+        <div className="mt-3 space-y-2.5">
+          {row(
+            'Minutes',
+            <Segmented
+              size="sm"
+              label="Minutes"
+              value={value.minutes === null ? 'none' : String(value.minutes)}
+              onChange={(v) => set({ minutes: v === 'none' ? null : Number(v) })}
+              options={TIME_OPTIONS.map((m) => ({ value: m === null ? 'none' : String(m), label: m === null ? 'No limit' : String(m) }))}
+            />,
+          )}
+          {row(
+            'Stocks',
+            <Segmented size="sm" label="Stocks" value={String(value.stocks)} onChange={(v) => set({ stocks: Number(v) })} options={STOCK_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))} />,
+          )}
+          {row(
+            'Best of',
+            <Segmented size="sm" label="Best of" value={String(value.bestOf)} onChange={(v) => set({ bestOf: Number(v) })} options={BEST_OF_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))} />,
+          )}
+        </div>
+      ) : null}
+      {note && <p className="mt-2 text-sm text-muted">{note}</p>}
+    </Card>
+  );
+}
+
 export function StageCard({ value, onChange, random = true }: { value: StagePick; onChange: (v: StagePick) => void; random?: boolean }) {
   return (
     <Card className="p-5">
@@ -308,8 +390,8 @@ function colorsOf(chars: CharId[]) {
   return chars.map((c, i) => fighterColor(CHARS[c], chars.slice(0, i).filter((x) => x === c).length));
 }
 
-/** "Fisticuffs vs Buster on Scaffold", shown for the first moments of a match. */
-export function MatchIntro({ chars, stage }: { chars: CharId[]; stage: StageId }) {
+/** "Fisticuffs vs Buster on Scaffold", shown for the first moments of a match (with the game and score in a set). */
+export function MatchIntro({ chars, stage, game }: { chars: CharId[]; stage: StageId; game?: { n: number; wins: number[] } }) {
   const [show, setShow] = useState(true);
   useEffect(() => {
     const t = window.setTimeout(() => setShow(false), 2600);
@@ -328,7 +410,10 @@ export function MatchIntro({ chars, stage }: { chars: CharId[]; stage: StageId }
             </span>
           ))}
         </p>
-        <p className="label-caps mt-1 text-muted">{STAGES[stage].name}</p>
+        <p className="label-caps mt-1 text-muted">
+          {STAGES[stage].name}
+          {game && ` · Game ${game.n} · ${game.wins.join('–')}`}
+        </p>
       </div>
     </div>
   );
@@ -340,18 +425,31 @@ export function ResultCard({
   onBack,
   backLabel = 'Back to character select',
   footer,
+  set,
 }: {
   state: MatchState;
   labels: PlayerLabel[];
   onBack?: () => void;
   backLabel?: string;
-  /** Shown instead of the button (an online room moves on by itself). */
+  /** Shown instead of the button (an online room moves on by itself, and so does the next game of a set). */
   footer?: ReactNode;
+  /** In a best of 3 or 5: games won so far, the game just played, and the set's winner once decided (-1: not yet). */
+  set?: { wins: number[]; game: number; setWinner: number; bestOf: number };
 }) {
   const w = state.winner;
   const draw = w === -1 || w === null;
   const youWon = !draw && labels[w!]?.you;
-  const title = draw ? 'Draw' : youWon ? 'You win!' : `${labels[w!]?.name ?? 'Opponent'} wins`;
+  const setDone = !!set && set.setWinner >= 0;
+  const youWonSet = setDone && labels[set!.setWinner]?.you;
+  const title = setDone
+    ? youWonSet
+      ? 'You win the set!'
+      : `${labels[set!.setWinner]?.name ?? 'Opponent'} wins the set`
+    : draw
+      ? 'Draw'
+      : youWon
+        ? 'You win!'
+        : `${labels[w!]?.name ?? 'Opponent'} wins`;
   const why =
     state.endReason === 'time'
       ? 'Time ran out. Most stocks left wins.'
@@ -365,9 +463,13 @@ export function ResultCard({
   return (
     <div className="absolute inset-0 z-[45] flex animate-fade items-center justify-center bg-navy/35 p-4">
       <div className="w-full max-w-md animate-rise rounded-3xl border-2 border-navy bg-surface p-6 text-center shadow-pop">
-        <p className="label-caps text-accent">Match over</p>
-        <h2 className={cx('mt-2 text-5xl', youWon && 'text-accent')}>{title}</h2>
-        <p className="mt-2 text-muted">{why}</p>
+        <p className="label-caps text-accent">{set ? `Game ${set.game} · best of ${set.bestOf}` : 'Match over'}</p>
+        <h2 className={cx('mt-2 text-5xl', (setDone ? youWonSet : youWon) && 'text-accent')}>{title}</h2>
+        <p className="mt-2 text-muted">
+          {setDone && !draw && `${labels[w!]?.you ? 'You' : (labels[w!]?.name ?? 'Opponent')} took the last game. `}
+          {why}
+          {set && draw && !setDone && ' A drawn game does not count.'}
+        </p>
         <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
           {state.fighters.map((f) => (
             <div key={f.slot} className="text-center">
@@ -376,6 +478,11 @@ export function ResultCard({
                 {labels[f.slot]?.name} · {CHARS[f.char].name}
               </p>
               <p className="text-xs text-muted">{f.act === 'out' ? 'Out' : `${f.stocks} ${f.stocks === 1 ? 'stock' : 'stocks'} left`}</p>
+              {set && (
+                <p className="font-display text-lg leading-tight">
+                  {set.wins[f.slot] ?? 0} {set.wins[f.slot] === 1 ? 'game' : 'games'}
+                </p>
+              )}
             </div>
           ))}
         </div>

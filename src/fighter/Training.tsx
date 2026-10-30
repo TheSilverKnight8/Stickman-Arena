@@ -243,6 +243,7 @@ function TrainingSession({ chars, stage, onBack }: { chars: CharId[]; stage: Sta
         mySlot={0}
         hold={menu}
         sceneOptions={sceneOptions}
+        music="training"
         leaveText="Back to the training setup."
         onLeave={onBack}
         onOver={() => {}}

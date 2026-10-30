@@ -4,6 +4,7 @@ import type { Joints } from '../sim/skeleton';
 import { STAGES } from '../sim/stages';
 import { BOMB_FUSE, projShape, step, tetherLine } from '../sim/step';
 import type { Act, FighterState, MatchState, ProjectileState, SimEvent } from '../sim/types';
+import { drawScenery } from './backdrops';
 import { CREAM, NAVY, RED, drawFigure, drawSword, fighterColor, shade } from './figure';
 
 // Draws a match: the stage, fighters, projectiles, effects and the HUD.
@@ -240,10 +241,11 @@ export class Scene {
     const st = STAGES[s.stage];
     this.updateCamera(s, W, H);
 
-    // Background.
+    // Background: the stage's scenery, the kill spark over it, then the portal's stripes.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#f6e7cf';
     ctx.fillRect(0, 0, W, H);
+    drawScenery(ctx, s.stage, W, H, this.cam, this.time);
     if (this.kill) this.drawKillSpark(W, H);
     this.drawBackdrop(W, H);
 
@@ -1066,7 +1068,7 @@ export class Scene {
     ctx.textAlign = 'center';
     ctx.font = `${26 * dpr}px Norwester, sans-serif`;
     ctx.fillStyle = secs <= 10 && s.phase === 'play' ? RED : NAVY;
-    if (!this.options.training) ctx.fillText(clock, W / 2, 36 * dpr);
+    if (!this.options.training && s.timed) ctx.fillText(clock, W / 2, 36 * dpr);
     if (s.suddenDeath) {
       ctx.font = `${13 * dpr}px Norwester, sans-serif`;
       ctx.fillStyle = RED;
