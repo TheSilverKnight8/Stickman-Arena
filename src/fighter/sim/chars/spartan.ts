@@ -231,7 +231,8 @@ export const spartan: CharDef = {
       // Like Ike's Aether: the sword is tossed straight up (it hits on the way up), then after a short
       // pause Spartan leaps after it, catches it at the top, flips, and plunges straight down sword
       // first (dragging opponents down, and he can catch the ledge on the way), hitting again on
-      // landing. Without the sword in hand (thrown), he leaps without the toss.
+      // landing. Without the sword in hand (thrown), he leaps without the toss. He holds still until the
+      // leap, and has super armor from the start until the catch (Caleb's change after the CPU study).
       name: 'Sky Toss',
       total: 44,
       prio: 2,
@@ -256,11 +257,11 @@ export const spartan: CharDef = {
         { f: [37, 40], at: 'hand1', to: 'tip', r: 11, dmg: 6, ang: -70, bkb: 35, kbg: 20, group: 0 },
       ],
       vel: [
-        { f: 1, vy: 0, when: 'air' },
         { f: 13, vx: 2.5, vy: 15 },
         { f: 37, vx: 0, vy: -13 },
       ],
-      gravity: { f: [1, 12], mul: 0.2 },
+      still: [1, 12],
+      superArmor: [1, 28],
     },
     uspecLand: {
       name: 'Sky Toss (landing)',

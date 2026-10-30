@@ -28,6 +28,8 @@ export interface FigureStyle {
   gliding?: boolean;
   /** A wing move (Wing Flare, Gale Burst): the wings beat open. */
   flare?: boolean;
+  /** Ranger's dagger is out (a dagger move); otherwise it sits in its sheath at the hip. */
+  dagger?: boolean;
 }
 
 type Ctx = CanvasRenderingContext2D;
@@ -127,6 +129,8 @@ function drawProp(ctx: Ctx, id: CharId, c: CharDef, j: Joints, st: FigureStyle, 
       ctx.stroke();
       break;
     case 'ranger':
+      if (st.dagger) drawDagger(ctx, j.hand2, j.tip2);
+      else drawSheath(ctx, j, st);
       drawBow(ctx, j.elbow1, j.hand1);
       drawHat(ctx, j, c.body.head, color);
       break;
@@ -274,6 +278,58 @@ function drawBow(ctx: Ctx, elbow: P, hand: P) {
   ctx.strokeStyle = 'rgba(0, 38, 87, 0.7)';
   ctx.lineWidth = 1.5;
   line(ctx, [a, b]);
+}
+
+/** Ranger's dagger, from the back hand along the forearm: a short steel blade, a guard and a grip. */
+function drawDagger(ctx: Ctx, hand: P, tip: P) {
+  const dx = tip[0] - hand[0];
+  const dy = tip[1] - hand[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const nx = -uy;
+  const ny = ux;
+  const base: P = [hand[0] + ux * 3, hand[1] + uy * 3];
+  const end: P = [hand[0] + ux * (len + 6), hand[1] + uy * (len + 6)];
+  ctx.fillStyle = '#e4ebf5';
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(base[0] + nx * 3.5, base[1] + ny * 3.5);
+  ctx.lineTo(end[0], end[1]);
+  ctx.lineTo(base[0] - nx * 3.5, base[1] - ny * 3.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.lineWidth = 4;
+  line(ctx, [
+    [base[0] + nx * 6, base[1] + ny * 6],
+    [base[0] - nx * 6, base[1] - ny * 6],
+  ]);
+  ctx.strokeStyle = '#8a5a2b';
+  ctx.lineWidth = 3.5;
+  line(ctx, [
+    [hand[0] - ux * 5, hand[1] - uy * 5],
+    [base[0], base[1]],
+  ]);
+}
+
+/** The dagger put away: a small sheath at the back of the hip. */
+function drawSheath(ctx: Ctx, j: Joints, st: FigureStyle) {
+  const facing = st.facing ?? 1;
+  const tx = j.neck[0] - j.hip[0];
+  const ty = j.neck[1] - j.hip[1];
+  const tl = Math.hypot(tx, ty) || 1;
+  const u: P = [tx / tl, ty / tl];
+  const back: P = [-facing * u[1], facing * u[0]];
+  const top: P = [j.hip[0] + back[0] * 7 + u[0] * 4, j.hip[1] + back[1] * 7 + u[1] * 4];
+  const bottom: P = [top[0] + back[0] * 8 - u[0] * 18, top[1] + back[1] * 8 - u[1] * 18];
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 8;
+  line(ctx, [top, bottom]);
+  ctx.strokeStyle = '#8a5a2b';
+  ctx.lineWidth = 4.5;
+  line(ctx, [top, bottom]);
 }
 
 /** Ranger's wide-brimmed hat, set on the head along the body's tilt. */

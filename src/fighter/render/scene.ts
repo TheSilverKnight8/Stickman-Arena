@@ -2,7 +2,7 @@ import { CHARS } from '../sim/chars';
 import { hidden, hitsOf, hurtOf, jointsOf, moveOf } from '../sim/body';
 import type { Joints } from '../sim/skeleton';
 import { STAGES } from '../sim/stages';
-import { projShape, step, tetherLine } from '../sim/step';
+import { BOMB_FUSE, projShape, step, tetherLine } from '../sim/step';
 import type { Act, FighterState, MatchState, ProjectileState, SimEvent } from '../sim/types';
 import { CREAM, NAVY, RED, drawFigure, drawSword, fighterColor, shade } from './figure';
 
@@ -14,7 +14,7 @@ import { CREAM, NAVY, RED, drawFigure, drawSword, fighterColor, shade } from './
 // afterimages on dodges and travelling moves, swing trails).
 
 interface Effect {
-  kind: 'spark' | 'ko' | 'dust' | 'shatter' | 'flash' | 'puff' | 'armor' | 'jumpdust' | 'ring' | 'dash' | 'streak' | 'clash' | 'ember';
+  kind: 'spark' | 'ko' | 'dust' | 'shatter' | 'flash' | 'puff' | 'armor' | 'jumpdust' | 'ring' | 'dash' | 'streak' | 'clash' | 'ember' | 'boom';
   x: number;
   y: number;
   t: number;
@@ -158,6 +158,12 @@ export class Scene {
           this.add('flash', f.x + f.facing * 30, f.y + CHARS[f.char].height * 0.5, 10, 26, this.colorOf(f));
           break;
         }
+        case 'blast':
+          // Ranger's bomb going off: a fireball the size of the blast, then smoke.
+          this.add('boom', e.x, e.y, 30, 64, '#ff9f1c');
+          this.add('flash', e.x, e.y, 14, 80, CREAM);
+          this.shake = Math.max(this.shake, 12);
+          break;
       }
     }
     this.track(s);
@@ -250,10 +256,12 @@ export class Scene {
 
     this.drawStage(st);
     for (const f of s.fighters) if (f.act === 'respawn') this.drawRespawnPlatform(f);
-    for (const p of s.projectiles) this.drawProjectile(p, s);
+    for (const p of s.projectiles) if (p.kind !== 'bomb') this.drawProjectile(p, s);
     // The local player is drawn last, on top.
     const order = [...s.fighters].sort((a, b) => Number(this.labels[a.slot]?.you) - Number(this.labels[b.slot]?.you));
     for (const f of order) this.drawFighter(f, s);
+    // Bombs on top, so one at someone's feet still shows.
+    for (const p of s.projectiles) if (p.kind === 'bomb') this.drawProjectile(p, s);
     if (this.options.showBoxes?.()) this.drawBoxes(s);
     this.drawEffects();
 
@@ -379,6 +387,8 @@ export class Scene {
     let alpha = 1;
     if (f.act === 'dodge' || f.act === 'airdodge') alpha = 0.45;
     const m = moveOf(f);
+    // Ranger's dagger is out during the moves that use it.
+    const dagger = !!m?.hits?.some((h) => h.at === 'tip2' || h.to === 'tip2');
     const tr = this.tracks[f.slot];
     // Afterimages while dodging or during a move that carries the fighter fast.
     if (tr && (f.act === 'dodge' || f.act === 'airdodge' || (f.act === 'move' && (Math.abs(f.vx) > 8.5 || m?.teleport)))) {
@@ -388,7 +398,7 @@ export class Scene {
         [g.length - 5, 0.17],
         [g.length - 7, 0.09],
       ].forEach(([i, a]) => {
-        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing, airborne: !f.grounded, gliding: f.act === 'glide' });
+        if (i >= 0) drawFigure(this.ctx, c, g[i], { color: this.colorOf(f), alpha: a, noWeapon: f.weaponOut, time: this.time, facing: f.facing, airborne: !f.grounded, gliding: f.act === 'glide', dagger });
       });
     }
     // Swing trail: a fading smear along the path of the attack's leading hitbox.
@@ -406,11 +416,13 @@ export class Scene {
       airborne: !f.grounded,
       gliding: f.act === 'glide',
       flare: c.id === 'valkyrie' && f.act === 'move' && (f.move === 'utilt' || f.move === 'nspec') && f.t >= 5 && f.t <= 14,
+      dagger,
     });
     // Fisticuffs' Haymaker: the fist catches fire as it winds up and blazes through the punch.
     if (c.id === 'fisticuffs' && f.act === 'move' && f.move === 'nspec' && m) this.drawFlames(f, j, m.total);
     // Armor: a yellow glow while armored frames are on.
-    if (m?.armor && f.t >= m.armor[0] && f.t <= m.armor[1]) {
+    const armored = (m?.armor && f.t >= m.armor[0] && f.t <= m.armor[1]) || (m?.superArmor && f.t >= m.superArmor[0] && f.t <= m.superArmor[1]);
+    if (armored) {
       const ctx = this.ctx;
       ctx.strokeStyle = 'rgba(255, 212, 59, 0.75)';
       ctx.lineWidth = 5;
@@ -418,15 +430,11 @@ export class Scene {
       ctx.ellipse(j.hip[0], j.hip[1] + 20, c.halfWidth * 2.4, c.height * 0.62, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
-    // Charging: a growing ring at the bow.
-    if (f.charge > 0 && m?.charge) {
-      const ctx = this.ctx;
-      ctx.strokeStyle = RED;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(j.hand1[0], j.hand1[1], 6 + (f.charge / m.charge.max) * 18, 0, Math.PI * 2);
-      ctx.stroke();
-    }
+    // Ranger's bomb in her hand until she lets it go.
+    const thrown = m?.proj?.find((q) => q.kind === 'bomb');
+    if (thrown && f.t < thrown.f) this.drawBomb(j.hand2[0], j.hand2[1], false);
+    // Charging: green wind gathering around the bow, wider and stronger as the charge grows.
+    if (f.charge > 0 && m?.charge) this.drawWind(j.hand1[0], j.hand1[1], f.charge / m.charge.max, this.time * 0.35);
   }
 
   /** Training: hurtboxes (blue outlines), hitboxes (red; command grabs yellow) and projectiles' hit areas. */
@@ -543,6 +551,56 @@ export class Scene {
     }
   }
 
+  /** A round bomb with a lit fuse (red when blinking). */
+  private drawBomb(x: number, y: number, blink: boolean) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = blink ? RED : NAVY;
+    ctx.strokeStyle = NAVY;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(250, 238, 218, 0.55)';
+    ctx.beginPath();
+    ctx.arc(x - 4, y + 4, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#8a5a2b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x + 3, y + 10);
+    ctx.quadraticCurveTo(x + 6, y + 18, x + 11, y + 17);
+    ctx.stroke();
+    ctx.fillStyle = Math.floor(this.time / 2) % 2 ? '#ffd43b' : '#ff9f1c';
+    ctx.beginPath();
+    ctx.arc(x + 12, y + 17, 3 + (this.time % 3), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** Green wind swirling around a point (Ranger's charge): `k` 0..1 sets its size and strength. */
+  private drawWind(x: number, y: number, k: number, spin: number) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.lineCap = 'round';
+    const r = 16 + 30 * k;
+    ctx.fillStyle = `rgba(110, 214, 130, ${0.12 + 0.18 * k})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    for (let i = 0; i < 4; i++) {
+      const a = spin + (i * Math.PI) / 2;
+      ctx.strokeStyle = `rgba(70, 190, 100, ${0.6 + 0.4 * k})`;
+      ctx.lineWidth = 3 + 4 * k;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * (0.7 + 0.12 * i), a, a + 1.1 + 0.6 * k);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   private drawTrail(trail: Track['trail'], color: string) {
     const ctx = this.ctx;
     ctx.save();
@@ -608,6 +666,30 @@ export class Scene {
     switch (p.kind) {
       case 'arrow': {
         const len = Math.hypot(p.vx, p.vy) || 1;
+        // A charged arrow is drawn bigger (as big as it hits), wrapped in green wind.
+        const k = (p.size - 1) / 1.2;
+        if (k > 0.05) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(Math.atan2(p.vy, p.vx));
+          ctx.fillStyle = `rgba(110, 214, 130, ${0.18 + 0.2 * k})`;
+          ctx.beginPath();
+          ctx.ellipse(-14 * p.size, 0, 26 * p.size, (8 + 8 * k) * p.size * 0.6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (let i = 0; i < 3; i++) {
+            const off = ((this.time * 6 + i * 14) % 42) + 6;
+            ctx.strokeStyle = `rgba(70, 190, 100, ${(0.6 + 0.4 * k) * (1 - off / 56)})`;
+            ctx.lineWidth = 3 + 4 * k;
+            ctx.beginPath();
+            // Curls on alternating sides of the shaft.
+            ctx.ellipse(-off * p.size, 0, 7 + 9 * k, 5 + 4 * k, 0, i % 2 ? 0 : Math.PI, i % 2 ? Math.PI : Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+        ctx.translate(p.x, p.y);
+        ctx.scale(p.size, p.size);
+        ctx.translate(-p.x, -p.y);
         const ux = p.vx / len;
         const uy = p.vy / len;
         const tail: [number, number] = [p.x - ux * 34, p.y - uy * 34];
@@ -683,6 +765,12 @@ export class Scene {
         ctx.moveTo(-7, 3);
         ctx.lineTo(3, -5);
         ctx.stroke();
+        break;
+      }
+      case 'bomb': {
+        // It blinks faster as the fuse runs out.
+        const left = BOMB_FUSE - p.t;
+        this.drawBomb(p.x, p.y, left < 40 && Math.floor(this.time / (left < 15 ? 2 : 4)) % 2 === 0);
         break;
       }
       case 'shock': {
@@ -776,6 +864,38 @@ export class Scene {
             ctx.restore();
           }
           break;
+        case 'boom': {
+          // A fireball that swells to the blast's size, then a puff of smoke that rises and fades.
+          const fire = Math.min(1, k * 3);
+          if (k < 0.45) {
+            ctx.globalAlpha = 1 - k / 0.45;
+            const r = e.size * (0.45 + 0.55 * fire);
+            for (const [col, sz] of [
+              ['#e8352f', 1],
+              ['#ff9f1c', 0.74],
+              ['#ffe066', 0.45],
+            ] as [string, number][]) {
+              ctx.fillStyle = col;
+              ctx.beginPath();
+              ctx.arc(0, 0, r * sz, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.strokeStyle = NAVY;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = (1 - k) * 0.55;
+          ctx.fillStyle = shade(CREAM, -0.35);
+          for (let i = 0; i < 5; i++) {
+            const a = (i / 5) * Math.PI * 2 + e.angle;
+            ctx.beginPath();
+            ctx.arc(Math.cos(a) * e.size * 0.5 * k, Math.sin(a) * e.size * 0.3 * k + k * 40, e.size * 0.28 * (0.5 + k), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        }
         case 'flash':
         case 'armor':
           ctx.globalAlpha = 1 - k;

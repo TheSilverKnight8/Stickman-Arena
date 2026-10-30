@@ -165,6 +165,10 @@ export const sfx = {
     else if (kind === 'orb') tone(midiHz(69), { type: 'sine', dur: 0.35, to: midiHz(81), gain: 0.16 });
     else if (kind === 'boulder') tone(110, { type: 'square', dur: 0.15, to: 70, gain: 0.12 });
     else if (kind === 'toss') noise({ filter: 'bandpass', hz: 700, toHz: 1600, q: 2, dur: 0.35, gain: 0.18 });
+    else if (kind === 'bomb') {
+      noise({ filter: 'bandpass', hz: 900, toHz: 400, q: 1.5, dur: 0.18, gain: 0.16 });
+      noise({ filter: 'highpass', hz: 5000, dur: 0.25, gain: 0.05, at: 0.05 });
+    }
     else noise({ filter: 'lowpass', hz: 400, dur: 0.25, gain: 0.3 });
   },
   reflect() {
@@ -173,6 +177,12 @@ export const sfx = {
   armor() {
     tone(midiHz(57), { type: 'square', dur: 0.12, gain: 0.1 });
     tone(midiHz(64), { type: 'square', dur: 0.12, gain: 0.08 });
+  },
+  /** Ranger's bomb going off: a deep boom with a crackle. */
+  blast() {
+    noise({ filter: 'lowpass', hz: 1400, toHz: 120, dur: 0.7, gain: 0.55 });
+    tone(90, { type: 'sawtooth', dur: 0.4, to: 35, gain: 0.18 });
+    for (let i = 0; i < 3; i++) noise({ filter: 'bandpass', hz: 2400 - i * 500, at: 0.04 + i * 0.05, dur: 0.06, gain: 0.12 });
   },
   shatter() {
     for (let i = 0; i < 4; i++) noise({ filter: 'bandpass', hz: 800 + i * 400, at: i * 0.03, dur: 0.08, gain: 0.2 });

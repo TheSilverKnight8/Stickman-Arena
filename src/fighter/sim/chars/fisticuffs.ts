@@ -211,25 +211,27 @@ export const fisticuffs: CharDef = {
       vel: [{ f: 17, vx: 4 }],
     },
     sspec: {
+      // A longer wind-up (hits from frame 12, was 8) and a longer stop after (24 frames, was 18): Caleb
+      // found it too safe a burst move after the CPU study.
       name: 'Dash Punch',
-      total: 36,
+      total: 46,
       prio: 2,
       turn: true,
       stopOnHit: true,
       anim: keys(
         [0, S],
-        [5, S, { lean: 30, a1: -40, f1: -20, a2: 40, f2: 120, t1: 40, s1: -10, t2: -30, s2: -40 }],
-        [8, S, { lean: 45, a1: 90, f1: 90, a2: -40, f2: -20, t1: 60, s1: 30, t2: -60, s2: -60 }],
-        [22, S, { lean: 45, a1: 90, f1: 90, a2: -40, f2: -20, t1: 60, s1: 30, t2: -60, s2: -60 }],
-        [36, S],
+        [9, S, { lean: 30, a1: -40, f1: -20, a2: 40, f2: 120, t1: 40, s1: -10, t2: -30, s2: -40 }],
+        [12, S, { lean: 45, a1: 90, f1: 90, a2: -40, f2: -20, t1: 60, s1: 30, t2: -60, s2: -60 }],
+        [26, S, { lean: 45, a1: 90, f1: 90, a2: -40, f2: -20, t1: 60, s1: 30, t2: -60, s2: -60 }],
+        [46, S],
       ),
-      hits: [{ f: [8, 18], at: 'hand1', r: 17, dmg: 9, ang: 40, bkb: 45, kbg: 60 }],
+      hits: [{ f: [12, 22], at: 'hand1', r: 17, dmg: 9, ang: 40, bkb: 45, kbg: 60 }],
       vel: [
-        { f: 7, vx: 15 },
-        { f: 7, vy: 2, when: 'air' },
-        { f: 20, vx: 4 },
+        { f: 11, vx: 15 },
+        { f: 11, vy: 2, when: 'air' },
+        { f: 24, vx: 4 },
       ],
-      gravity: { f: [7, 20], mul: 0.3 },
+      gravity: { f: [11, 24], mul: 0.3 },
     },
     uspec: {
       // A strong jumping uppercut: the fist hits hardest as it leaves the ground.

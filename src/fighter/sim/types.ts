@@ -43,7 +43,8 @@ export interface Stats {
   squat: number;
 }
 
-export type ProjKind = 'arrow' | 'sword' | 'orb' | 'boulder' | 'shock' | 'toss';
+/** A bomb sits until its fuse runs out, then becomes a blast (the explosion's hit area for a few frames). */
+export type ProjKind = 'arrow' | 'sword' | 'orb' | 'boulder' | 'shock' | 'toss' | 'bomb' | 'blast';
 
 /**
  * Priority when two attacks touch: 1 light, 2 medium, 3 heavy. The higher one
@@ -126,6 +127,10 @@ export interface MoveDef {
   proj?: ProjSpawn[];
   /** Frames with armor: hits below the armor threshold do damage but no knockback. */
   armor?: [number, number];
+  /** Frames with super armor: every hit does damage but no knockback or hitstun. */
+  superArmor?: [number, number];
+  /** Frames held in place: no speed, gravity or drift. */
+  still?: [number, number];
   /** Frames where the fighter cannot be hit. */
   intangible?: [number, number];
   /** Frames where projectiles touching this circle are sent back. */
@@ -351,6 +356,8 @@ export interface ProjectileState {
   nearT: number;
   /** Projectiles (ids) this one has already clashed with. */
   clashed: number[];
+  /** Size against the kind's normal size (a charged arrow grows with the charge). */
+  size: number;
 }
 
 export type MatchPhase = 'countdown' | 'play' | 'sudden-intro' | 'over';
@@ -395,4 +402,5 @@ export type SimEvent =
   | { type: 'teleport'; slot: number; x: number; y: number }
   | { type: 'ledge'; slot: number }
   | { type: 'clash'; x: number; y: number }
-  | { type: 'grab'; slot: number };
+  | { type: 'grab'; slot: number }
+  | { type: 'blast'; x: number; y: number };

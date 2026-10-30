@@ -3,9 +3,10 @@ import type { CharDef, ProjSpawn } from '../types';
 import { aimPose, baseAnims, keys } from './common';
 
 // RANGER: zoner. Average mobility and survivability, plenty of ranged tools;
-// less effective close up, needs precision. An archer with many bow attacks,
-// plus an answer to close opponents (spec): Bow Bash, Back-off Kick and
-// Backflip Kick push them away. She wears a wide-brimmed hat and a quiver (drawn only).
+// less effective close up, needs precision. An archer whose specials shoot
+// (Charged Shot, Triple Shot, Rocket Arrow) or throw a bomb, while her tilts and
+// aerials (Caleb's change after the CPU study) are melee: the bow, kicks, and a
+// dagger drawn in the back hand. She wears a wide-brimmed hat and a quiver (drawn only).
 
 const S = pose({ lean: 4, a1: 70, f1: 80, a2: 20, f2: 60, t1: 14, s1: -2, t2: -14, s2: -16 });
 const A = pose(S, { t1: 40, s1: -20, t2: -10, s2: -40, a1: 95, f1: 100 });
@@ -24,7 +25,7 @@ export const ranger: CharDef = {
   archetype: 'Zoner',
   color: '#2f9e44',
   alt: '#8ccf4e',
-  body: { torso: 30, upper: 17, fore: 16, thigh: 21, shin: 21, head: 10, weapon: 0, torsoR: 9, limbR: 5 },
+  body: { torso: 30, upper: 17, fore: 16, thigh: 21, shin: 21, head: 10, weapon: 0, dagger: 16, torsoR: 9, limbR: 5 },
   line: 6,
   halfWidth: 16,
   height: 90,
@@ -70,33 +71,33 @@ export const ranger: CharDef = {
       hits: [{ f: [4, 6], at: 'hand1', r: 13, dmg: 4, ang: 55, bkb: 40, kbg: 45 }],
     },
     ftilt: {
-      name: 'Quick Shot',
-      total: 34,
+      // A backhand slash with the dagger, stepping in, the bow arm swinging back for balance.
+      name: 'Dagger Slash',
+      total: 24,
       prio: 2,
       turn: true,
-      // Plants a wide stance to shoot, and rocks back with the release.
-      anim: [
+      anim: keys(
         [0, S],
-        [6, aimPose(S, 90, { t1: 30, s1: 0, t2: -30, s2: -30, dy: -3 })],
-        [11, aimPose(S, 90, { lean: -6, t1: 30, s1: 0, t2: -30, s2: -30, dy: -3, dx: -4 })],
-        [18, aimPose(S, 90, { t1: 26, s1: -2, t2: -26, s2: -28, dy: -2, dx: -3 })],
-        [34, S],
-      ],
-      proj: [arrow(10, 34, 30, 0, 6, { hitAng: 38, bkb: 28, kbg: 45 })],
+        [3, S, { lean: -6, a1: 60, f1: 40, a2: -70, f2: -40, t1: 20, s1: -5, t2: -20, s2: -25, dx: -2 }],
+        [6, S, { lean: 20, a1: 10, f1: -20, a2: 112, f2: 110, t1: 45, s1: -5, t2: -30, s2: -40, dx: 7 }],
+        [9, S, { lean: 22, a1: 0, f1: -30, a2: 125, f2: 135, t1: 45, s1: -5, t2: -30, s2: -40, dx: 7 }],
+        [24, S],
+      ),
+      hits: [{ f: [5, 8], at: 'hand2', to: 'tip2', r: 11, dmg: 7, ang: 35, bkb: 34, kbg: 58 }],
     },
     utilt: {
-      name: 'Skyward Shot',
-      total: 34,
+      // Rises out of a crouch sweeping the dagger up from low in front to over her head.
+      name: 'Dagger Upswing',
+      total: 26,
       prio: 2,
-      // Leans back with one knee bent to aim straight up.
-      anim: [
+      anim: keys(
         [0, S],
-        [6, aimPose(S, 175, { lean: -14, t1: 40, s1: -20, t2: -20, s2: -30, dy: -4 })],
-        [11, aimPose(S, 175, { lean: -18, t1: 40, s1: -20, t2: -20, s2: -30, dy: -5 })],
-        [18, aimPose(S, 175, { lean: -14, t1: 36, s1: -18, t2: -18, s2: -28, dy: -4 })],
-        [34, S],
-      ],
-      proj: [arrow(9, 6, 72, 85, 6, { hitAng: 88, bkb: 30, kbg: 62 })],
+        [3, S, { lean: 10, a2: 40, f2: 20, t1: 30, s1: -20, t2: -30, s2: -35, dy: -3 }],
+        [6, S, { lean: -10, a2: 150, f2: 170, t1: 10, s1: 0, t2: -10, s2: -10 }],
+        [10, S, { lean: -18, a2: 200, f2: 215, t1: 10, s1: 0, t2: -10, s2: -10 }],
+        [26, S],
+      ),
+      hits: [{ f: [6, 10], at: 'hand2', to: 'tip2', r: 12, dmg: 7, ang: 85, bkb: 40, kbg: 62 }],
     },
     dtilt: {
       name: 'Back-off Kick',
@@ -129,47 +130,53 @@ export const ranger: CharDef = {
       ],
     },
     fair: {
-      name: 'Air Shot',
-      total: 36,
-      landLag: 8,
-      prio: 2,
-      turn: true,
-      anim: [
-        [0, A],
-        [5, aimPose(A, 90, { t1: 60, s1: 10, t2: -30, s2: -60 })],
-        [10, aimPose(A, 90, { lean: -8, t1: 50, s1: 0, t2: -40, s2: -70 })],
-        [18, aimPose(A, 90, { lean: -4, t1: 50, s1: 0, t2: -40, s2: -70 })],
-        [36, A],
-      ],
-      proj: [arrow(9, 34, 30, 0)],
-      vel: [{ f: 9, vx: -1.5, add: true }],
-    },
-    uair: {
-      name: 'Up Shot',
-      total: 34,
+      // Draws the dagger back and stabs straight ahead, front knee up.
+      name: 'Dagger Stab',
+      total: 28,
       landLag: 7,
       prio: 2,
-      anim: [
+      turn: true,
+      anim: keys(
         [0, A],
-        [5, aimPose(A, 175, { lean: -16, t1: 70, s1: 0, t2: 20, s2: -30 })],
-        [18, aimPose(A, 175, { lean: -16, t1: 70, s1: 0, t2: 20, s2: -30 })],
-        [34, A],
-      ],
-      proj: [arrow(8, 6, 72, 88, 5, { hitAng: 88 })],
+        [3, A, { lean: -10, a1: 60, f1: 60, a2: -60, f2: -30 }],
+        [6, A, { lean: 15, a1: -20, f1: -40, a2: 90, f2: 90, t1: 70, s1: 30, t2: -30, s2: -50 }],
+        [12, A, { lean: 15, a1: -20, f1: -40, a2: 90, f2: 90, t1: 70, s1: 30, t2: -30, s2: -50 }],
+        [28, A],
+      ),
+      hits: [{ f: [6, 9], at: 'hand2', to: 'tip2', r: 11, dmg: 8, ang: 40, bkb: 30, kbg: 68 }],
+    },
+    uair: {
+      // Swings the bow overhead from in front to behind, leaning back into it.
+      name: 'Bow Arc',
+      total: 28,
+      landLag: 6,
+      prio: 2,
+      anim: keys(
+        [0, A],
+        [3, A, { lean: 5, a1: 80, f1: 70 }],
+        [6, A, { lean: -15, a1: 160, f1: 170, t1: 50, s1: 0, t2: 0, s2: -30 }],
+        [10, A, { lean: -20, a1: 230, f1: 240, t1: 50, s1: 0, t2: 0, s2: -30 }],
+        [28, A],
+      ),
+      hits: [{ f: [5, 10], at: 'hand1', r: 22, dmg: 7, ang: 85, bkb: 34, kbg: 70 }],
     },
     dair: {
-      name: 'Dive Shot',
-      total: 38,
-      landLag: 9,
+      // Raises the dagger overhead and drives it straight down: the point spikes as it lands its blow.
+      name: 'Dagger Drop',
+      total: 34,
+      landLag: 10,
       prio: 2,
-      anim: [
+      anim: keys(
         [0, A],
-        [5, aimPose(A, 45, { lean: 28, t1: 20, s1: -40, t2: -50, s2: -90 })],
-        [20, aimPose(A, 45, { lean: 28, t1: 20, s1: -40, t2: -50, s2: -90 })],
-        [38, A],
+        [4, A, { lean: -10, a1: 120, f1: 140, a2: 160, f2: 170, t1: 80, s1: -10, t2: 60, s2: -30 }],
+        [8, A, { lean: 25, a1: 120, f1: 140, a2: 10, f2: 0, t1: 40, s1: -20, t2: -10, s2: -40 }],
+        [15, A, { lean: 25, a1: 120, f1: 140, a2: 10, f2: 0, t1: 40, s1: -20, t2: -10, s2: -40 }],
+        [34, A],
+      ),
+      hits: [
+        { f: [8, 10], at: 'hand2', to: 'tip2', r: 11, dmg: 9, ang: -70, bkb: 28, kbg: 52 },
+        { f: [11, 15], at: 'hand2', to: 'tip2', r: 10, dmg: 6, ang: 45, bkb: 25, kbg: 40, prio: 1 },
       ],
-      proj: [arrow(9, 30, 4, -45, 6, { hitAng: 45 })],
-      vel: [{ f: 9, vy: 4, when: 'air' }],
     },
     nspec: {
       // Hold up or down while drawing (until the arrow leaves) to aim 45 degrees up or down.
@@ -177,7 +184,8 @@ export const ranger: CharDef = {
       total: 46,
       prio: 3,
       aim: 45,
-      charge: { at: 12, max: 50 },
+      // Full charge in 40 frames (was 50); the arrow grows with the charge.
+      charge: { at: 12, max: 40 },
       anim: [
         [0, S],
         [12, aimPose(S, 90, { a2: -80, f2: 100, lean: -6, t1: 32, s1: 0, t2: -32, s2: -30, dy: -4 })],
@@ -216,22 +224,19 @@ export const ranger: CharDef = {
       vel: [{ f: 7, vy: 16.1 }],
     },
     dspec: {
-      name: 'Backflip Kick',
-      total: 32,
+      // Lobs a bomb forward in an arc. It comes to rest where it lands and goes off a second and a
+      // half after the throw (not on contact), throwing everyone near it away; it never hurts Ranger.
+      name: 'Fuse Bomb',
+      total: 36,
       prio: 2,
       anim: keys(
         [0, S],
-        [3, S, { lean: -10, t1: 90, s1: 100, t2: -10, s2: -10, a1: 150, f1: 160 }],
-        [6, S, { lean: -10, t1: 100, s1: 110, t2: -10, s2: -10, a1: 150, f1: 160 }],
-        [14, A, { rot: 360, t1: 40, s1: -20 }],
-        [32, A, { rot: 360 }],
+        [5, S, { lean: -10, a1: 60, f1: 50, a2: -100, f2: -60, t1: 25, s1: -5, t2: -20, s2: -30 }],
+        [11, S, { lean: 15, a1: 40, f1: 20, a2: 120, f2: 140, t1: 35, s1: -10, t2: -25, s2: -35, dx: 4 }],
+        [16, S, { lean: 12, a1: 40, f1: 20, a2: 100, f2: 110, t1: 35, s1: -10, t2: -25, s2: -35, dx: 4 }],
+        [36, S],
       ),
-      hits: [{ f: [3, 6], at: 'foot1', r: 12, dmg: 8, ang: 40, bkb: 62, kbg: 82 }],
-      vel: [
-        { f: 5, vx: -8 },
-        { f: 5, vy: 7, when: 'ground' },
-        { f: 5, vy: 5, when: 'air' },
-      ],
+      proj: [{ f: 11, kind: 'bomb', x: 20, y: 60, speed: 9.5, ang: 55, dmg: 14, hitAng: 62, bkb: 50, kbg: 90 }],
     },
   },
 };

@@ -180,6 +180,9 @@ function playSounds(events: SimEvent[], mySlot: number) {
       case 'shatter':
         sfx.shatter();
         break;
+      case 'blast':
+        sfx.blast();
+        break;
       case 'teleport':
         sfx.teleport();
         break;

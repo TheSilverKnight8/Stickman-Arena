@@ -73,6 +73,8 @@ export interface Body {
   head: number;
   /** Weapon length from the front hand (0 = none). */
   weapon: number;
+  /** A dagger in the back hand, its length (Ranger). */
+  dagger?: number;
   /** Hurtbox radii (armR: the arms, if different from the other limbs). */
   torsoR: number;
   limbR: number;
@@ -94,6 +96,8 @@ export interface Joints {
   foot2: [number, number];
   /** Weapon tip (the front hand when there is no weapon). */
   tip: [number, number];
+  /** Dagger tip, along the back forearm (the back hand when there is no dagger). */
+  tip2: [number, number];
 }
 
 export type JointName = keyof Joints;
@@ -131,7 +135,8 @@ export function solve(b: Body, p: Pose, x: number, y: number, facing: number, gr
   const knee2 = add(hip, b.thigh, p.t2);
   const foot2 = add(knee2, b.shin, p.s2);
   const tip = b.weapon > 0 ? add(hand1, b.weapon * (1 - p.ws), p.f1 + p.w) : hand1;
-  const local = { hip, neck, head, elbow1, hand1, elbow2, hand2, knee1, foot1, knee2, foot2, tip };
+  const tip2 = b.dagger ? add(hand2, b.dagger, p.f2) : hand2;
+  const local = { hip, neck, head, elbow1, hand1, elbow2, hand2, knee1, foot1, knee2, foot2, tip, tip2 };
 
   // Rotation turns the body around its belly, not its hip.
   let cx = 0;

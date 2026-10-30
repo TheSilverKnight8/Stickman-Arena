@@ -25,7 +25,7 @@ Weight 85 · run speed 7.2 · air speed 4.8 · jump 13.6 / double jump 12.5 · g
 | Up (air) | **Sky Kick** — Leans back and kicks straight up. | 5 | 28 | 9 | medium | landing lag 7 |
 | Down (air) | **Spike Punch** — Punches straight down. The fist spikes (sends straight down) at first; later it knocks away. | 9 | 34 | 10 | medium | landing lag 13; spikes |
 | Neutral special | **Haymaker** — Winds up, steps in and throws a heavy punch; the fist catches fire. The best KO move Fisticuffs has. | 18 | 48 | 16 | heavy |  |
-| Side special | **Dash Punch** — Lunges forward fist-first (also useful for getting back to the stage). Stops when it hits. | 8 | 36 | 9 | medium |  |
+| Side special | **Dash Punch** — Lunges forward fist-first (also useful for getting back to the stage). Stops when it hits. | 12 | 46 | 9 | medium |  |
 | Up special | **Jumping Uppercut** — A strong jumping uppercut: hardest as it leaves the ground (KOs a mid-weight at about 170% in the middle of the stage), weaker on the way up. The recovery move. | 5 | 42 | 11 | medium |  |
 | Down special | **Stomp Drop** — Hops if on the ground, then drops straight down feet-first (spikes in the air) and pops nearby opponents up on landing. | 10 | 12 + 18 on landing | 9 | medium | falls until landing; spikes |
 
@@ -47,29 +47,29 @@ Weight 108 · run speed 5 · air speed 3.6 · jump 12.5 / double jump 11.5 · gr
 | Down (air) | **Plunge** — Plunges the sword straight down. The tip spikes. | 9 | 40 | 13 | heavy | landing lag 16; needs the sword in hand; spikes |
 | Neutral special | **Grand Slash** — A slow, huge overhead slam. Spartan's strongest hit. | 21 | 58 | 19 | heavy | needs the sword in hand |
 | Side special | **Sword Throw** — The projectile. A stab throw aimed 30 degrees upward: the sword flies straight out along that line point first, slows down, and comes straight back along the same line, hitting on the way out and again on the way back. Spartan catches it when it reaches the hand; if Spartan has moved off its line (in the air, say), it flies on and is back in hand once it is gone. Until then, attacks that need the sword cannot be used. | 12 | 30 | 8 | medium | projectile (sword); needs the sword in hand |
-| Up special | **Sky Toss** — Like Ike's Aether: tosses the sword straight up (it hits on the way up), leaps after it and catches it, then flips and plunges straight down sword first, dragging opponents down (he can catch the ledge on the way), and hits again on landing. Without the sword in hand (thrown), he leaps without the toss. The recovery move. | 6 | 44 + 24 on landing | 6 | medium | projectile (toss); falls until landing; spikes |
+| Up special | **Sky Toss** — Like Ike's Aether: tosses the sword straight up (it hits on the way up), leaps after it and catches it, then flips and plunges straight down sword first, dragging opponents down (he can catch the ledge on the way), and hits again on landing. Without the sword in hand (thrown), he leaps without the toss. He holds completely still until the leap, and has super armor (takes damage but never flinches) from the start until he catches the sword. The recovery move. | 6 | 44 + 24 on landing | 6 | medium | projectile (toss); super armor frames 1–28; holds still frames 1–12; falls until landing; spikes |
 | Down special | **Deflect** — Twirls the sword in front. Sends arrows, orbs and boulders back at their thrower (reflect), harder and faster. | 4 | 30 | 4 | light | reflects frames 3–20; needs the sword in hand |
 
 ## Ranger — Zoner
 
-Zoner. Most attacks fire the bow. Arrows push opponents back but stun them only briefly (40% of the usual hitstun). Up close, Ranger pushes opponents away with the Bow Bash and two kicks.
+Zoner. Her specials shoot the bow (and one throws a bomb); her tilts and aerials are melee (Caleb's change after the CPU study): the bow, kicks, and a dagger drawn in her back hand. Arrows push opponents back but stun them only briefly (40% of the usual hitstun).
 
 Weight 98 · run speed 6 · air speed 4.2 · jump 13 / double jump 12 · gravity 0.47 · fall speed 8.6 (fast fall 14) · projectile limit 5
 
 | Input | Move | Starts | Ends | Damage | Priority | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | Neutral (ground) | **Bow Bash** — Swings the bow at close range (an answer to opponents who get close). | 4 | 18 | 4 | light |  |
-| Side (ground) | **Quick Shot** — Fires an arrow straight ahead. | 10 | 34 | 6 | medium | projectile (arrow) |
-| Up (ground) | **Skyward Shot** — Fires an arrow upward. | 9 | 34 | 6 | medium | projectile (arrow) |
+| Side (ground) | **Dagger Slash** — A backhand dagger slash, stepping in. | 5 | 24 | 7 | medium |  |
+| Up (ground) | **Dagger Upswing** — Rises out of a crouch sweeping the dagger up from low in front to over her head (an anti-air). | 6 | 26 | 7 | medium |  |
 | Down (ground) | **Back-off Kick** — Low kick that pushes the opponent away and slides Ranger back. | 4 | 24 | 6 | light |  |
 | Neutral (air) | **Bow Spin** — Spins with the bow out (close-range answer in the air). | 5 | 28 | 6 | light | landing lag 7 |
-| Side (air) | **Air Shot** — Fires an arrow ahead in the air, with a little recoil. | 9 | 36 | 5 | medium | projectile (arrow); landing lag 8 |
-| Up (air) | **Up Shot** — Fires an arrow straight up in the air. | 8 | 34 | 5 | medium | projectile (arrow); landing lag 7 |
-| Down (air) | **Dive Shot** — Fires an arrow down and forward, with a small hop upward. | 9 | 38 | 6 | medium | projectile (arrow); landing lag 9 |
-| Neutral special | **Charged Shot** — Hold special to draw the bow (up to about a second), let go to fire. Faster, stronger arrows the longer it is held. Hold up or down while drawing (until the arrow leaves) to aim it 45 degrees up or down. | 13 | 46 | 7 | heavy | hold up or down to aim 45°; projectile (arrow); hold to charge up to 50 frames |
+| Side (air) | **Dagger Stab** — Draws the dagger back and stabs straight ahead, front knee up. | 6 | 28 | 8 | medium | landing lag 7 |
+| Up (air) | **Bow Arc** — Swings the bow overhead from in front to behind. | 5 | 28 | 7 | medium | landing lag 6 |
+| Down (air) | **Dagger Drop** — Raises the dagger and drives it straight down: spikes at first, knocks away after. | 8 | 34 | 9 | medium | landing lag 10; spikes |
+| Neutral special | **Charged Shot** — Hold special to draw the bow (up to two thirds of a second), let go to fire. The longer it is held, the faster, stronger and bigger the arrow (up to 2.2 times its size, hitting as big as it looks), with green wind gathering at the bow and trailing the arrow. Hold up or down while drawing (until the arrow leaves) to aim it 45 degrees up or down. | 13 | 46 | 7 | heavy | hold up or down to aim 45°; projectile (arrow); hold to charge up to 40 frames |
 | Side special | **Triple Shot** — Three arrows in a spread. | 14 | 48 | 4 | light | projectile (arrow) |
 | Up special | **Rocket Arrow** — Fires an arrow straight down and rides the push upward. The recovery move. | 7 | 34 | 7 | light | projectile (arrow) |
-| Down special | **Backflip Kick** — Kicks the opponent away and backflips out (a close-range escape). | 3 | 32 | 8 | medium |  |
+| Down special | **Fuse Bomb** — Lobs a bomb forward in an arc (it lands about 275 ahead on flat ground). It comes to rest where it lands and goes off a second and a half after the throw, not on contact, throwing everyone near it away from it (KOs a mid-weight at about 120% in the middle of the stage). It never hurts Ranger. One at a time. | 11 | 36 | 14 | medium | projectile (bomb) |
 
 ## Buster — Heavyweight
 
@@ -108,7 +108,7 @@ Weight 78 · run speed 8 · air speed 5.2 · jump 13.9 / double jump 13.4 · gra
 | Side (air) | **Drill Kick** — A drill kick: the body straightens like an arrow and dives feet first, down and forward. Strong as it comes out. | 5 | 24 | 9 | medium | landing lag 6 |
 | Up (air) | **Scissor Kick** — Both legs scissor overhead. | 4 | 18 | 7 | light | landing lag 4 |
 | Down (air) | **Hover Stomp** — Hovers a moment with the knees tucked, then stomps both feet straight down. The first two frames of the stomp spike (send straight down), for finishing opponents offstage; it does not drop Phantom. | 8 | 25 | 9 | medium | landing lag 6; spikes |
-| Neutral special | **Phantom Orb** — The projectile. An orb flies forward; it knocks harder right after it leaves the hand (over about the first 200 units). Two at a time; they fade if Phantom is hit. | 10 | 32 | 7 | medium | projectile (orb) |
+| Neutral special | **Phantom Orb** — The projectile. An orb flies forward: a pressure poke with little damage and knockback but a long stun, so Phantom can follow it up. Two at a time; they fade if Phantom is hit. | 10 | 32 | 4 | medium | projectile (orb) |
 | Side special | **Tether Zip** — Throws a ghostly chain forward, up to about 210 away (slightly upward in the air). If it catches an opponent, Phantom zips in with a kick and springs back off them; if it catches a ledge, it reels her in to hang from it. | 5 | 36 | 6 | medium | tether, reaches 210; damage is the kick |
 | Up special | **Phase Rise** — Vanishes and reappears up to about two and a half body-lengths away in any held direction (straight up if none). Cannot be hit while vanished. The recovery move. | 13 | 27 | 4 | light | can't be hit frames 3–14 |
 | Down special | **Reaper Kick** — The kill move. The knee comes up, then the heel drives straight out while Phantom leans far back. The heel is the strongest hit (KOs a mid-weight at about 100% in the middle of the stage); the rest of the leg launches too. Slow to start, so it needs a read or a set-up. | 13 | 36 | 14 | heavy |  |

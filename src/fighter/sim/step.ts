@@ -63,10 +63,14 @@ const LEDGE_REACH_UNDER = 10;
 const LIP_SLIDE = 12;
 const LIP_ZONE = 48;
 const UNTIL_LAND_MAX = 45;
-const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14, toss: 16 };
+const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14, toss: 16, bomb: 11, blast: 64 };
 /** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
 const SWORD_HIT = { back: 9, front: 45 };
-const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30, toss: 150 };
+const PROJ_LIFE: Record<ProjKind, number> = { arrow: 80, sword: 140, orb: 110, boulder: 240, shock: 30, toss: 150, bomb: 400, blast: 5 };
+/** Ranger's bomb goes off this long after it is thrown (it does not go off on contact). */
+export const BOMB_FUSE = 90;
+/** A charged arrow grows up to this much bigger (as a share of its size) at full charge. */
+const CHARGE_GROW = 1.2;
 /** Spartan's sword (thrown or tossed up) is never used up by a hit or a clash. */
 const KEEPS: ProjKind[] = ['sword', 'toss'];
 // Priority clashes.
@@ -77,6 +81,8 @@ const RECOIL = 16;
 /** Gliding ends by itself after this long. */
 const GLIDE_MAX = 240;
 const REFLECTABLE: ProjKind[] = ['arrow', 'orb', 'boulder'];
+/** Neither swatted by attacks nor clashing with other projectiles. */
+const UNTOUCHABLE: ProjKind[] = ['bomb', 'blast'];
 
 const DIRS = BTN.left | BTN.right | BTN.up | BTN.down;
 const ACTIONS = BTN.attack | BTN.special | BTN.jump | BTN.dodge;
@@ -382,6 +388,11 @@ function updateFighter(s: MatchState, f: FighterState, input: number, ev: SimEve
   const pulled = !!m?.pull && !f.halted && f.t <= m.pull.until;
   if (pulled) {
     // Nothing: the pull sets the speed each frame.
+  } else if (m?.still && f.t >= m.still[0] && f.t <= m.still[1]) {
+    // Held in place: no speed, gravity or drift, and what was left of a launch is gone too.
+    f.vx = 0;
+    f.vy = 0;
+    f.kbSpeed = 0;
   } else if (f.grounded) {
     f.vy = 0;
     if (f.act === 'idle' || f.act === 'run') {
@@ -638,6 +649,8 @@ function canStart(s: MatchState, f: FighterState, slot: MoveSlot): boolean {
   if (m.needsWeapon && f.weaponOut) return false;
   // Moves that exist to throw something wait until the last one is gone.
   if (m.proj?.some((p) => p.kind === 'orb' || p.kind === 'boulder') && countProjectiles(s, f.slot) >= c.projLimit) return false;
+  // One bomb at a time (its blast included).
+  if (m.proj?.some((p) => p.kind === 'bomb') && s.projectiles.some((q) => q.owner === f.slot && (q.kind === 'bomb' || q.kind === 'blast'))) return false;
   return true;
 }
 
@@ -1131,8 +1144,14 @@ function applyHit(s: MatchState, a: FighterState | null, v: FighterState, h: Str
   const lag = h.rehit ? 2 : Math.min(18, Math.floor(d * 0.6 + 4));
   v.lastHitBy = a ? a.slot : -1;
 
-  // Armor: the hit does damage but no knockback.
+  // Armor: the hit does damage but no knockback. Super armor takes any number of hits of any strength.
   const vm = moveOf(v);
+  if (vm?.superArmor && v.t >= vm.superArmor[0] && v.t <= vm.superArmor[1]) {
+    v.hitlag = Math.floor(lag / 2);
+    if (a) a.hitlag = lag;
+    ev.push({ type: 'armor', x, y, victim: v.slot });
+    return;
+  }
   if (vm?.armor && v.t >= vm.armor[0] && v.t <= vm.armor[1] && kb < vc.armorKb && !v.armorUsed) {
     // Armor holds against one hit per move; the next hit goes through.
     v.armorUsed = true;
@@ -1200,12 +1219,14 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
   // A shot aimed up or down leaves from the hand along the aim.
   const aim = m.aim ? f.aim : 0;
   const ang = def.ang + aim;
+  let size = 1;
   if (m.charge) {
     const k = f.charge / m.charge.max;
     speed *= 1 + 0.6 * k;
     dmg += 8 * k;
     kbg += 22 * k;
     bkb += 8 * k;
+    size += CHARGE_GROW * k;
   }
   const vx = dcos(ang) * speed * f.facing;
   const vy = dsin(ang) * speed;
@@ -1235,6 +1256,7 @@ function spawnProjectile(s: MatchState, f: FighterState, m: MoveDef, def: ProjSp
     nearKbg: def.near?.kbg ?? 0,
     nearT: def.near?.frames ?? 0,
     clashed: [],
+    size,
   };
   if (KEEPS.includes(def.kind)) f.weaponOut = true;
   s.projectiles.push(p);
@@ -1281,6 +1303,15 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
         if (!surf || p.x < surf.x1 || p.x > surf.x2) gone = true;
         break;
       }
+      case 'bomb':
+        // Lobbed: it falls, comes to rest on whatever it lands on, and goes off when the fuse runs out.
+        if (p.vy === 0) p.vx *= 0.8;
+        p.vy -= 0.42;
+        if (p.t >= BOMB_FUSE) {
+          explode(p, keep, ev);
+          gone = true;
+        }
+        break;
       case 'toss': {
         // Spartan's sword tossed up: it slows, then falls, easing over to stay above him. Caught in
         // the hand during his up special; otherwise back in hand once it falls back to him.
@@ -1300,15 +1331,16 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
     const prevY = p.y;
     p.x += p.vx;
     p.y += p.vy;
-    if (p.kind === 'boulder') rollOnFloor(st, p, prevY);
+    if (p.kind === 'boulder' || p.kind === 'bomb') rollOnFloor(st, p, prevY);
     if (p.t > PROJ_LIFE[p.kind]) {
       gone = true;
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
     }
-    // Arrows, orbs and boulders stop at the stage; the sword flies through it.
-    if (!KEEPS.includes(p.kind) && p.kind !== 'shock' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
+    // Arrows, orbs and boulders stop at the stage, and a bomb thrown into its side goes off; the sword flies through it.
+    if (!gone && !KEEPS.includes(p.kind) && p.kind !== 'shock' && p.kind !== 'blast' && p.x > m.x1 && p.x < m.x2 && p.y < 0 && p.y > m.bottom) {
       gone = true;
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: Math.max(p.y, 0), kind: p.kind });
+      if (p.kind === 'bomb') explode(p, keep, ev);
     }
     const b = st.blast;
     if (p.x < b.left || p.x > b.right || p.y < b.bottom || p.y > b.top) gone = true;
@@ -1328,6 +1360,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
       const p = keep[i];
       const q = keep[k];
       if (p.owner === q.owner || out[i] || out[k] || p.clashed.includes(q.id)) continue;
+      if (UNTOUCHABLE.includes(p.kind) || UNTOUCHABLE.includes(q.kind)) continue;
       if (!capsTouch(projShape(p), projShape(q))) continue;
       p.clashed.push(q.id);
       q.clashed.push(p.id);
@@ -1344,7 +1377,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
 
 /** The area a projectile covers: the thrown sword hits along its blade, the rest are circles. */
 export function projShape(p: ProjectileState): Capsule {
-  const r = PROJ_R[p.kind];
+  const r = PROJ_R[p.kind] * p.size;
   return p.kind === 'sword'
     ? [p.x - p.ux * SWORD_HIT.back, p.y - p.uy * SWORD_HIT.back, p.x + p.ux * SWORD_HIT.front, p.y + p.uy * SWORD_HIT.front, r]
     : [p.x, p.y, p.x, p.y, r];
@@ -1370,6 +1403,7 @@ function beaten(p: ProjectileState): boolean {
  * the projectile is gone.
  */
 function projectileClash(s: MatchState, p: ProjectileState, boxes: ActiveHit[][], ev: SimEvent[]): boolean {
+  if (UNTOUCHABLE.includes(p.kind)) return false;
   const shape = projShape(p);
   for (const v of s.fighters) {
     if (v.slot === p.owner || p.hit.includes(v.slot) || !boxes[v.slot].length) continue;
@@ -1391,10 +1425,10 @@ function projectileClash(s: MatchState, p: ProjectileState, boxes: ActiveHit[][]
   return false;
 }
 
-/** The boulder rolls: it rests on the floor or a platform it comes down onto, and falls off their edges. */
+/** The boulder rolls (and the bomb comes to rest): on the floor or a platform it comes down onto, falling off their edges. */
 function rollOnFloor(st: (typeof STAGES)[keyof typeof STAGES], p: ProjectileState, prevY: number) {
   if (p.vy > 0) return;
-  const r = PROJ_R.boulder;
+  const r = PROJ_R[p.kind];
   for (const sf of [{ x1: st.main.x1, x2: st.main.x2, y: 0 }, ...st.plats]) {
     if (p.x < sf.x1 || p.x > sf.x2) continue;
     if (prevY - r >= sf.y - 0.01 && p.y - r <= sf.y) {
@@ -1405,9 +1439,17 @@ function rollOnFloor(st: (typeof STAGES)[keyof typeof STAGES], p: ProjectileStat
   }
 }
 
+/** A bomb going off: a blast in its place, with the bomb's hit. */
+function explode(p: ProjectileState, keep: ProjectileState[], ev: SimEvent[]) {
+  keep.push({ ...p, kind: 'blast', vx: 0, vy: 0, t: 0, hit: [], clashed: [] });
+  ev.push({ type: 'blast', x: p.x, y: p.y });
+}
+
 /** Returns true when the projectile is used up. */
 function projectileHits(s: MatchState, p: ProjectileState, joints: ReturnType<typeof jointsOf>[], ev: SimEvent[]): boolean {
-  const r = PROJ_R[p.kind];
+  // A bomb hits nothing until it goes off.
+  if (p.kind === 'bomb') return false;
+  const r = PROJ_R[p.kind] * p.size;
   for (const v of s.fighters) {
     if (v.slot === p.owner || p.hit.includes(v.slot)) continue;
     const j = joints[v.slot];
@@ -1435,10 +1477,11 @@ function projectileHits(s: MatchState, p: ProjectileState, joints: ReturnType<ty
     // Some projectiles hit harder right after leaving the hand.
     const k = p.nearT > 0 && p.t < p.nearT ? 1 - p.t / p.nearT : 0;
     const strike = k > 0 ? { ...p, bkb: p.bkb + (p.nearBkb - p.bkb) * k, kbg: p.kbg + (p.nearKbg - p.kbg) * k } : p;
-    applyHit(s, null, v, strike, p.dir, p.x, p.y, ev);
+    // A blast throws everyone away from where it went off.
+    applyHit(s, null, v, strike, p.kind === 'blast' ? (v.x >= p.x ? 1 : -1) : p.dir, p.x, p.y, ev);
     // Credit the thrower (for who knocked whom out); projectiles cause no hitlag for the thrower.
     v.lastHitBy = owner.slot;
-    if (!KEEPS.includes(p.kind)) {
+    if (!KEEPS.includes(p.kind) && p.kind !== 'blast') {
       if (p.kind === 'boulder') ev.push({ type: 'shatter', x: p.x, y: p.y, kind: p.kind });
       return true;
     }

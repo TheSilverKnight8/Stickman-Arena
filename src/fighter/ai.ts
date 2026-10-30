@@ -2,7 +2,7 @@ import { random, type HasRng } from '../lib/rng';
 import { hitsOf, moveOf } from './sim/body';
 import { CHARS } from './sim/chars';
 import { STAGES } from './sim/stages';
-import { createMatch, step } from './sim/step';
+import { BOMB_FUSE, createMatch, projShape, step } from './sim/step';
 import { BTN, type CharId, type FighterState, type MatchState, type MoveSlot } from './sim/types';
 
 // The CPU opponent. It reads the match and presses the same buttons a player
@@ -101,11 +101,22 @@ function reachOf(char: CharId): Reach[] {
     }
     // Hitboxes are measured from where the move started (x = 0), so a move that carries the fighter
     // forward counts the ground it covers.
-    for (let fr = 0; fr < m.total + 30; fr++) {
+    // A bomb is followed until it goes off: what it covers is its blast, where it lands.
+    let bombAt = -1;
+    for (let fr = 0; fr < m.total + (bombAt >= 0 ? BOMB_FUSE + 30 : 30); fr++) {
       if (air) f.y = Math.max(f.y, 200);
       step(s, [fr === 0 ? inputFor(slot, 1) : 0, 0]);
-      if (f.act !== 'move') break;
       const baseY = air ? 200 : 0;
+      if (bombAt >= 0) {
+        const b = s.projectiles.find((q) => q.owner === 0 && q.kind === 'blast');
+        if (b) {
+          const R = projShape(b)[4];
+          r = { slot, startup: bombAt + 6, x1: b.x - R, x2: b.x + R, y1: b.y - R - baseY, y2: b.y + R - baseY, dmg: b.dmg, kbg: b.kbg, air, special: slot.endsWith('spec') };
+          break;
+        }
+        continue;
+      }
+      if (f.act !== 'move') break;
       for (const h of hitsOf(f)) {
         const [ax, ay, bx, by, rad] = h.shape;
         const box = { x1: Math.min(ax, bx) - rad, x2: Math.max(ax, bx) + rad, y1: Math.min(ay, by) - rad - baseY, y2: Math.max(ay, by) + rad - baseY };
@@ -124,7 +135,8 @@ function reachOf(char: CharId): Reach[] {
         }
       }
       const p = s.projectiles.find((q) => q.owner === 0);
-      if (!r && p) {
+      if (!r && p?.kind === 'bomb') bombAt = f.t;
+      else if (!r && p) {
         // A projectile: covers a long strip along its path. (Measured along the real path instead, the CPU
         // threw Spartan's sword only at targets already in its way, and it made a fifth of the KOs.)
         const len = 520;
@@ -191,10 +203,14 @@ export interface Cpu extends HasRng {
   retreat: number;
   /** An attack chosen on the ground (true) or in the air (false); null for other taps. */
   tapGround: boolean | null;
+  /** The opponent being gone after (a slot, or -1). */
+  target: number;
+  /** For each fighter, how far it has kept from its nearest other fighter lately (campers keep far). */
+  camp: number[];
 }
 
 export function createCpu(level: Difficulty, seed: number): Cpu {
-  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0, tapGround: null };
+  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0, tapGround: null, target: -1, camp: [] };
 }
 
 /**
@@ -214,6 +230,7 @@ export function needsRecovery(s: MatchState, f: FighterState): boolean {
 export function cpuInput(s: MatchState, slot: number, cpu: Cpu, recoverOnly = false): number {
   const me = s.fighters[slot];
   const L = LEVEL[cpu.level];
+  if (s.phase === 'play') watchCampers(s, cpu);
   if (s.phase !== 'play' || me.act === 'dead' || me.act === 'out') return 0;
 
   // Taps last exactly one frame; then the button is let go so the next press counts.
@@ -316,7 +333,7 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean)
   }
   if (recoverOnly) return;
 
-  const target = nearestTarget(s, me);
+  const target = chooseTarget(s, me, cpu);
   if (!target) return;
   const dx = target.x - me.x;
   const dy = target.y - me.y;
@@ -416,17 +433,49 @@ function incomingFloorShot(s: MatchState, me: FighterState) {
   });
 }
 
-function nearestTarget(s: MatchState, me: FighterState) {
+/** How long the camping measure remembers (frames), how far counts as keeping away, and how much it pulls. */
+const CAMP_MEMORY = 120;
+const CAMP_FROM = 200;
+const CAMP_PULL = 2;
+/** A new target has to be this much better before the CPU switches. */
+const TARGET_STICK = 60;
+
+/** Follows how far each fighter keeps from its nearest other fighter. */
+function watchCampers(s: MatchState, cpu: Cpu) {
+  for (const f of s.fighters) {
+    if (f.act === 'dead' || f.act === 'out' || f.act === 'respawn') continue;
+    let near = Infinity;
+    for (const o of s.fighters) {
+      if (o === f || o.act === 'dead' || o.act === 'out' || o.act === 'respawn') continue;
+      near = Math.min(near, Math.abs(o.x - f.x) + Math.abs(o.y - f.y) * 0.5);
+    }
+    if (near === Infinity) continue;
+    const was = cpu.camp[f.slot] ?? near;
+    cpu.camp[f.slot] = was + (near - was) / CAMP_MEMORY;
+  }
+}
+
+/**
+ * The opponent to go after: the nearest, except that one who has kept away from
+ * everyone lately (a camper) counts as nearer, so it does not get left alone.
+ * The CPU keeps its target unless another is clearly better.
+ */
+function chooseTarget(s: MatchState, me: FighterState, cpu: Cpu) {
   let best: FighterState | null = null;
-  let bestD = Infinity;
+  let bestScore = Infinity;
+  let current = Infinity;
   for (const f of s.fighters) {
     if (f === me || f.act === 'dead' || f.act === 'out' || f.act === 'respawn') continue;
     const d = Math.abs(f.x - me.x) + Math.abs(f.y - me.y);
-    if (d < bestD) {
-      bestD = d;
+    const score = d - CAMP_PULL * Math.max(0, (cpu.camp[f.slot] ?? 0) - CAMP_FROM);
+    if (f.slot === cpu.target) current = score;
+    if (score < bestScore) {
+      bestScore = score;
       best = f;
     }
   }
+  if (best && current !== Infinity && current - bestScore < TARGET_STICK) best = s.fighters[cpu.target];
+  cpu.target = best ? best.slot : -1;
   return best;
 }
 
@@ -446,6 +495,9 @@ function chooseMove(me: FighterState, target: FighterState, face: number, cpu: C
   for (const rch of reachOf(me.char)) {
     if (rch.air !== !me.grounded && !rch.special) continue;
     if (rch.slot === 'uspec' && !me.upSpecial) continue;
+    // The up special is for getting back, or for finishing a combo (the target still stunned from this
+    // fighter's hit), never thrown out raw (Caleb's rule after the CPU study).
+    if (rch.slot === 'uspec' && !(target.act === 'hurt' && target.lastHitBy === me.slot)) continue;
     const m = c.moves[rch.slot];
     if (m.needsWeapon && me.weaponOut) continue;
     // Air fighters keep the projectile for targets further away; closer in, they jump in instead.

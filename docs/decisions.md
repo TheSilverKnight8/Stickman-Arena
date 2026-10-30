@@ -285,6 +285,27 @@ The moves and their numbers are in [`characters.md`](characters.md); this is how
 
 CPU vs CPU after this pass (Hard against Hard, every pairing 8 times, 40 matches per fighter): Fisticuffs 63%, Spartan 55%, Buster 50%, Ranger 45%, Valkyrie 45%, Phantom 40% (before: Spartan 75%, Ranger 50%, Fisticuffs 48%, Buster 45%, Valkyrie 43%, Phantom 40%). The first run had Ranger at 5%: the CPU was aiming her Charged Shot badly (holding up or down by accident, aiming down into the floor, and firing up-aimed shots at targets that were not on their line), and the held direction turned its next moves into Rocket Arrow and Backflip Kick. With the CPU shooting straight, she is back in the middle. Two other first-run results were trimmed: Fisticuffs' Jumping Uppercut (heavy on its first frames, 25 KOs) is now medium with a little less damage and knockback, and Tether Zip's reach and kick were reduced (26 KOs from the kick, Phantom at 65%).
 
+### Balance pass 7 (Caleb's changes after the CPU study)
+
+Caleb's calls on the study's findings; the numbers below are Claude Code's, for playtesting.
+
+| Change | What |
+| --- | --- |
+| Spartan: Sky Toss | Holds completely still (no speed, gravity or drift, and what is left of a launch is gone) from the press until the leap on frame 13, and has super armor from frame 1 until the catch (frame 28): Caleb's choice of both the hang and the leap. Super armor is new: every hit does its damage but no knockback or hitstun, any number of hits, any strength (command grabs still catch). The hang costs the recovery some reach: it gets back from 300 out at stage height instead of 340 (falling at full speed). |
+| Fisticuffs: Dash Punch | More startup and more ending lag (Caleb's choice of the two): hits from frame 12 (was 8), and 24 frames after the hit ends (was 18), 46 in all (was 36). |
+| Phantom: orb | A pressure poke, not a kill move: damage 7 → 4, knockback 30/42 → 24/18 with no extra close-range knockback (it had 52/78 close in), and 2.2 times the hitstun. |
+| Phantom: Drill Kick | Knockback growth 88 → 66, so Reaper Kick (unchanged, KOs Spartan from about 95% in the middle of the stage) is the main KO move. |
+| Ranger: tilts and aerials | All melee (Caleb: melee moves or dagger strikes). A dagger in the back hand (16 long, drawn only during the moves that use it; otherwise in a sheath at the hip): Dagger Slash (side tilt), Dagger Upswing (up tilt), Dagger Stab (forward air), Dagger Drop (down air, spikes at first). Bow Arc (up air) swings the bow overhead. Bow Bash, Back-off Kick and Bow Spin stay. |
+| Ranger: Fuse Bomb (down special, replaces Backflip Kick) | Thrown in an arc (Caleb's pick): about 275 ahead on flat ground, comes to rest, and goes off 90 frames (1.5 seconds) after the throw, not on contact. The blast (radius 64) throws everyone near it away from it: 14 damage, KOs a mid-weight from about 120% in the middle of the stage. It never hurts Ranger; attacks and other projectiles don't touch the bomb or the blast; one at a time. The bomb is drawn over the fighters so one at someone's feet still shows, and blinks red as the fuse runs out. |
+| Ranger: Charged Shot | Full charge in 40 frames (was 50). The arrow grows with the charge, up to 2.2 times its size, and hits as big as it looks; green wind gathers at the bow while charging and trails the charged arrow. |
+| CPU: up specials | Only to get back, or to finish a combo (the target still stunned from this fighter's hit), never raw: on-stage up specials went from up to 9.9 a minute (Spartan's Sky Toss) to under 1. |
+| CPU: who to go after | Each CPU follows how far every fighter keeps from its nearest other fighter (averaged over about 2 seconds). Past 200, the gap counts double against that fighter's distance, so a camper is gone after rather than left alone; a CPU switches targets only when another is clearly better (by 60). |
+| CPU: bombs | The CPU judges the bomb by where its blast lands. Ranger's CPU still keeps about 360 away: tried at 220 so she would use her new melee more, she won 25% of one-on-ones instead of 40%. |
+
+SPEC.md describes Ranger as "an archer, with many attacks that shoot a bow" and "less effective close up". After this pass, 3 of her 12 moves shoot (Charged Shot, Triple Shot, Rocket Arrow) and one throws a bomb. That is Caleb's call; the spec text is his to change.
+
+CPU vs CPU after this pass (the same 1,200 one-on-ones and 600 free-for-alls), wins one-on-one (free-for-all): Buster 61% (34%), Phantom 57% (31%), Fisticuffs 56% (21%), Valkyrie 55% (19%), Ranger 40.5% (26.5%), Spartan 30% (18%); before it Phantom 76% (45%), Fisticuffs 67% (22%), Ranger 60% (47%), Buster 42% (18%), Valkyrie 42% (8%), Spartan 15% (10%). One-on-ones that went to time: 15% → 11%. Reaper Kick makes most of Phantom's KOs (426, then Drill Kick 254, the orb 109; the orb made 297 before), and the bomb most of Ranger's (390). The new lopsided matchup is Valkyrie against Ranger (Valkyrie wins 97.5%): without the arrows that shot her out of the air, Ranger has only melee anti-airs. Dash Punch is still thrown about as often by the CPU (15.8 a minute, landing 26%, was 30%).
+
 ### Weight, speed and jump
 
 Ratings from the archetypes (1 = lowest of the six, 5 = highest, worked out from the numbers):
