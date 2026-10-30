@@ -131,7 +131,7 @@ function reachOf(char: CharId): Reach[] {
         const ey = p.y - (air ? 200 : 0) + uy * len;
         const sx = p.x - f.x;
         const sy = p.y - (air ? 200 : 0);
-        r = { slot, startup: f.t + 6, x1: Math.min(sx, ex) - 20, x2: Math.max(sx, ex) + 20, y1: Math.min(sy, ey) - 30, y2: Math.max(sy, ey) + 30, dmg: p.dmg, kbg: p.kbg, air, special: true };
+        r = { slot, startup: f.t + 6, x1: Math.min(sx, ex) - 20, x2: Math.max(sx, ex) + 20, y1: Math.min(sy, ey) - 30, y2: Math.max(sy, ey) + 30, dmg: p.dmg, kbg: p.kbg, air, special: slot.endsWith('spec') };
       }
     }
     if (r) out.push(r);
@@ -157,10 +157,12 @@ export interface Cpu extends HasRng {
   triedSide: boolean;
   /** Phantom: back off for a while after landing a hit. */
   retreat: number;
+  /** An attack chosen on the ground (true) or in the air (false); null for other taps. */
+  tapGround: boolean | null;
 }
 
 export function createCpu(level: Difficulty, seed: number): Cpu {
-  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0 };
+  return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0, tapGround: null };
 }
 
 /**
@@ -185,8 +187,11 @@ export function cpuInput(s: MatchState, slot: number, cpu: Cpu, recoverOnly = fa
   // Taps last exactly one frame; then the button is let go so the next press counts.
   let out = cpu.hold;
   if (cpu.tap) {
-    out |= cpu.tap;
+    // An attack chosen in the air is dropped if the fighter has landed since (and the other way round):
+    // it would come out as a different move (an aerial picked from afar becoming a ground move).
+    if (cpu.tapGround === null || cpu.tapGround === me.grounded) out |= cpu.tap;
     cpu.tap = 0;
+    cpu.tapGround = null;
   }
   if (cpu.jumpHold > 0) {
     cpu.jumpHold--;
@@ -302,12 +307,15 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean)
     return;
   }
 
-  // Pick an attack that would reach the target.
-  if (r() < L.aggression && cpu.retreat === 0) {
+  // Pick an attack that would reach the target, only when free to act: a press made during another move or
+  // landing would wait in the buffer and come out later, as whatever the held direction then makes it.
+  const free = me.act === 'idle' || me.act === 'run' || me.act === 'air';
+  if (free && r() < L.aggression && cpu.retreat === 0) {
     const pick = chooseMove(me, target, face, cpu, me.facing);
     if (pick) {
       const bits = inputFor(pick.slot, face);
       cpu.tap = bits & (BTN.attack | BTN.special);
+      cpu.tapGround = me.grounded;
       cpu.hold = bits & (BTN.left | BTN.right | BTN.up | BTN.down);
       // Phantom hits and runs.
       if (me.char === 'phantom') cpu.retreat = 24;
