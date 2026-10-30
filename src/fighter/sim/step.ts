@@ -57,6 +57,11 @@ const LEDGE_HOLD_MAX = 300;
 const LEDGE_WAIT = 6;
 /** After leaving a ledge, frames before a ledge can be grabbed again. */
 const REGRAB_FRAMES = 30;
+/** During an up special the ledge can be caught with the body's centre this far in under the lip. */
+const LEDGE_REACH_UNDER = 10;
+/** Rising into the underside this close to an edge slides the fighter out around the lip (per frame, and how close). */
+const LIP_SLIDE = 12;
+const LIP_ZONE = 48;
 const UNTIL_LAND_MAX = 45;
 const PROJ_R: Record<ProjKind, number> = { arrow: 7, sword: 12, orb: 13, boulder: 19, shock: 14, toss: 16 };
 /** The thrown sword flies point first: it hits along the front of the blade, from just behind its middle to the tip. */
@@ -462,7 +467,8 @@ function tryGrabLedge(s: MatchState, f: FighterState, input: number, ev: SimEven
   for (const side of [-1, 1]) {
     const ledgeX = side > 0 ? main.x2 : main.x1;
     const out = side * (f.x - ledgeX);
-    if (out < -4 || out > c.halfWidth + 30) continue;
+    // An up special reaches a little under the lip, so a recovery that comes up just inside the edge still catches it.
+    if (out < (reaching ? -(c.halfWidth + LEDGE_REACH_UNDER) : -4) || out > c.halfWidth + 30) continue;
     if (grabLedge(s, f, side, input, ev)) return;
   }
 }
@@ -891,8 +897,17 @@ function collide(s: MatchState, f: FighterState, prevY: number, ev: SimEvent[]) 
     if (over && prevY >= -0.01 && dy <= 0) return landOn(s, f, 0, 0, prevY, ev);
     if (over && prevY + c.height <= m.bottom + 0.01) {
       f.y = m.bottom - c.height;
-      if (f.vy > 0) f.vy = 0;
-      if (f.kbY > 0) f.kbY = -f.kbY * 0.5;
+      // Rising into the underside close to an edge (not launched): slide out around the lip and keep rising,
+      // instead of being stopped dead under the stage.
+      const toLeft = f.x - m.x1;
+      const toRight = m.x2 - f.x;
+      if (f.act !== 'hurt' && f.vy > 0 && Math.min(toLeft, toRight) < hw + LIP_ZONE) {
+        // Out until the whole body clears the edge (then the side of the stage keeps it out).
+        f.x += toLeft < toRight ? -Math.min(LIP_SLIDE, toLeft + hw + 1) : Math.min(LIP_SLIDE, toRight + hw + 1);
+      } else {
+        if (f.vy > 0) f.vy = 0;
+        if (f.kbY > 0) f.kbY = -f.kbY * 0.5;
+      }
     } else {
       const reach = Math.min(hw, -f.y);
       if (f.x + reach > m.x1 && f.x - reach < m.x2) {

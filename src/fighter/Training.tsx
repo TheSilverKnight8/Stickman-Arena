@@ -5,7 +5,7 @@ import { Button, Card, Segmented, cx } from '../components/ui';
 import { sfx } from '../lib/audio/sfx';
 import { newSeed } from '../lib/rng';
 import { createStore, useStore } from '../lib/store';
-import { DIFFICULTIES, cpuInput, createCpu, type Cpu, type Difficulty } from './ai';
+import { DIFFICULTIES, cpuInput, createCpu, needsRecovery, type Cpu, type Difficulty } from './ai';
 import { FighterChips, SetupLayout, StageCard, settle } from './FighterPages';
 import type { SceneOptions } from './render/scene';
 import { moveOf } from './sim/body';
@@ -18,7 +18,8 @@ import { FightView, type FightDriver } from './ui/FightView';
 import type { StagePick } from './ui/StagePicker';
 
 // The training room (Caleb's friend's idea): you and a dummy on a stage with no
-// timer and no stocks. The dummy can stand, jump, dodge or play as a CPU; its
+// timer and no stocks. The dummy can stand, jump, dodge or play as a CPU; in
+// every mode it gets back to the stage and off ledges by itself (Caleb). Its
 // damage can be set; positions and damage reset with a button; hitboxes can be
 // shown; and the last hit and the combo are shown on screen. Offline only.
 
@@ -70,6 +71,8 @@ export class TrainingDriver implements FightDriver {
   /** Counts up whenever `info` changes, so the screen knows to redraw it. */
   version = 0;
   private cpu: Cpu;
+  /** Gets the dummy back to the stage and off ledges in every mode (the Hard CPU's recovery). */
+  private recoverer = createCpu('hard', newSeed());
   /** Frames the dummy has been free to act, and frames left holding jump. */
   private dummyT = 0;
   private jumpHold = 0;
@@ -99,6 +102,7 @@ export class TrainingDriver implements FightDriver {
     this.version++;
     this.dummyT = 0;
     this.jumpHold = 0;
+    this.recoverer = createCpu('hard', newSeed());
   }
 
   /** A new CPU level for the dummy. */
@@ -115,6 +119,12 @@ export class TrainingDriver implements FightDriver {
     const d = s.fighters[1];
     const o = this.opts();
     if (o.dummy === 'cpu') return cpuInput(s, 1, this.cpu);
+    // Off the stage, on a ledge or on the respawn platform: get back like the Hard CPU does.
+    if (needsRecovery(s, d)) {
+      this.jumpHold = 0;
+      this.dummyT = 0;
+      return cpuInput(s, 1, this.recoverer, true);
+    }
     // A jump already started is held for a full jump.
     if (this.jumpHold > 0) {
       this.jumpHold--;

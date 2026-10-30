@@ -163,8 +163,21 @@ export function createCpu(level: Difficulty, seed: number): Cpu {
   return { level, rng: seed | 0, hold: 0, tap: 0, wait: 0, jumpHold: 0, triedUp: false, triedSide: false, retreat: 0 };
 }
 
-/** The CPU's buttons for this frame. */
-export function cpuInput(s: MatchState, slot: number, cpu: Cpu): number {
+/**
+ * Whether a fighter has to get back to the stage: off it in the air, gliding,
+ * on or climbing from a ledge, or on the respawn platform.
+ */
+export function needsRecovery(s: MatchState, f: FighterState): boolean {
+  if (f.act === 'ledge' || f.act === 'climb' || f.act === 'glide' || f.act === 'respawn') return true;
+  const m = STAGES[s.stage].main;
+  return !f.grounded && f.act !== 'hurt' && (f.x < m.x1 + 4 || f.x > m.x2 - 4 || f.y < -4);
+}
+
+/**
+ * The CPU's buttons for this frame. With `recoverOnly` it only gets back to the
+ * stage and off ledges, and otherwise does nothing (the training dummy).
+ */
+export function cpuInput(s: MatchState, slot: number, cpu: Cpu, recoverOnly = false): number {
   const me = s.fighters[slot];
   const L = LEVEL[cpu.level];
   if (s.phase !== 'play' || me.act === 'dead' || me.act === 'out') return 0;
@@ -190,12 +203,12 @@ export function cpuInput(s: MatchState, slot: number, cpu: Cpu): number {
   if (--cpu.wait > 0) return aimable ? out & ~(BTN.up | BTN.down) : out;
   cpu.wait = L.think;
   cpu.hold = 0;
-  decide(s, me, cpu);
+  decide(s, me, cpu, recoverOnly);
   const bits = cpu.hold | (out & (BTN.attack | BTN.special | BTN.dodge | BTN.jump));
   return aimable ? bits & ~(BTN.up | BTN.down) : bits;
 }
 
-function decide(s: MatchState, me: FighterState, cpu: Cpu) {
+function decide(s: MatchState, me: FighterState, cpu: Cpu, recoverOnly: boolean) {
   const L = LEVEL[cpu.level];
   const st = STAGES[s.stage];
   const r = () => random(cpu);
@@ -230,12 +243,14 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
 
   // Recovery: get back to the stage. Drift in first, cover distance with a
   // moving side special when far out, save the double jump until near stage
-  // height, and use the up special once below it.
+  // height, and use the up special once below it. Below the top of the stage,
+  // aim just outside the ledge, not at the middle, so as not to drift in under it.
   const off = me.x < st.main.x1 + 4 || me.x > st.main.x2 - 4;
   if (!me.grounded && (off || me.y < -4)) {
-    const center = 0;
+    const side = me.x >= 0 ? 1 : -1;
+    const center = me.y < -10 ? (side > 0 ? st.main.x2 : st.main.x1) + side * (CHARS[me.char].halfWidth + 8) : 0;
     const gap = Math.abs(me.x) - st.main.x2;
-    cpu.hold = toward(center);
+    cpu.hold = Math.abs(me.x - center) > 6 ? toward(center) : 0;
     if (me.vy < 0) {
       if (gap > 140 && SIDE_RECOVERY.has(me.char) && !cpu.triedSide && me.y > -120 && r() < L.recover) {
         cpu.triedSide = true;
@@ -254,6 +269,7 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
     cpu.wait = Math.min(cpu.wait, 2);
     return;
   }
+  if (recoverOnly) return;
 
   const target = nearestTarget(s, me);
   if (!target) return;
@@ -288,13 +304,19 @@ function decide(s: MatchState, me: FighterState, cpu: Cpu) {
 
   // Pick an attack that would reach the target.
   if (r() < L.aggression && cpu.retreat === 0) {
-    const pick = chooseMove(me, target, face, cpu);
+    const pick = chooseMove(me, target, face, cpu, me.facing);
     if (pick) {
       const bits = inputFor(pick.slot, face);
       cpu.tap = bits & (BTN.attack | BTN.special);
       cpu.hold = bits & (BTN.left | BTN.right | BTN.up | BTN.down);
       // Phantom hits and runs.
       if (me.char === 'phantom') cpu.retreat = 24;
+      return;
+    }
+    // Facing away on the ground, with a move that would reach if turned around: turn now, attack next time.
+    if (me.grounded && me.facing !== face && (me.act === 'idle' || me.act === 'run') && chooseMove(me, target, face, cpu, face)) {
+      cpu.hold = toward(target.x);
+      cpu.wait = Math.min(cpu.wait, 2);
       return;
     }
   }
@@ -360,7 +382,15 @@ function nearestTarget(s: MatchState, me: FighterState) {
   return best;
 }
 
-function chooseMove(me: FighterState, target: FighterState, face: number, cpu: Cpu): Reach | null {
+/** Side moves that turn to the held direction when they start. */
+const SIDE = new Set<MoveSlot>(['ftilt', 'fair', 'sspec']);
+
+/**
+ * The best move that would reach the target, judged by the way each move will
+ * actually go: a side move that turns goes toward the target (`face`); every
+ * other move, projectiles included, goes the way the fighter faces (`facing`).
+ */
+function chooseMove(me: FighterState, target: FighterState, face: number, cpu: Cpu, facing: number): Reach | null {
   const L = LEVEL[cpu.level];
   const c = CHARS[me.char];
   let best: Reach | null = null;
@@ -377,12 +407,15 @@ function chooseMove(me: FighterState, target: FighterState, face: number, cpu: C
     const ahead = L.predict ? rch.startup : 0;
     const tx = target.x + (target.vx + target.kbSpeed * target.kbX) * ahead - me.x;
     const ty = target.y + 40 + (target.grounded ? 0 : target.vy * ahead) - me.y;
-    const rx = tx * face;
+    const rx = tx * (m.turn && SIDE.has(rch.slot) ? face : facing);
     const margin = 8;
     const reach = L.reach;
     if (rx < rch.x1 * reach - margin || rx > rch.x2 * reach + margin || ty < rch.y1 - margin - 40 || ty > rch.y2 + margin) continue;
+    // Damage (more for a KO move once the target is past 100%), less for slow starts and for long moves
+    // that leave the fighter open: a big slow move is mostly a finisher, not something to throw out all the time.
     const killing = target.damage > 100 ? rch.kbg / 40 : 0;
-    const score = rch.dmg * (1 + killing) - rch.startup * 0.45 + random(cpu) * 5 - (rch.slot === 'uspec' ? 8 : 0);
+    const length = m.total + (m.onLand ? c.moves[m.onLand].total : 0);
+    const score = rch.dmg * (1 + killing) - rch.startup * 0.6 - length * 0.15 + random(cpu) * 5 - (rch.slot === 'uspec' ? 8 : 0);
     if (score > bestScore) {
       bestScore = score;
       best = rch;
