@@ -353,6 +353,14 @@ function drawScarf(ctx: Ctx, j: Joints, st: FigureStyle) {
   line(ctx, pts);
 }
 
+/**
+ * A fighter's colour for the n-th copy of the same fighter in a match: its
+ * colour, then its alternate, then a lighter and a darker shade of the colour.
+ */
+export function fighterColor(c: CharDef, palette: number) {
+  return palette === 0 ? c.color : palette === 1 ? c.alt : shade(c.color, palette === 2 ? 0.45 : -0.45);
+}
+
 /** Lighten (+) or darken (−) a #rrggbb colour. */
 export function shade(hex: string, k: number) {
   if (!hex.startsWith('#')) return hex;

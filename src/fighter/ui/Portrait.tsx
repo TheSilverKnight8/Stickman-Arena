@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { CHARS } from '../sim/chars';
 import { pose, solve } from '../sim/skeleton';
 import type { CharId } from '../sim/types';
-import { drawFigure } from '../render/figure';
+import { drawFigure, fighterColor } from '../render/figure';
 
 /** A still drawing of a fighter in its stance, for the select screen. */
 export function Portrait({ id, palette = 0, size = 96, className }: { id: CharId; palette?: number; size?: number; className?: string }) {
@@ -26,7 +26,7 @@ export function Portrait({ id, palette = 0, size = 96, className }: { id: CharId
     const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(zoom, 0, 0, -zoom, canvas.width / 2 - cx * zoom, canvas.height / 2 + cy * zoom);
-    drawFigure(ctx, c, j, { color: palette ? c.alt : c.color, facing: 1 });
+    drawFigure(ctx, c, j, { color: fighterColor(c, palette), facing: 1 });
   }, [id, palette, size]);
   return <canvas ref={ref} className={className} style={{ width: size, height: size }} aria-hidden />;
 }

@@ -9,7 +9,7 @@ import { settings } from '../../lib/settings';
 import { Keyboard } from '../input/keyboard';
 import { TapJump } from '../input/tapJump';
 import { TouchControls, TouchInput } from '../input/TouchControls';
-import { Scene, type PlayerLabel } from '../render/scene';
+import { Scene, type PlayerLabel, type SceneOptions } from '../render/scene';
 import { FPS } from '../sim/step';
 import type { MatchState, SimEvent } from '../sim/types';
 
@@ -39,6 +39,8 @@ export function FightView({
   overlay,
   pausable = true,
   leaveText = 'The match ends here.',
+  hold = false,
+  sceneOptions,
 }: {
   driver: FightDriver;
   labels: PlayerLabel[];
@@ -50,12 +52,16 @@ export function FightView({
   pausable?: boolean;
   /** What leaving does, in the "Leave the match?" question. */
   leaveText?: string;
+  /** Holds the match still (training menu open). */
+  hold?: boolean;
+  /** How the match is shown (training). */
+  sceneOptions?: SceneOptions;
 }) {
   useMusic('fighter');
   const canvas = useRef<HTMLCanvasElement>(null);
   const landscape = useLandscape();
   const upright = isTouch && !landscape;
-  const paused = pausable && upright;
+  const paused = (pausable && upright) || hold;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
   const [touch] = useState(() => new TouchInput());
@@ -64,7 +70,7 @@ export function FightView({
 
   useEffect(() => {
     const el = canvas.current!;
-    const scene = new Scene(el, labels);
+    const scene = new Scene(el, labels, sceneOptions);
     // Development only: lets automated tests read the running match.
     if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__fight = driver;
     const keys = new Keyboard();
@@ -102,8 +108,8 @@ export function FightView({
       cancelAnimationFrame(raf);
       keys.detach();
     };
-    // The driver is fixed for the life of this screen.
-  }, [driver, labels, mySlot, touch]);
+    // The driver and scene options are fixed for the life of this screen.
+  }, [driver, labels, mySlot, touch, sceneOptions]);
 
   // Escape asks to leave.
   useEffect(() => {

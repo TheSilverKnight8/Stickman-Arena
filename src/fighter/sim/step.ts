@@ -1328,7 +1328,7 @@ function updateProjectiles(s: MatchState, ev: SimEvent[]) {
 }
 
 /** The area a projectile covers: the thrown sword hits along its blade, the rest are circles. */
-function projShape(p: ProjectileState): Capsule {
+export function projShape(p: ProjectileState): Capsule {
   const r = PROJ_R[p.kind];
   return p.kind === 'sword'
     ? [p.x - p.ux * SWORD_HIT.back, p.y - p.uy * SWORD_HIT.back, p.x + p.ux * SWORD_HIT.front, p.y + p.uy * SWORD_HIT.front, r]

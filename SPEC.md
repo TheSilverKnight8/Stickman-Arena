@@ -22,7 +22,7 @@ Status: ready to build. This document records decisions Caleb has made, research
 
 - One home page with two buttons, one for each game.
 - Each button leads to that game's own home page.
-- Each game's home page holds the game-specific items: finding a match (creating a room, or joining one with a code), playing against a CPU, and settings.
+- Each game's home page holds the game-specific items: finding a match (creating a room, or joining one with a code), playing against a CPU, and settings. The Platfighter's also has watching CPUs and a training room (below).
 
 ## Online play (both games)
 
@@ -51,6 +51,8 @@ Pazaak: the same flow, with deck selection in place of character and stage selec
 
 - Both games have an optional CPU opponent. CPU modes must work without a network connection.
 - Platfighter CPU: three difficulties, easy, normal and hard. Behavior per difficulty is **Claude Code decides**.
+- Platfighter CPU matches (Caleb's friend's idea): pick the CPU's fighter and the stage, watch CPU vs CPU, and play against more than one CPU.
+- Platfighter training room (Caleb's friend's idea): dummy settings, damage and reset, show hitboxes, and move info. The details are **Claude Code decides**.
 - Pazaak CPU: two levels, normal and advanced. They differ in deck composition, not skill. Normal uses only the basic plus and minus cards. Advanced also uses the flip cards and the tiebreaker.
 
 ## Platfighter

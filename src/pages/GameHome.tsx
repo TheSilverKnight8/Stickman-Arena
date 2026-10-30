@@ -10,17 +10,20 @@ import { CODE_LENGTH, normalizeCode } from '../net/room';
 /**
  * A game's home page: create a room, join one with a code, play the CPU, settings.
  * `onCreate` and `onJoin` start the connection; the room screen shows its progress.
+ * `practice` adds more offline modes under Play the CPU (the Platfighter's Watch CPUs and Training).
  */
 export function GameHome({
   game,
   about,
   onCreate,
   onJoin,
+  practice,
 }: {
   game: GameId;
   about: ReactNode;
   onCreate: () => void;
   onJoin: (code: string) => void;
+  practice?: ReactNode;
 }) {
   const g = GAMES[game];
   const navigate = useNavigate();
@@ -98,6 +101,7 @@ export function GameHome({
               <Bot className="size-6" />
               Play the CPU
             </ButtonLink>
+            {practice}
             <p className="mt-2 text-sm text-muted">Works without an internet connection.</p>
           </Card>
           <ButtonLink to={`${g.path}/settings`} onClick={() => sfx.click()} size="lg" press className="w-full border-2 border-navy">

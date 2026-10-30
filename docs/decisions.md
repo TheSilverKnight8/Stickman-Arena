@@ -79,7 +79,7 @@ The 12 moves of each fighter, with their numbers, are in [`characters.md`](chara
 
 | Question | Answer |
 | --- | --- |
-| CPU match: who picks the CPU's fighter and the stage? | Both random. |
+| CPU match: who picks the CPU's fighter and the stage? | Both random. Since the modes update (Caleb's friend's idea) they can be picked; Random is still there, and is the default. |
 | Character select | Has a Random option. |
 | Sudden death time limit | After 1 minute it ends in a draw. |
 
@@ -331,6 +331,26 @@ The CPU presses the same buttons a player does.
 | Hard | Decides 20 times a second, aims where you will be when the move comes out, dodges about 1 time in 3, prefers KO moves when you are above 100%, recovers reliably. |
 
 Each fighter keeps its own distance: Ranger stays far and shoots, Spartan stays at sword range, Fisticuffs gets close. Phantom (since Balance pass 4, Caleb's request) fights in the air: it jumps in toward the opponent (a short hop when close, a full jump when further), uses its aerials and specials up close, throws orbs only when the opponent is more than 200 units away, and backs off briefly after a hit. Every CPU jumps over a boulder or shockwave rolling toward it (Hard nearly always, Normal about half the time, Easy rarely), and now and then jumps in toward the opponent instead of walking. Measured over 30 matches each (after Balance pass 5, and the same again with Valkyrie added): Hard beats Easy 30–0 and Normal 29–1; Normal beats Easy 30–0. Since Balance pass 6: the CPU uses Buster's command grabs and Phantom's Tether Zip like any other move; it does not aim Ranger's Charged Shot (its aimed shots missed more than they hit and dragged Ranger from 60% to 13% of CPU wins, so it shoots straight); and Valkyrie's CPU dives out of a glide once over the stage, or ends it (a jump, else a dodge) if it is gliding away from the stage.
+
+### CPU matches, watching and training (Caleb's friend's idea)
+
+Caleb chose all of these: pick the CPU's fighter and the stage, watch CPU vs CPU, more than one CPU, and a training room with dummy settings, damage and reset, hitboxes and move info. All are offline, on this device only (online rooms stay at 2 players, as the spec says).
+
+| Item | Choice |
+| --- | --- |
+| Where | Under Practice on the Platfighter's home page: Play the CPU, Watch CPUs, Training. |
+| Play the CPU | Your fighter, then 1, 2 or 3 CPUs, each with its own fighter (or Random) and difficulty, and the stage (or Random). Random fighters and stage are the defaults, as before. With more than one CPU it is a free-for-all: every fighter goes after the nearest one, with the normal match rules (last fighter standing; at the time limit, most stocks, with sudden death among those tied). |
+| Watch CPUs | 2, 3 or 4 CPUs (Hard by default), each with its fighter and difficulty, and the stage. Nothing on the device plays; the result names the winning CPU. Leave at any time. |
+| Copies of one fighter | The first copy in its colour, the second in its alternate shade (as before), a third lighter and a fourth darker. |
+| Training: setup | Your fighter, the dummy's fighter (or Random) and the stage. |
+| Training: rules | No countdown, no timer and no stocks: a fighter knocked out comes back as usual and the match never ends. The clock and stock dots are not shown. Leave returns to the training setup. |
+| Dummy settings | Stand (does nothing), Jump (a full jump after standing still for about two thirds of a second), Dodge (a spot dodge on the same rhythm), or CPU at Easy, Normal or Hard. The option list Caleb was shown also had "crouch"; the game has no crouch, so Dodge took its place. |
+| Damage and reset | The dummy's damage can be set (−10, +10, or 0, 50, 100, 150%); it applies at once, after a reset, and when the dummy comes back after a KO. Reset (a button on screen and in the menu) puts both fighters back at their start and the dummy at its set damage. |
+| Show hitboxes | Hurtboxes in blue outlines, attack hitboxes in red, command grabs in yellow, and projectiles' hit areas in red. |
+| Move info | A panel in the corner for the last hit you landed on the dummy: the move's name, damage, knockback, and first active frame (none for projectiles and throws); and the combo: hits that land while the dummy is still stunned (or held) count toward it, with the total damage. |
+| Training menu | Opens over the match and holds it still; dummy, damage, the two Show switches, and Reset. The settings are kept until the app closes, like the other setups. |
+
+Checked in a browser: every option of the three setups starts the right match; matches with 3 and 4 fighters run to a result (12 CPU free-for-alls by script: all ended with a winner, none by time) and stay deterministic; the training menu holds the match, sets the damage, and turns hitboxes on; the move info shows Level Sweep with its startup (frame 9); the dummy jumps by itself; a knocked-out dummy keeps its stocks and comes back at the set damage; Reset works.
 
 ### Online (Stage 3)
 

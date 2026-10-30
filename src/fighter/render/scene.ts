@@ -1,10 +1,10 @@
 import { CHARS } from '../sim/chars';
-import { hidden, hitsOf, jointsOf, moveOf } from '../sim/body';
+import { hidden, hitsOf, hurtOf, jointsOf, moveOf } from '../sim/body';
 import type { Joints } from '../sim/skeleton';
 import { STAGES } from '../sim/stages';
-import { step, tetherLine } from '../sim/step';
+import { projShape, step, tetherLine } from '../sim/step';
 import type { Act, FighterState, MatchState, ProjectileState, SimEvent } from '../sim/types';
-import { CREAM, NAVY, RED, drawFigure, drawSword, shade } from './figure';
+import { CREAM, NAVY, RED, drawFigure, drawSword, fighterColor, shade } from './figure';
 
 // Draws a match: the stage, fighters, projectiles, effects and the HUD.
 // Nothing here changes the match; effects and the camera live only on screen.
@@ -59,6 +59,14 @@ export interface PlayerLabel {
   you: boolean;
 }
 
+/** How a match is shown, beyond the defaults. */
+export interface SceneOptions {
+  /** Training: no clock or stocks in the HUD. */
+  training?: boolean;
+  /** Draw hurtboxes and hitboxes (read every frame, so it can be switched while playing). */
+  showBoxes?: () => boolean;
+}
+
 export class Scene {
   private ctx: CanvasRenderingContext2D;
   private effects: Effect[] = [];
@@ -74,6 +82,7 @@ export class Scene {
   constructor(
     private canvas: HTMLCanvasElement,
     private labels: PlayerLabel[],
+    private options: SceneOptions = {},
   ) {
     this.ctx = canvas.getContext('2d')!;
   }
@@ -208,8 +217,7 @@ export class Scene {
   }
 
   private colorOf(f: FighterState) {
-    const c = CHARS[f.char];
-    return f.palette === 0 ? c.color : c.alt;
+    return fighterColor(CHARS[f.char], f.palette);
   }
 
   draw(s: MatchState) {
@@ -246,6 +254,7 @@ export class Scene {
     // The local player is drawn last, on top.
     const order = [...s.fighters].sort((a, b) => Number(this.labels[a.slot]?.you) - Number(this.labels[b.slot]?.you));
     for (const f of order) this.drawFighter(f, s);
+    if (this.options.showBoxes?.()) this.drawBoxes(s);
     this.drawEffects();
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -418,6 +427,40 @@ export class Scene {
       ctx.arc(j.hand1[0], j.hand1[1], 6 + (f.charge / m.charge.max) * 18, 0, Math.PI * 2);
       ctx.stroke();
     }
+  }
+
+  /** Training: hurtboxes (blue outlines), hitboxes (red; command grabs yellow) and projectiles' hit areas. */
+  private drawBoxes(s: MatchState) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.lineWidth = 2;
+    for (const f of s.fighters) {
+      if (f.act === 'dead' || f.act === 'out' || hidden(f)) continue;
+      const j = jointsOf(f);
+      if (!j) continue;
+      ctx.strokeStyle = 'rgba(30, 110, 255, 0.8)';
+      ctx.fillStyle = 'rgba(30, 110, 255, 0.12)';
+      for (const h of hurtOf(f, j)) {
+        capsule(ctx, h);
+        ctx.fill();
+        ctx.stroke();
+      }
+      for (const h of hitsOf(f, j)) {
+        ctx.strokeStyle = h.def.grab ? 'rgba(200, 150, 0, 0.95)' : 'rgba(220, 0, 0, 0.95)';
+        ctx.fillStyle = h.def.grab ? 'rgba(255, 212, 59, 0.4)' : 'rgba(252, 63, 63, 0.4)';
+        capsule(ctx, h.shape);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = 'rgba(220, 0, 0, 0.95)';
+    ctx.fillStyle = 'rgba(252, 63, 63, 0.35)';
+    for (const p of s.projectiles) {
+      capsule(ctx, projShape(p));
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** A ghostly chain from Phantom's hand to the tether's tip (or to what it caught). */
@@ -873,13 +916,13 @@ export class Scene {
   private drawHud(s: MatchState, W: number, H: number, dpr: number) {
     const ctx = this.ctx;
     ctx.textBaseline = 'alphabetic';
-    // Clock.
+    // Clock (none in training).
     const secs = Math.ceil(Math.max(0, s.clock) / 60);
     const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
     ctx.textAlign = 'center';
     ctx.font = `${26 * dpr}px Norwester, sans-serif`;
     ctx.fillStyle = secs <= 10 && s.phase === 'play' ? RED : NAVY;
-    ctx.fillText(clock, W / 2, 36 * dpr);
+    if (!this.options.training) ctx.fillText(clock, W / 2, 36 * dpr);
     if (s.suddenDeath) {
       ctx.font = `${13 * dpr}px Norwester, sans-serif`;
       ctx.fillStyle = RED;
@@ -959,9 +1002,9 @@ export class Scene {
     ctx.font = `${30 * dpr * pop}px Norwester, sans-serif`;
     ctx.fillText(`${Math.floor(f.damage)}%`, x + 14 * dpr, y + 47 * dpr);
 
-    // Stocks.
+    // Stocks (none in training).
     ctx.textAlign = 'right';
-    for (let i = 0; i < f.stocks; i++) {
+    for (let i = 0; i < (this.options.training ? 0 : f.stocks); i++) {
       const sx = x + w - (12 + i * 16) * dpr;
       ctx.fillStyle = CREAM;
       ctx.strokeStyle = color;
@@ -973,6 +1016,15 @@ export class Scene {
     }
     ctx.globalAlpha = 1;
   }
+}
+
+/** Traces a capsule (a segment with a radius). */
+function capsule(ctx: CanvasRenderingContext2D, [ax, ay, bx, by, r]: [number, number, number, number, number]) {
+  const a = Math.atan2(by - ay, bx - ax);
+  ctx.beginPath();
+  ctx.arc(ax, ay, r, a + Math.PI / 2, a + Math.PI * 1.5);
+  ctx.arc(bx, by, r, a - Math.PI / 2, a + Math.PI / 2);
+  ctx.closePath();
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {

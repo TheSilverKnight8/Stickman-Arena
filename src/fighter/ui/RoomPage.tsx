@@ -26,10 +26,11 @@ import {
 import type { PlayerLabel } from '../render/scene';
 import { CHARS } from '../sim/chars';
 import { STAGES, STAGE_IDS } from '../sim/stages';
-import type { MatchState, StageDef } from '../sim/types';
+import type { MatchState } from '../sim/types';
 import { CharacterGrid, CharacterInfo, type Pick } from './CharacterGrid';
 import { ControlsHelp } from './Controls';
 import { FightView } from './FightView';
+import { StagePreview } from './StagePicker';
 
 // The online Platfighter room: character select → stage select → match →
 // back to character select (spec).
@@ -274,33 +275,6 @@ function Reveal({ room }: { room: FighterRoomState }) {
         </div>
       </div>
     </div>
-  );
-}
-
-/** A small drawing of a stage: the base and its platforms. */
-function StagePreview({ stage, className }: { stage: StageDef; className?: string }) {
-  const m = stage.main;
-  const slab = [
-    [m.x1, 0],
-    [m.x2, 0],
-    [m.x2 - 10, m.bottom],
-    [m.x2 - 70, m.bottom - 70],
-    [m.x1 + 70, m.bottom - 70],
-    [m.x1 + 10, m.bottom],
-  ]
-    .map(([x, y]) => `${x},${-y}`)
-    .join(' ');
-  return (
-    <svg viewBox="-440 -290 880 440" className={cx('aspect-[2/1]', className)} aria-hidden>
-      <polygon points={slab} fill="#002657" />
-      <rect x={m.x1 + 30} y={10} width={(m.x2 - m.x1) * 0.55} height={8} fill="#fc3f3f" />
-      {stage.plats.map((p, i) => (
-        <g key={i}>
-          <rect x={p.x1} y={-p.y} width={p.x2 - p.x1} height={18} rx={4} fill="#002657" />
-          <rect x={p.x1 + 10} y={-p.y + 6} width={(p.x2 - p.x1) * 0.35} height={5} fill="#fc3f3f" />
-        </g>
-      ))}
-    </svg>
   );
 }
 
